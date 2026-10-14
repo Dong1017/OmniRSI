@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "name": "performance-ceiling-analysis",
+  "status": "candidate",
+  "sources": [
+    {
+      "url": "https://github.com/NVIDIA/TensorRT-LLM",
+      "commit": "f33e0e5fd55b",
+      "paths": [
+        ".claude/skills/perf-analysis/SKILL.md",
+        ".claude/skills/perf-nsight-compute-analysis/references/roofline-analysis.md",
+        ".claude/skills/perf-workload-profiling/SKILL.md",
+        ".claude/skills/perf-optimization/SKILL.md",
+        ".claude/skills/perf-optimization-casebook/SKILL.md",
+        ".claude/skills/exec-env-check/SKILL.md",
+        ".claude/skills/exec-remote-slurm/SKILL.md",
+        ".claude/agents/perf-profiling-specialist.md"
+      ]
+    },
+    {
+      "url": "https://github.com/hahnyuan/LLM-Viewer",
+      "commit": "1893e4b5705d",
+      "paths": [
+        "roofline_model.py",
+        "model_analyzer.py",
+        "hardwares/hardware_params.py",
+        "configs/DiT.py"
+      ]
+    },
+    {
+      "url": "https://github.com/ebugger/Empirical-Roofline-Toolkit",
+      "commit": "0771fa9621d0",
+      "paths": [
+        "Empirical_Roofline_Tool-1.1.0/README.md",
+        "Empirical_Roofline_Tool-1.1.0/Drivers/driver1.c",
+        "Empirical_Roofline_Tool-1.1.0/Kernels/kernel1.c",
+        "Empirical_Roofline_Tool-1.1.0/Scripts/roofline.py"
+      ]
+    }
+  ],
+  "verification": {
+    "locally_verified": false,
+    "evidence_level": "source_grounded",
+    "note": "Method extracted from three source repositories. No empirical accelerator measurements on this machine. Empirical fields in the measurement plan are remote-measurement placeholders."
+  },
+  "applicability": {
+    "scope": "inference serving systems (LLM, diffusion, audio)",
+    "hardware": "any; CUDA examples from sources, NPU adaptation required",
+    "prerequisites": "profiler access (nsys/ncu or NPU equivalent), or willingness to work at L1 analytical only"
+  }
+}

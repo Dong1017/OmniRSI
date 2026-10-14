@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "name": "npu-skill-factory",
+  "status": "candidate",
+  "sources": [
+    {
+      "url": "https://github.com/VectorSpaceLab/AREX-Skill",
+      "commit": "ac3fe1af",
+      "paths": [
+        "docs/disco-meta-skills.md",
+        "docs/disco-workflows.md",
+        "src/disco/skills/create-paper-module-skill/SKILL.md",
+        "src/disco/skills/create-paper-module-skill/scripts/create_skill_skeleton.py",
+        "src/disco/skills/create-paper-module-skill/scripts/validate_skill_tree.py",
+        "src/disco/modes/skill-policy.ts",
+        "src/core/repo-skills-library-manager.ts"
+      ]
+    },
+    {
+      "url": "https://github.com/SkillOpt/SkillOpt",
+      "commit": "343db229",
+      "paths": [
+        "skillopt/evaluation/gate.py",
+        "skillopt/optimizer/skill.py",
+        "skillopt/optimizer/clip.py",
+        "skillopt_sleep/cycle.py",
+        "skillopt_sleep/harvest_sources.py"
+      ]
+    },
+    {
+      "url": "https://github.com/WillowMindIE/MindIE-SD",
+      "commit": "8481d39b",
+      "paths": [
+        ".agents/skills/profiling-analyze/SKILL.md",
+        ".agents/skills/dit-perf-opt/SKILL.md",
+        ".agents/skills/perf-gate/SKILL.md",
+        ".agents/skills/dit-parallel-opt/SKILL.md"
+      ]
+    }
+  ],
+  "verification": {
+    "locally_verified": false,
+    "evidence_level": "source_grounded",
+    "note": "Skill bundle schema observed in sibling workstream at 82218b4. AREX and SkillOpt mechanisms extracted from source by research agent. Ascend corpus characterized from repo @ 8481d39b."
+  },
+  "applicability": {
+    "scope": "OmniRSI skill lifecycle management",
+    "prerequisites": "schemas/skill-bundle.json, omnirsi.harness.skill_distill, omnirsi.harness.skill_eval"
+  }
+}

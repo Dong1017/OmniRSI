@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "name": "repository-evolution-analysis",
+  "status": "candidate",
+  "sources": [
+    {
+      "url": "https://github.com/LearningToCommit/LearningToCommit",
+      "commit": "7e5a1d77",
+      "paths": [
+        "data_construction/s1_scan_commits.py",
+        "data_construction/s3_tag.py",
+        "data_construction/s4_sample.py",
+        "data_construction/s5_build.py",
+        "modules/agent.py",
+        "modules/prompt_builder.py",
+        "modules/trajectory_to_md.py",
+        "system_prompts/solve_with_skill.txt",
+        "system_prompts/learn_reflect.txt",
+        "evaluation/pairwise_judge.py",
+        "evaluation/programmatic_metrics.py"
+      ]
+    },
+    {
+      "url": "https://github.com/yetone/magpie",
+      "commit": "77800032",
+      "paths": ["internal/", "docs/"]
+    }
+  ],
+  "verification": {
+    "locally_verified": false,
+    "evidence_level": "source_grounded",
+    "note": "Pipeline map extracted from LearningToCommit source. Magpie diff statistics computed from JSONL history. Capability evolution graph edges based on commit diff sampling."
+  },
+  "applicability": {
+    "scope": "any software repository with a recoverable git history",
+    "prerequisites": "git history access, optionally LearningToCommit-style benchmark for evaluation"
+  }
+}
