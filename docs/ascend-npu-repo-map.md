@@ -2,7 +2,7 @@
 
 ## AKG (Ascend Kernel Graph Compiler)
 
-**Purpose** (observed: `/d/world_model/RSI-dev/omnirsi-preflight/repos/akg/README.md`)
+**Purpose** (observed: [mindspore-ai/akg README at the recorded `5aa15f3f` revision](https://github.com/mindspore-ai/akg/blob/5aa15f3f/README.md))
 
 AKG is a deep learning compiler for operator optimization and automatic fusion in DNNs. Two major subprojects:
 - **AKG-AGENT**: LLM-driven operator generation framework supporting Triton-Ascend (Atlas A2/A3) and SWFT (300I DUO) DSL generation with integrated AscendKernelBench evaluation platform
