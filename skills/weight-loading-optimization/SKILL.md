@@ -35,7 +35,9 @@ weight prefetch, CPU-tier offload, loading-mode selection.
 Related skills: `host-overhead-profiling` (request-time host overhead — this
 skill covers the once-per-process side), `ascend-device-health` (card state
 before launch), `os-process-placement` (process placement before measuring),
-`kv-tier-management` (runtime KV offload — a different lifecycle concern).
+`kv-tier-management` (runtime KV offload — a different lifecycle concern),
+`storage-io-measurement` (device/process-level I/O attribution and fio
+methodology — the measurement layer beneath §7's phase timers).
 
 ---
 

@@ -33,7 +33,9 @@ admission.
 
 Related skills: `weight-loading-optimization` (startup/load path — different
 lifecycle stage), `host-memory-management` (pinned memory / NUMA allocation
-mechanics), `os-process-placement` (process placement).
+mechanics), `os-process-placement` (process placement),
+`storage-io-measurement` (per-device/per-process I/O attribution for L2
+adapter traffic; two-layer evidence gate for any storage-side claim).
 
 ---
 

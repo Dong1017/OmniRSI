@@ -45,10 +45,10 @@ Covered: CPU affinity pinning, NUMA-local process placement, thread-count
 environment discipline, device-busy preflight, structured environment
 checks, container-level resource limits.
 
-Explicitly not covered (no evidence in any local source repo): cgroups,
-cpuset, isolcpus, nice/ionice, SCHED_FIFO/RR priorities. Do not improvise
-OS-scheduler content beyond Docker flags and ulimits without external
-authoritative sources.
+Cgroup v2 resource controls (cpu.max/weight, cpuset requested/effective,
+memory high/low/max with PSI events, io.max) are covered by the companion
+skill `cgroup-resource-controls` (kernel-doc-grounded). Still not covered
+anywhere: isolcpus, nice/ionice, SCHED_FIFO/RR scheduler priorities.
 
 ---
 
@@ -198,9 +198,9 @@ specific device mappings for inference/training containers.
   (TensorRT-LLM), not measured in this workspace.
 - `OMP_NUM_THREADS` serving values (8–10) come from per-model templates;
   they are starting points, not tuned constants.
-- No cgroup/cpuset/isolcpus or scheduler-priority methodology exists in any
-  local repo; that part of the OS/System Optimize cell stays open until a
-  real source appears.
+- Cgroup v2 controls are now sourced (see `cgroup-resource-controls`,
+  kernel-doc-grounded via the supplied pack); isolcpus and scheduler
+  priorities (nice/ionice/SCHED_FIFO/RR) remain unsourced.
 - `CPU_AFFINITY_CONF` behavior (which threads it binds, interaction with
   taskset) is documented only as a checklist env var in the sources.
 - llama.cpp NUMA/thread trade-offs are qualitatively documented with no
