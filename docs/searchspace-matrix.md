@@ -1,6 +1,6 @@
 # OmniRSI SearchSpace Matrix
 
-**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `ef6587a`
+**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `3097788`
 
 Top-level rows are hardware resource layers.  
 Second-level optimization targets (Kernel, Operator, KV Cache, Attention, Runtime, Distributed, Serving, VAE/Codec) live **inside** the row that owns their bottleneck.
@@ -22,7 +22,7 @@ The primary compute and HBM resource. Most current work lives here.
 | **Configure** | Graph mode (npugraph_ex / ACLGraph): capture-replay, FX pass, memory reuse, static kernel compile | `ascend-graph-mode` | TorchAir document-first discipline | awesome-ascend-skills torch-npugraph-ex-knowledge @ 75ec89ce | 🟢 |
 | **Configure** | Parallelism strategy (USP/CP/TP/PP), topology-aware card-group selection | `ascend-distributed-parallel` | USP activation requirement, masking upper-bound formula, AlltoAllV workaround | MindIE-SD dit-parallel-opt @ 8481d39b (9 reference files) | 🟢 |
 | **Configure** | Model adapter: FP8 dequantization, KV-head replication, multimodal feature validation order | `ascend-model-adaptation` | vllm-ascend FP8/multimodal lessons | vllm-ascend @ bc8115ed | 🟢 |
-| **Optimize** | Kernel-level: Triton/CuTe/TileIR writing, kernel tuning, fusion scope analysis | — (TRT-LLM kernel-* skills not ported to OmniRSI yet; akg-mlir candidate identified) | TRT-LLM kernel casebook | TRT-LLM @ f33e0e5f; akg @ 5aa15f3f | 🟡 |
+| **Optimize** | Kernel-level: Triton/CuTe/TileIR writing, kernel tuning, fusion scope analysis | `kernel-writing-guide` | Framework routing (Triton vs CuTe vs AscendC), 6 universal correctness rules, verify-before-benchmark workflow | TRT-LLM kernel-triton-writing + kernel-cute-writing @ f33e0e5f | 🟢 |
 | **Optimize** | Operator-level: CANN AscendC operator dev, op performance tuning (pypto-op-perf-tune) | — (candidate skills identified in ascend-npu-repo-map.md: `pypto-op-perf-tune`, `triton-op-designer`, `ascendc-precision-debug`) | ops-profiling iterative loop | awesome-ascend-skills; see `docs/ascend-npu-repo-map.md` | 🟡 |
 | **Optimize** | Casebook of past NPU optimization decisions: AI-CPU fallback, memory-bound, comm-exposed, graph-compilation, scheduling idle gaps | `ascend-optimization-casebook`, `inference-optimization-casebook` | Five bottleneck classes with symptom→diagnosis→action→evidence schema | MindIE-SD profiling-analyze + dit-perf-opt + perf-gate + dit-parallel-opt @ 8481d39b | 🟢 |
 | **Optimize** | Search policy: phase-locked round, negative memory, cost-aware selection, RRSI constraints, CRISP critical-step | `optimization-search-policy` | RRSI constraint propagation; CRISP critical-step classification | vllm-evolve @ 43cc82c; arXiv 2609.24972; arXiv 2608.01867 | 🟢 |
@@ -41,7 +41,7 @@ Host-side memory: CPU DRAM, pinned memory, page tables, PyTorch tensor lifecycle
 |---|---|---|---|---|---|
 | **Observe / Profile** | Host overhead in nsys: GPU idle ratio (>0.30 aggregate/>0.15 generation), host-prep exposed ratio (M3b>0.05), NVTX breakdown, inter-kernel gaps | `host-overhead-profiling` | GPU idle + host-prep verdict metrics; NVTX root-cause breakdown; regression comparison across two traces | TRT-LLM perf-host-analysis @ f33e0e5f | 🟢 |
 | **Diagnose** | YES/NO bottleneck verdict; multi-rank straggler detection; NVTX-to-source function mapping | `host-overhead-profiling` | M3b>0.05 AND M3c>0.50 together confirm host-prep bottleneck | TRT-LLM perf-host-analysis @ f33e0e5f | 🟢 |
-| **Configure** | CUDA pinned memory, async H2D transfers, Python GIL avoidance | — | — | — | 🔴 |
+| **Configure** | Pinned memory for fast H2D (>1MB tensors where transfer is measured bottleneck), async H2D via non_blocking=True + stream + explicit synchronize(), Python GIL avoidance (ProcessPoolExecutor, Python 3.13 free-threading PEP 703), NUMA-aware allocation (numactl) | `host-memory-management` | All APIs verified from PyTorch docs, Python docs, numactl manpage | PyTorch docs, Python docs, PEP 703, numactl manpage | 🟢 |
 | **Optimize** | line_profiler loop targeting `_prepare_tp_inputs`; NVTX regression triage to alternative targets (`_fetch_new_requests` +643%, `broadcast_requests`, `_update_requests` +75%) | `host-overhead-optimization` | Iterative profile→identify→optimize→verify loop | TRT-LLM perf-host-optimization @ f33e0e5f | 🟢 |
 | **Verify** | — | `dense-performance-evidence` (evidence levels apply) | — | — | 🟡 (inherited from accelerator row) |
 
@@ -88,7 +88,7 @@ System-level: scheduler, DVFS, process isolation, environment variables, driver 
 
 | Lifecycle step | What it covers | Candidate Skills | Cases / Experience | Evidence | Maturity |
 |---|---|---|---|---|---|
-| **Observe / Profile** | DVFS effect on first-run timing, process-level NPU ownership (proc-mem via npu-smi) | `ascend-operator-profiling` (--warm-up rationale) | DVFS: always warm up before measuring; skip N iterations | awesome-ascend-skills ops-profiling | 🟡 |
+| **Observe / Profile** | DVFS effect on first-run timing, process-level NPU ownership (proc-mem via npu-smi) | `ascend-operator-profiling` (--warm-up rationale), `ascend-device-health` (proc-mem check) | DVFS: always warm up before measuring; proc-mem occupancy check | awesome-ascend-skills ops-profiling; MindIE-SD dit-parallel-opt @ 8481d39b | 🟢 |
 | **Diagnose** | Shared-machine contamination: neighbor load, inter-window drift, temperature variation | `ascend-performance-analysis` (measurement discipline section) | Same-window A/B required; cross-window delta ≈ real gain magnitude | MindIE-SD perf-gate @ 8481d39b | 🟢 |
 | **Diagnose** | SIGKILL residual state: per-step time uniformly elevated by ~1 order of magnitude | `ascend-device-health` | npu-smi Health=OK does not prove card is clean; 4-step smoke required | MindIE-SD dit-parallel-opt @ 8481d39b | 🟢 |
 | **Configure** | Card-group selection, env variables (`HCCL_OP_EXPANSION_MODE=AIV`), proc-mem occupancy check | `ascend-device-health` | Card-group change = contract change; all baselines must be re-measured on new group | MindIE-SD dit-parallel-opt + perf-gate @ 8481d39b | 🟢 |
@@ -104,17 +104,18 @@ System-level: scheduler, DVFS, process isolation, environment variables, driver 
 
 | Gap | Row | Priority | Next action |
 |-----|-----|----------|-------------|
-| Kernel writing skill (Triton-Ascend / AscendC TileIR / CuTe) | Accelerator / Optimize | High | Mine TRT-LLM kernel-triton-writing + kernel-cute-writing skills; port relevant patterns to OmniRSI. Candidate names: `triton-op-designer`, `ascendc-tiling-design` (see ascend-npu-repo-map.md) |
-| Host memory lifecycle (pinned memory, GIL, H2D async) | RAM / Configure | Medium | No source material identified yet; needs new investigation (PyTorch async data loading, CUDA pinned memory API) |
-| Storage I/O profiling and optimization | SSD / Observe, Optimize | Low | No source material; deepest gap — defer until a strong source appears |
-| OS/System Optimize (CPU affinity, NUMA, process placement) | OS / Optimize | Low | No source material beyond env variable checklist |
+| Operator-level tuning (pypto-op-perf-tune, AscendC tiling) | Accelerator / Optimize | Medium | Mine awesome-ascend-skills pypto-op-perf-tune and cannbot/model-infer-fusion; port to OmniRSI format |
+| Storage I/O profiling and optimization | SSD / Observe, Optimize | Low | No source material; defer until a strong source appears |
+| OS/System Optimize (CPU affinity, NUMA process placement, cgroups) | OS / Optimize | Low | `host-memory-management` covers NUMA allocation; dedicated OS-level scheduling skill needs new sources |
 
-**Resolved gaps since initial matrix:**
+**Resolved gaps since initial matrix (all high/medium priority cleared):**
 - ~~Host overhead profiling + optimization skills~~ → `host-overhead-profiling`, `host-overhead-optimization` ✅
 - ~~Parallelism strategy skill~~ → `ascend-distributed-parallel` ✅
 - ~~NPU optimization casebook~~ → `ascend-optimization-casebook` ✅
 - ~~SIGKILL / card-health recovery~~ → `ascend-device-health` ✅
 - ~~Same-window A/B acceptance skill~~ → covered in `ascend-optimization-casebook` (per-case evidence schema) ✅
+- ~~Kernel writing skill (Triton-Ascend / AscendC TileIR / CuTe)~~ → `kernel-writing-guide` ✅
+- ~~Host memory lifecycle (pinned memory / GIL / H2D async)~~ → `host-memory-management` ✅
 
 ---
 
@@ -124,11 +125,11 @@ Use this table in the PR description for `opus/meta-skill-bootstrap`.
 
 | Search Space | Observe / Profile | Diagnose | Configure | Optimize | Verify |
 |---|---|---|---|---|---|
-| **Accelerator** | 🟢 `ascend-performance-analysis`, `ascend-operator-profiling`, `dense-performance-evidence` | 🟢 `ascend-performance-analysis`, `performance-ceiling-analysis` | 🟢 `ascend-graph-mode`, `ascend-model-adaptation`, `ascend-distributed-parallel` | 🟢 `ascend-optimization-casebook`, `optimization-search-policy` (kernel writing 🟡) | 🟢 `dense-performance-evidence`, `rsi-evidence`, `claim-contract` |
-| **RAM / Host** | 🟢 `host-overhead-profiling` | 🟢 `host-overhead-profiling` | 🔴 (pinned memory/GIL gap) | 🟢 `host-overhead-optimization` | 🟡 (inherited) |
+| **Accelerator** | 🟢 `ascend-performance-analysis`, `ascend-operator-profiling`, `dense-performance-evidence` | 🟢 `ascend-performance-analysis`, `performance-ceiling-analysis` | 🟢 `ascend-graph-mode`, `ascend-model-adaptation`, `ascend-distributed-parallel` | 🟢 `ascend-optimization-casebook`, `optimization-search-policy`, `kernel-writing-guide` | 🟢 `dense-performance-evidence`, `rsi-evidence`, `claim-contract` |
+| **RAM / Host** | 🟢 `host-overhead-profiling` | 🟢 `host-overhead-profiling` | 🟢 `host-memory-management` | 🟢 `host-overhead-optimization` | 🟡 (inherited from Accelerator row) |
 | **SSD / Storage** | 🔴 | 🟡 `ascend-graph-mode` (startup/loading incidental) | 🟡 `ascend-model-adaptation` (FP8 loading) | 🔴 | 🔴 |
 | **Communication** | 🟢 `ascend-performance-analysis` | 🟢 `ascend-performance-analysis`, `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel`, `ascend-performance-analysis` |
-| **OS / System** | 🟡 `ascend-operator-profiling` (DVFS) | 🟢 `ascend-device-health`, `ascend-performance-analysis` | 🟢 `ascend-device-health` | 🔴 | 🟢 `ascend-device-health` |
+| **OS / System** | 🟢 `ascend-operator-profiling` (DVFS), `ascend-device-health` (proc-mem) | 🟢 `ascend-device-health`, `ascend-performance-analysis` | 🟢 `ascend-device-health` | 🔴 | 🟢 `ascend-device-health` |
 
 **Optimization targets added in this branch:**
 - Kernel profiling (CANN CSV pipeline, 5-layer analysis, operator-level msprof loop)
@@ -136,11 +137,13 @@ Use this table in the PR description for `opus/meta-skill-bootstrap`.
 - Model adapter (FP8, KV replication, multimodal)
 - Distributed parallelism (USP/CP strategy, topology rules, masking formula, attribution)
 - Host overhead (GPU idle / host-prep verdict, NVTX root-cause, line_profiler loop)
+- Host memory (pinned memory, async H2D, GIL avoidance, NUMA allocation)
 - Device health (topology validation, SIGKILL detection, 4-step smoke)
 - NPU optimization casebook (5 bottleneck classes: AI-CPU fallback, memory-bound, comm-exposed, graph-compile, scheduling)
+- Kernel writing (Triton/CuTe/AscendC routing, 6 correctness rules, verify-before-benchmark workflow)
 - Search policy (phase-locked round, RRSI constraints, CRISP critical-step)
 - Skill evolution (Trace2Skill pool consolidation, SkillOpt bounded edit)
 - Benchmark design (goodput, three-regime, OmniRSI evidence trail)
 - Repository intelligence (LTC temporal split, Magpie patterns, Change2Task, Chronos)
 
-**Skill count:** 17 candidate skills. All `status: candidate`. None promoted.
+**Skill count:** 19 candidate skills. All `status: candidate`. None promoted.
