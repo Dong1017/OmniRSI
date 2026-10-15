@@ -7,10 +7,10 @@ description: >
   bytes-and-counts lines and hit-criteria warmup validation, verify sharded
   weight downloads against the safetensors index, apply device-side weight
   prefetch only on profiled memory-bound hot spots, and order CPU-tier
-  offload candidates by change surface. Use when startup/loading latency or
-  load-path I/O dominates. Does not cover disk-level mechanics (mmap, pinned
-  staging, fio/page-cache benchmarking), checkpoint save/restore I/O, or
-  disk-tier offload — no source evidence for those.
+  offload candidates by change surface. Includes source-scoped disk-loading
+  modes, pinned staging and synchronous checkpoint save semantics. Use when
+  startup/loading latency dominates; route DCP asynchronous save performance
+  and distributed recovery validity to their separate skills.
 tags: [storage, weight-loading, startup, prefetch, offload, serving, npu]
 status: candidate
 ---
@@ -315,13 +315,14 @@ placement decisions (llama.cpp), pinned-staging parallel-read mechanics and
 a load-path measurement protocol (fastsafetensors), runtime KV-to-disk
 tiering (LMCache → `kv-tier-management`), block-device measurement
 methodology (fio/sysstat → `storage-io-measurement`), and checkpoint
-save/restore semantics (§8 above). Still open:
+save/restore semantics (§8 above). The fastsafetensors-specific save-performance
+gap remains: its inspected saver supplied no perf harness, benchmarks or
+documented tuning levers. Wave 7 adds separate candidates rather than extending
+that source's support claims:
 
-- Save-path **performance optimization** intelligence: the saver has no
-  perf harness, no benchmarks, and no documented tuning levers — what §8
-  records is semantics, not optimization guidance.
-- Async / distributed checkpointing patterns (no source among approved
-  repos).
+- `dcp-async-save-performance`: DCP-only staging/pause/buffer-lifetime decisions.
+- `checkpoint-recovery-consistency`: DLRover and NVIDIA Resiliency Extension
+  generation/replica/failure-domain contracts, not save-throughput evidence.
 
 Measurement caveat (mindie-agent): disk read/write counters include cache
 and pipes — they are **logical I/O, not physical disk writes**; without
