@@ -19,21 +19,23 @@ status: candidate
 
 Status: candidate. Source-grounded from MindIE-SD `host-opt` +
 `env-install/weights-prep` + `dit-perf-opt/resource-fallback-tiers` @ 8481d39b
-(Apache-2.0), and awesome-ascend-skills `model-infer-prefetch` +
-`diffusers-ascend` memory-optimization @ 75ec89c (license UNKNOWN). Serves the
-storage row at the serving level; disk-level I/O mechanics need a second
-source (upstream vLLM safetensors loader, fastsafetensors, lmcache).
+(Apache-2.0), awesome-ascend-skills `model-infer-prefetch` +
+`diffusers-ascend` memory-optimization @ 75ec89c (license UNKNOWN), and —
+for loading modes and high-throughput mechanics — ggml-org/llama.cpp @
+3e390af (MIT) and foundation-model-stack/fastsafetensors @ 219e256
+(Apache-2.0).
 
 ## SearchSpace mapping
 
-SSD / Storage row → Diagnose + Optimize cells.
+SSD / Storage row → Diagnose + Optimize + Verify cells (loading-path level).
 
 Second-level targets: model weight sharding/loading, startup latency,
-weight prefetch, CPU-tier offload.
+weight prefetch, CPU-tier offload, loading-mode selection.
 
 Related skills: `host-overhead-profiling` (request-time host overhead — this
 skill covers the once-per-process side), `ascend-device-health` (card state
-before launch), `os-process-placement` (process placement before measuring).
+before launch), `os-process-placement` (process placement before measuring),
+`kv-tier-management` (runtime KV offload — a different lifecycle concern).
 
 ---
 
@@ -141,26 +143,138 @@ When weights/activations do not fit device memory:
 
 ---
 
-## Negative findings (searched, not found — keep these gaps open)
+## 6. Loading modes: mmap / mlock / direct I/O / lazy (llama.cpp pattern)
 
-Scanned all 8 local repos (TensorRT-LLM, vllm-ascend, MindIE-SD, akg,
-mindie-agent, awesome-ascend-skills, LLM-Viewer, OmniRSI; queries included
-safetensors, mmap, memory_map, pinned, O_DIRECT, posix_fadvise, readahead,
-page cache, fio, iostat, iotop, nvme, startup time, load latency, async
-checkpoint save):
+At the pinned revision (3e390af) loading is one unified flag,
+`--load-mode {auto|none|mmap|mlock|mmap+mlock|dio}` (default `auto` = mmap
+unless the device lacks `mmap_support`). The legacy standalone `--mlock` /
+`--no-mmap` flags no longer exist — they are mode values now. Always record
+the effective mode; the loader logs it (`load_mode = %s`).
 
-- No mmap / pinned staging / shard-parallel loading mechanics anywhere.
-- No checkpoint save/restore **I/O optimization** (only format-conversion
-  guides).
-- No disk/NVMe-tier offload (no weight-spill-to-disk, no KV-to-file cache).
-- No fio/iostat/page-cache storage benchmarking methodology.
-- Caveat: the three big repos are skill-doc-only sparse checkouts (no runtime
-  implementations present), so absence here is not absence upstream.
+| Mode | What it does | Trade-off |
+|---|---|---|
+| `auto` | mmap unless device lacks support | default |
+| `none` | full read into RAM | slower load, may reduce pageouts; the only mode with exact load progress (mmap progress is unreliable on some platforms) |
+| `mmap` | file-backed pages, on-demand fault | fastest startup, lowest committed RAM; OS may page the model out under pressure |
+| `mlock` | force residency, no swap/compress | paging-stall avoidance at committed-RAM cost; gated by RLIMIT_MEMLOCK (`ulimit -l`; Apple `vm.user_wire_limit`; Windows working-set quota) |
+| `mmap+mlock` | map then lock | resident + zero-copy start; largest RAM commitment |
+| `dio` | direct I/O through a staging buffer | bypasses the page cache; avoids double-caching |
 
-Measurement caveat when you do get to disk-level work (mindie-agent): disk
-read/write counters include cache and pipes — they are **logical I/O, not
-physical disk writes**; without dropping the OS file cache, a run is not a
-cold-start physical test.
+Mechanics that matter when choosing:
+
+- **mmap prefetch tuning**: Linux path issues `POSIX_FADV_SEQUENTIAL`, adds
+  `MAP_POPULATE` only when prefetching and no lazy ranges exist (populate
+  would fault lazy ranges in), `POSIX_MADV_WILLNEED` for non-lazy ranges and
+  `POSIX_MADV_RANDOM` for lazy ones.
+- **NUMA disables eager populate**: when NUMA handling is active, the mmap
+  path forces prefetch off and uses `MADV_RANDOM` over the whole mapping —
+  placement and loading mode interact; do not tune them independently. Docs
+  recommend dropping the page cache before the first NUMA-enabled run, and
+  warn that kernel auto NUMA balancing (`/proc/sys/kernel/numa_balancing`)
+  impairs performance.
+- **mlock grows incrementally**: the locked extent tracks the highest loaded
+  offset (`grow_to(offs + n_size)`), not the whole file up front; lazy
+  tensors are deliberately excluded (locking would fault them fully in).
+  First lock failure latches silently — a run can end partially locked with
+  only a warning; check `ulimit -l` before relying on residency.
+- **Lazy mode** (`--lazy-mode on|auto|off`, default auto = tensors > 4 GiB):
+  read rows of huge tensors (per-layer embeddings) from disk on demand
+  instead of keeping them resident — requires mmap; trades startup/RAM for
+  disk re-reads on access.
+- **Memory-fit probes force `--load-mode none`**: mmap-backed free-memory
+  accounting is distorted; any "how much VRAM is free" measurement must
+  bypass mmap.
+- Host/GPU split flags route weights without reloading: `--cpu-moe` /
+  `--n-cpu-moe` / `--n-cpu-ffn` keep expert/FFN weights in host buffers via
+  tensor buffer-type overrides; `--moe-cache-mib` adds a GPU staging cache
+  for CPU-kept experts; KV on device vs host toggles separately.
+
+## 7. High-throughput loading mechanics (fastsafetensors pattern)
+
+The complementary design point: **not** using mmap at all on the main path,
+because per-tensor mmap faulting cannot saturate NVMe. Instead: parallel
+async file→device copy, then lazy zero-copy tensor instantiation (DLPack
+capsules over the device buffer with refcounted shared ownership). mmap
+survives only as the unified-memory fallback (mmap → `pin_memory` →
+`memcpyAsync`: kernel readahead + pinning in one path).
+
+Bounce-buffer reader (the no-GDS path):
+
+- Persistent worker pool per loader; each worker alternates **2 pinned host
+  slots and 2 streams**, so `pread` on one slot overlaps H2D copy on the
+  other.
+- Block size = `ceil(bounce_budget / (threads × 2))`; default budget 16 MiB,
+  default threads 16. Auto-tune heuristic: threads = physical cores of the
+  GPU's NUMA node; budget = that node's total L2 cache size.
+- Reader workers NUMA-bind to the GPU's node.
+- O_DIRECT per filesystem policy: network filesystems and tmpfs/ramfs stay
+  buffered (keep kernel readahead); O_DIRECT EINVAL retries once then warns.
+- Windows serializes `pread` under a file mutex — expect lower reader
+  parallelism there.
+
+Direct-to-device (GDS/cuFile, CUDA/ROCm-bound): worker-split `cuFileRead`
+into the device buffer; 4 KiB-aligned rounding with coalesced boundary
+pages; in-device `memmove` repair for unaligned whole-file loads (blocking);
+the GDS bounce cache is charged as fixed overhead from
+`cuFileDriverGetProperties`; check `/dev/nvidia-fs0` before driver init
+(half-configured hosts close fd 0); per-loader fallback to the bounce path.
+CUDA ≥ 12.2 tolerates non-O_DIRECT descriptors.
+
+Tensor-readiness overlap: publish tensor views while IO is in flight; a
+consumer waits only on the completed DMA prefix covering its tensor (fenced
+prefix for pread paths, 16 MiB blocks for unified memory). Accessing unread
+bytes raises an error rather than returning garbage. Enabled only when the
+alignment repair is not needed (it would race the DMA).
+
+Partial reads and memory planning:
+
+- Byte-range filtering: read only kept tensors' offsets, coalesced with a
+  4 KiB merge gap; expert-parallel ranks filter to owned experts — unowned
+  MoE bytes are never read.
+- Sub-file chunking bounded by `max_batch_bytes`; a chunk must be at least
+  the largest tensor.
+- Static fit planner: `resident + depth × multiplier × budget + overhead ≤
+  budget` at every moment; all inputs header-derived → deterministic plans,
+  identical across ranks (lockstep without collectives); pipeline depth
+  auto-clamps as residency grows; no runtime feedback — failures re-plan.
+
+Measurement protocol for any load path (how fastsafetensors benchmarks):
+
+- Phase timers reported separately: init / header registration / copy (io) /
+  tensor instantiation (get). Never one elapsed number.
+- Cold-cache runs via `posix_fadvise(POSIX_FADV_DONTNEED)` per file (or a
+  global page-cache drop); `iostat 1` / dool CSV captured alongside.
+- Baseline = stock loader (mmap + pageable copy) on identical files; flag to
+  exclude driver init when measuring loader-only cost.
+- Author-reported (not locally validated): bounce path 6.02 GB/s vs mmap
+  1.28 GB/s (GPT-2 Medium, MI300X); 26.4 GB/s NVMe→GPU with GDS on 4 GPUs;
+  vLLM startup 12.39 s → 4.74 s. The pipeline/chunking/overlap features have
+  no perf harness at that revision — correctness tests only.
+
+---
+
+## Negative findings and remaining gaps
+
+First-layer scan (8 local repos, 2026-10-15, scoped to inspected
+sparse-checkout paths): no mmap/pinned/shard-parallel loading mechanics, no
+checkpoint save/restore I/O, no disk-tier offload, no fio-class storage
+benchmarking — recorded because the three big repos are skill-doc-only
+checkouts; absence there is not absence upstream.
+
+Wave-5 approved sources closed part of this: loading modes and mmap/mlock
+placement decisions (llama.cpp), pinned-staging parallel-read mechanics and
+a load-path measurement protocol (fastsafetensors), runtime KV-to-disk
+tiering (LMCache → `kv-tier-management`). Still open:
+
+- Checkpoint **save/restore** I/O optimization — fastsafetensors `saver.py`
+  is located but was out of approved scope this wave; no other source.
+- Standalone block-device profiling tooling (fio-class) — only the
+  load-path measurement protocol above; general disk benchmarking still
+  unsourced.
+
+Measurement caveat (mindie-agent): disk read/write counters include cache
+and pipes — they are **logical I/O, not physical disk writes**; without
+dropping the OS file cache, a run is not a cold-start physical test.
 
 ## Known limitations
 
@@ -171,6 +285,16 @@ cold-start physical test.
 - `model-infer-prefetch` API details (`torch_npu.npu_prefetch` signature,
   dependency wiring) are NPU-specific; consult the CANN docs of the target
   version.
+- fastsafetensors mechanisms are CUDA/ROCm/Windows-bound — **no Ascend/NPU
+  path exists in that repo**; the methodology (bounce buffering, readiness
+  overlap, static planning, phase-timed measurement) transfers, the APIs do
+  not. All its numbers are author-reported.
+- llama.cpp loading modes are POSIX/Windows, CPU-centric mechanisms; their
+  trade-offs are qualitatively documented with no numeric benchmarks in the
+  docs, and NUMA handling is Linux-only. Never imply Ascend support.
+- Flag surfaces move between revisions (llama.cpp replaced `--mlock` /
+  `--no-mmap` with `--load-mode` values); re-verify entry paths against the
+  pinned revision before relying on any flag name.
 
 ## Verification checklist (before claiming a load-path win)
 
@@ -178,5 +302,9 @@ cold-start physical test.
 - [ ] Every accounting line has timing points + bytes + counts + evidence
 - [ ] Warmup validated by hit criteria (cache entries / graph hits / logs)
 - [ ] Before/after compared same-window, same affinity, same device state
+- [ ] Loading mode recorded and identical across compared runs (mmap state
+      changes cache temperature; fit probes bypass mmap)
+- [ ] Load latency reported per phase (init / header / io / get), cold-cache
+      protocol stated (fadvise or page-cache drop)
 - [ ] Prefetch changes verified single-op first, switch defaults recorded
 - [ ] Offload tier wins re-estimated against un-overlapped transfer share

@@ -19,9 +19,10 @@ status: candidate
 
 Status: candidate. Source-grounded from TensorRT-LLM `perf-host-optimization`
 skill @ f33e0e5f (NVIDIA/Apache-2.0) for affinity and placement methodology,
-and awesome-ascend-skills @ 75ec89c (license UNKNOWN) for NPU-side
-environment discipline, device-busy preflight, and the env-check script
-pattern.
+awesome-ascend-skills @ 75ec89c (license UNKNOWN) for NPU-side environment
+discipline, device-busy preflight, and the env-check script pattern, and
+ggml-org/llama.cpp @ 3e390af (MIT) for NUMA mode semantics and thread /
+affinity control splits.
 
 ## SearchSpace mapping
 
@@ -80,6 +81,41 @@ as a card-group change (see `ascend-optimization-casebook`).
 NPU-side: `export CPU_AFFINITY_CONF=1` lets the Ascend driver bind NPU host
 threads to CPUs; it appears in migration device-layer checklists as a
 pre-launch env var.
+
+### NUMA placement mode semantics (llama.cpp reference)
+
+When a workload exposes NUMA modes, the three standard semantics
+(llama.cpp `--numa`, Linux-only):
+
+| Mode | Semantics | Implementation shape |
+|---|---|---|
+| `distribute` | spread execution evenly over all nodes | round-robin worker threads across nodes (`thread_n % n_nodes`) |
+| `isolate` | only spawn threads on the node execution started on | pin to the current node — NUMA-local, lowest cross-node traffic |
+| `numactl` | use the CPU map provided by numactl | re-apply the externally captured affinity cpuset |
+
+Operating rules learned from the same source:
+
+- Enabling NUMA handling changes memory behavior, not just thread
+  placement: the mmap path drops eager prefetch and switches to
+  `MADV_RANDOM` (see `weight-loading-optimization` §6) — tune placement and
+  loading mode together.
+- Drop the system page cache before the first NUMA-enabled run.
+- Kernel auto NUMA balancing (`/proc/sys/kernel/numa_balancing` != 0)
+  impairs performance for these workloads — check and warn.
+- Manual CPU-mask affinity and NUMA thread placement both set affinity
+  masks; combining them is order-sensitive and undocumented — prefer one
+  mechanism, or use `numactl` as the single source of the mask.
+
+### Thread and affinity control splits (llama.cpp pattern)
+
+Separate controls for generation vs batch phases (decode vs prompt
+processing): distinct thread counts (`-t` / `-tb`) and distinct affinity
+masks/ranges per phase, plus strict-placement, thread-priority, and
+spin-poll knobs. The transferable rules: (1) generation and batch have
+different optimal thread counts — do not share one value; (2) HTTP/frontend
+threads are decoupled from inference threads; (3) parallel-slot count (=
+server concurrency) drives memory pool sizing, so thread/slot decisions are
+also memory-placement decisions.
 
 ## 2. Thread-count environment discipline
 
@@ -167,6 +203,9 @@ specific device mappings for inference/training containers.
   real source appears.
 - `CPU_AFFINITY_CONF` behavior (which threads it binds, interaction with
   taskset) is documented only as a checklist env var in the sources.
+- llama.cpp NUMA/thread trade-offs are qualitatively documented with no
+  numeric benchmarks; NUMA handling is Linux-only and CPU-centric — the
+  semantics transfer, the flags are not Ascend APIs.
 
 ## Verification checklist (before a measurement campaign)
 
