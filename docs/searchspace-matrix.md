@@ -1,6 +1,6 @@
 # OmniRSI SearchSpace Matrix
 
-**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `3ec0fbb`
+**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `ef6587a`
 
 Top-level rows are hardware resource layers.  
 Second-level optimization targets (Kernel, Operator, KV Cache, Attention, Runtime, Distributed, Serving, VAE/Codec) live **inside** the row that owns their bottleneck.
@@ -20,14 +20,14 @@ The primary compute and HBM resource. Most current work lives here.
 | **Diagnose** | Bottleneck classification: compute-bound vs memory-bound vs AI-CPU fallback vs comm-exposed | `ascend-performance-analysis` (5-layer pipeline), `performance-ceiling-analysis` (L1–L3) | SOL% / mte2-ratio / mac-ratio heuristic | MindIE-SD; TRT-LLM roofline @ f33e0e5f; LLM-Viewer @ 1893e4b5 | 🟢 |
 | **Diagnose** | Roofline model, arithmetic intensity, hardware table entry for new accelerator | `performance-ceiling-analysis` (L1) | FLOPs formulas per layer type | LLM-Viewer `roofline_model.py`, `hardware_params.py` | 🟢 |
 | **Configure** | Graph mode (npugraph_ex / ACLGraph): capture-replay, FX pass, memory reuse, static kernel compile | `ascend-graph-mode` | TorchAir document-first discipline | awesome-ascend-skills torch-npugraph-ex-knowledge @ 75ec89ce | 🟢 |
-| **Configure** | Parallelism strategy (USP/CP/TP/PP), topology-aware card-group selection | — (covered in corpus, not yet its own skill) | dit-parallel-opt HCCL topology rules | MindIE-SD dit-parallel-opt @ 8481d39b | 🟡 |
+| **Configure** | Parallelism strategy (USP/CP/TP/PP), topology-aware card-group selection | `ascend-distributed-parallel` | USP activation requirement, masking upper-bound formula, AlltoAllV workaround | MindIE-SD dit-parallel-opt @ 8481d39b (9 reference files) | 🟢 |
 | **Configure** | Model adapter: FP8 dequantization, KV-head replication, multimodal feature validation order | `ascend-model-adaptation` | vllm-ascend FP8/multimodal lessons | vllm-ascend @ bc8115ed | 🟢 |
 | **Optimize** | Kernel-level: Triton/CuTe/TileIR writing, kernel tuning, fusion scope analysis | — (TRT-LLM kernel-* skills not ported to OmniRSI yet; akg-mlir candidate identified) | TRT-LLM kernel casebook | TRT-LLM @ f33e0e5f; akg @ 5aa15f3f | 🟡 |
 | **Optimize** | Operator-level: CANN AscendC operator dev, op performance tuning (pypto-op-perf-tune) | — (candidate skills identified in ascend-npu-repo-map.md: `pypto-op-perf-tune`, `triton-op-designer`, `ascendc-precision-debug`) | ops-profiling iterative loop | awesome-ascend-skills; see `docs/ascend-npu-repo-map.md` | 🟡 |
-| **Optimize** | Casebook of past optimization decisions (prior-art matching, adapt-not-copy) | `inference-optimization-casebook` | TRT-LLM casebook precedents (CUDA), NPU casebook empty | TRT-LLM perf-optimization-casebook @ f33e0e5f | 🟡 (CUDA populated; NPU empty) |
+| **Optimize** | Casebook of past NPU optimization decisions: AI-CPU fallback, memory-bound, comm-exposed, graph-compilation, scheduling idle gaps | `ascend-optimization-casebook`, `inference-optimization-casebook` | Five bottleneck classes with symptom→diagnosis→action→evidence schema | MindIE-SD profiling-analyze + dit-perf-opt + perf-gate + dit-parallel-opt @ 8481d39b | 🟢 |
 | **Optimize** | Search policy: phase-locked round, negative memory, cost-aware selection, RRSI constraints, CRISP critical-step | `optimization-search-policy` | RRSI constraint propagation; CRISP critical-step classification | vllm-evolve @ 43cc82c; arXiv 2609.24972; arXiv 2608.01867 | 🟢 |
 | **Verify** | Evidence taxonomy (L0 correctness → L5 production), claim-evidence matching | `dense-performance-evidence`, `rsi-evidence`, `claim-contract` | OmniRSI PASS/FAIL/INCONCLUSIVE protocol | OmniRSI @ 4c8e1285 | 🟢 |
-| **Verify** | Same-window A/B protocol, noise floor, acceptance-state discipline | — (covered in perf-gate corpus, not yet ported) | MindIE-SD perf-gate protocol | MindIE-SD perf-gate @ 8481d39b | 🟡 |
+| **Verify** | Same-window A/B protocol, noise floor, acceptance-state discipline | `ascend-optimization-casebook` (evidence-required section per case), `dense-performance-evidence`, `rsi-evidence` | MindIE-SD perf-gate protocol: exploration vs acceptance state, three-proof requirement | MindIE-SD perf-gate @ 8481d39b | 🟢 |
 
 **Second-level targets in this row:** Kernel, Operator, KV Cache, Attention, Diffusion denoising steps, VAE/Codec, Graph compilation
 
@@ -39,10 +39,10 @@ Host-side memory: CPU DRAM, pinned memory, page tables, PyTorch tensor lifecycle
 
 | Lifecycle step | What it covers | Candidate Skills | Cases / Experience | Evidence | Maturity |
 |---|---|---|---|---|---|
-| **Observe / Profile** | Host overhead in nsys: GPU idle ratio, host-prep exposed ratio, inter-kernel gaps | — (TRT-LLM perf-host-analysis not ported) | TRT-LLM host-analysis NVTX breakdown | TRT-LLM @ f33e0e5f | 🟡 |
-| **Diagnose** | CPU bottleneck detection: does host overhead gate GPU work? | — (TRT-LLM perf-host-analysis DETECT phase not ported) | GPU idle > 30% heuristic | TRT-LLM perf-host-analysis | 🟡 |
+| **Observe / Profile** | Host overhead in nsys: GPU idle ratio (>0.30 aggregate/>0.15 generation), host-prep exposed ratio (M3b>0.05), NVTX breakdown, inter-kernel gaps | `host-overhead-profiling` | GPU idle + host-prep verdict metrics; NVTX root-cause breakdown; regression comparison across two traces | TRT-LLM perf-host-analysis @ f33e0e5f | 🟢 |
+| **Diagnose** | YES/NO bottleneck verdict; multi-rank straggler detection; NVTX-to-source function mapping | `host-overhead-profiling` | M3b>0.05 AND M3c>0.50 together confirm host-prep bottleneck | TRT-LLM perf-host-analysis @ f33e0e5f | 🟢 |
 | **Configure** | CUDA pinned memory, async H2D transfers, Python GIL avoidance | — | — | — | 🔴 |
-| **Optimize** | Host-side optimizations: reduce sync points, optimize PyExecutor scheduling, batch request prep | — (TRT-LLM perf-host-optimization not ported) | `_prepare_tp_inputs` profiling loop | TRT-LLM @ f33e0e5f | 🟡 |
+| **Optimize** | line_profiler loop targeting `_prepare_tp_inputs`; NVTX regression triage to alternative targets (`_fetch_new_requests` +643%, `broadcast_requests`, `_update_requests` +75%) | `host-overhead-optimization` | Iterative profile→identify→optimize→verify loop | TRT-LLM perf-host-optimization @ f33e0e5f | 🟢 |
 | **Verify** | — | `dense-performance-evidence` (evidence levels apply) | — | — | 🟡 (inherited from accelerator row) |
 
 **Second-level targets:** PyTorch tensor lifecycle, request scheduling, KV cache CPU offload
@@ -73,10 +73,10 @@ Inter-device and inter-node communication: HCCL (Ascend), NCCL (CUDA), InfiniBan
 |---|---|---|---|---|---|
 | **Observe / Profile** | Communication time in step-trace four-tuple, HCCL per-collective timing, `communication.json` | `ascend-performance-analysis` (Layer 4) | HCCL single-collective latency varies ~2× across devices | MindIE-SD profiling-analyze @ 8481d39b | 🟢 |
 | **Diagnose** | Exposed communication: `effective_comm = Communication - Overlapped`; communication-bottleneck class | `ascend-performance-analysis` (L1 step-trace derivation) | Overlapping vs exposed comm in step_trace_time.csv | MindIE-SD | 🟢 |
-| **Diagnose** | Topology-aware card group validation: intra-domain (UB/HCCS) vs inter-domain (PCIe/SYS) | `ascend-graph-mode` (topology rules), MindIE-SD dit-parallel-opt (not yet ported) | npu-smi topo output; legal card-group rules | MindIE-SD dit-parallel-opt @ 8481d39b | 🟡 |
-| **Configure** | Collective-in-graph capture (HCCL graph mode), comm-stream masking | `ascend-graph-mode` (mentions communication_graph.md) | Masking upper bound: 1–1/n only when truly pipelined | MindIE-SD | 🟡 |
-| **Optimize** | Comm-masking stream isolation, USP/CP parallelism choice, AlltoAllV defect workaround | — (dit-parallel-opt not ported) | HCCL same-island rules, AlltoAllV workaround | MindIE-SD dit-parallel-opt @ 8481d39b | 🟡 |
-| **Verify** | Masking ratio measurement, before/after comm-fraction comparison | `ascend-performance-analysis`, `dense-performance-evidence` | Step-trace four-tuple as ground truth | MindIE-SD perf-gate | 🟡 |
+| **Diagnose** | Topology-aware card group validation: intra-domain (UB/HCCS) vs inter-domain (PCIe/SYS) | `ascend-distributed-parallel`, `ascend-device-health` | npu-smi topo output; legal card-group rules; Health=OK not sufficient | MindIE-SD dit-parallel-opt @ 8481d39b | 🟢 |
+| **Configure** | Collective-in-graph capture (HCCL graph mode), comm-stream masking; masking formula `1-1/n` when F≥C | `ascend-distributed-parallel` | Masking upper bound derivation; AlltoAllV defect workaround | MindIE-SD @ 8481d39b | 🟢 |
+| **Optimize** | USP activation requirement (ParallelConfig wrapping), strategy selection, AlltoAllV workaround | `ascend-distributed-parallel` | USP must set ParallelConfig; verify allToAll appears not just allGather | MindIE-SD dit-parallel-opt @ 8481d39b (9 ref files) | 🟢 |
+| **Verify** | Masking ratio measurement, before/after comm-fraction comparison; strategy activation attribution | `ascend-distributed-parallel` (attribution method), `ascend-performance-analysis`, `dense-performance-evidence` | Step-trace four-tuple as ground truth; scope-effectiveness-check.md | MindIE-SD perf-gate + dit-parallel-opt | 🟢 |
 
 **Second-level targets:** AllReduce, AllGather, AllToAll, P2P ring; TP/SP/PP/EP collective patterns
 
@@ -90,11 +90,11 @@ System-level: scheduler, DVFS, process isolation, environment variables, driver 
 |---|---|---|---|---|---|
 | **Observe / Profile** | DVFS effect on first-run timing, process-level NPU ownership (proc-mem via npu-smi) | `ascend-operator-profiling` (--warm-up rationale) | DVFS: always warm up before measuring; skip N iterations | awesome-ascend-skills ops-profiling | 🟡 |
 | **Diagnose** | Shared-machine contamination: neighbor load, inter-window drift, temperature variation | `ascend-performance-analysis` (measurement discipline section) | Same-window A/B required; cross-window delta ≈ real gain magnitude | MindIE-SD perf-gate @ 8481d39b | 🟢 |
-| **Diagnose** | SIGKILL residual state: per-step time uniformly elevated by ~1 order of magnitude | — (referenced in dit-parallel-opt corpus, not yet its own skill) | npu-smi Health=OK does not prove card is clean; requires smoke run | MindIE-SD | 🟡 |
-| **Configure** | Environment variables: `HCCL_OP_EXPANSION_MODE=AIV`, proxy settings, container flags | `ascend-graph-mode` (mentions AIV flag), `ascend-model-adaptation` | HCCL AIV mode recommended with graph capture | MindIE-SD | 🟡 |
+| **Diagnose** | SIGKILL residual state: per-step time uniformly elevated by ~1 order of magnitude | `ascend-device-health` | npu-smi Health=OK does not prove card is clean; 4-step smoke required | MindIE-SD dit-parallel-opt @ 8481d39b | 🟢 |
+| **Configure** | Card-group selection, env variables (`HCCL_OP_EXPANSION_MODE=AIV`), proc-mem occupancy check | `ascend-device-health` | Card-group change = contract change; all baselines must be re-measured on new group | MindIE-SD dit-parallel-opt + perf-gate @ 8481d39b | 🟢 |
 | **Configure** | Env-preflight: verify device availability, driver health, Python env before measurement | `performance-ceiling-analysis` (env-preflight references TRT-LLM exec-env-check) | TRT-LLM exec-env-check pattern | TRT-LLM @ f33e0e5f | 🟡 |
 | **Optimize** | — | — | — | — | 🔴 |
-| **Verify** | Card health check sequence: npu-smi Health, 4-step smoke verify, proc-mem occupancy | — (in dit-parallel-opt corpus, not yet ported) | Health=OK ≠ card usable; smoke run required | MindIE-SD | 🟡 |
+| **Verify** | Card health check sequence: npu-smi Health, 4-step smoke verify, proc-mem occupancy | `ascend-device-health` | Health=OK ≠ card usable; SIGKILL residual state only detectable via smoke run | MindIE-SD @ 8481d39b | 🟢 |
 
 **Second-level targets:** NPU driver, CANN runtime, container/process isolation
 
@@ -104,14 +104,17 @@ System-level: scheduler, DVFS, process isolation, environment variables, driver 
 
 | Gap | Row | Priority | Next action |
 |-----|-----|----------|-------------|
-| NPU optimization casebook (cases for memory-bound / comm-exposed / AI-CPU fallback) | Accelerator / Optimize | High | Mine MindIE-SD `model-auto-optimization` references; port existing perf-gate + dit-perf-opt cases |
-| Host overhead profiling + optimization skills | RAM / Observe, Diagnose, Optimize | High | Port TRT-LLM `perf-host-analysis` and `perf-host-optimization` patterns into OmniRSI skills |
-| Kernel writing skill (Triton-Ascend / AscendC TileIR) | Accelerator / Optimize | Medium | Candidates identified: `triton-op-designer`, `ascendc-precision-debug` (see ascend-npu-repo-map.md) |
-| Same-window A/B acceptance-state skill | Accelerator / Verify | Medium | Port MindIE-SD perf-gate skill content (already in corpus; needs OmniRSI format) |
-| Parallelism strategy skill | Accelerator / Configure | Medium | Port dit-parallel-opt skill (already read; substantial content) |
-| SIGKILL / card-health recovery procedure | OS / Diagnose, Verify | Medium | Short note skill from dit-parallel-opt § card-group rules |
-| Storage I/O profiling | SSD / Observe, Optimize | Low | No source material; needs new investigation |
-| Host memory lifecycle (pinned memory, GIL, H2D async) | RAM / Configure, Optimize | Low | No source material |
+| Kernel writing skill (Triton-Ascend / AscendC TileIR / CuTe) | Accelerator / Optimize | High | Mine TRT-LLM kernel-triton-writing + kernel-cute-writing skills; port relevant patterns to OmniRSI. Candidate names: `triton-op-designer`, `ascendc-tiling-design` (see ascend-npu-repo-map.md) |
+| Host memory lifecycle (pinned memory, GIL, H2D async) | RAM / Configure | Medium | No source material identified yet; needs new investigation (PyTorch async data loading, CUDA pinned memory API) |
+| Storage I/O profiling and optimization | SSD / Observe, Optimize | Low | No source material; deepest gap — defer until a strong source appears |
+| OS/System Optimize (CPU affinity, NUMA, process placement) | OS / Optimize | Low | No source material beyond env variable checklist |
+
+**Resolved gaps since initial matrix:**
+- ~~Host overhead profiling + optimization skills~~ → `host-overhead-profiling`, `host-overhead-optimization` ✅
+- ~~Parallelism strategy skill~~ → `ascend-distributed-parallel` ✅
+- ~~NPU optimization casebook~~ → `ascend-optimization-casebook` ✅
+- ~~SIGKILL / card-health recovery~~ → `ascend-device-health` ✅
+- ~~Same-window A/B acceptance skill~~ → covered in `ascend-optimization-casebook` (per-case evidence schema) ✅
 
 ---
 
@@ -121,19 +124,23 @@ Use this table in the PR description for `opus/meta-skill-bootstrap`.
 
 | Search Space | Observe / Profile | Diagnose | Configure | Optimize | Verify |
 |---|---|---|---|---|---|
-| **Accelerator** | 🟢 `ascend-performance-analysis`, `ascend-operator-profiling`, `dense-performance-evidence` | 🟢 `ascend-performance-analysis`, `performance-ceiling-analysis` | 🟢 `ascend-graph-mode`, `ascend-model-adaptation` | 🟡 casebook (CUDA only), kernel skills gap | 🟢 `dense-performance-evidence`, `rsi-evidence`, `claim-contract` |
-| **RAM / Host** | 🟡 (TRT-LLM source read, not ported) | 🟡 | 🔴 | 🟡 | 🟡 (inherited) |
-| **SSD / Storage** | 🔴 | 🟡 (startup/loading incidental) | 🟡 `ascend-model-adaptation` (FP8 loading) | 🔴 | 🔴 |
-| **Communication** | 🟢 `ascend-performance-analysis` | 🟢 `ascend-performance-analysis` | 🟡 | 🟡 | 🟡 |
-| **OS / System** | 🟡 `ascend-operator-profiling` (DVFS) | 🟢 `ascend-performance-analysis` (shared-machine discipline) | 🟡 | 🔴 | 🟡 |
+| **Accelerator** | 🟢 `ascend-performance-analysis`, `ascend-operator-profiling`, `dense-performance-evidence` | 🟢 `ascend-performance-analysis`, `performance-ceiling-analysis` | 🟢 `ascend-graph-mode`, `ascend-model-adaptation`, `ascend-distributed-parallel` | 🟢 `ascend-optimization-casebook`, `optimization-search-policy` (kernel writing 🟡) | 🟢 `dense-performance-evidence`, `rsi-evidence`, `claim-contract` |
+| **RAM / Host** | 🟢 `host-overhead-profiling` | 🟢 `host-overhead-profiling` | 🔴 (pinned memory/GIL gap) | 🟢 `host-overhead-optimization` | 🟡 (inherited) |
+| **SSD / Storage** | 🔴 | 🟡 `ascend-graph-mode` (startup/loading incidental) | 🟡 `ascend-model-adaptation` (FP8 loading) | 🔴 | 🔴 |
+| **Communication** | 🟢 `ascend-performance-analysis` | 🟢 `ascend-performance-analysis`, `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel`, `ascend-performance-analysis` |
+| **OS / System** | 🟡 `ascend-operator-profiling` (DVFS) | 🟢 `ascend-device-health`, `ascend-performance-analysis` | 🟢 `ascend-device-health` | 🔴 | 🟢 `ascend-device-health` |
 
 **Optimization targets added in this branch:**
 - Kernel profiling (CANN CSV pipeline, 5-layer analysis, operator-level msprof loop)
 - Graph compilation (npugraph_ex capture-replay, FX passes, memory reuse)
 - Model adapter (FP8, KV replication, multimodal)
+- Distributed parallelism (USP/CP strategy, topology rules, masking formula, attribution)
+- Host overhead (GPU idle / host-prep verdict, NVTX root-cause, line_profiler loop)
+- Device health (topology validation, SIGKILL detection, 4-step smoke)
+- NPU optimization casebook (5 bottleneck classes: AI-CPU fallback, memory-bound, comm-exposed, graph-compile, scheduling)
 - Search policy (phase-locked round, RRSI constraints, CRISP critical-step)
 - Skill evolution (Trace2Skill pool consolidation, SkillOpt bounded edit)
 - Benchmark design (goodput, three-regime, OmniRSI evidence trail)
 - Repository intelligence (LTC temporal split, Magpie patterns, Change2Task, Chronos)
 
-**Skill count:** 12 candidate skills. All `status: candidate`. None promoted.
+**Skill count:** 17 candidate skills. All `status: candidate`. None promoted.
