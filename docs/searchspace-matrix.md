@@ -1,6 +1,6 @@
 # OmniRSI SearchSpace Matrix
 
-**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `8a1e999`
+**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `1a9d095`
 
 Top-level rows are hardware resource layers.  
 Second-level optimization targets (Kernel, Operator, KV Cache, Attention, Runtime, Distributed, Serving, VAE/Codec) live **inside** the row that owns their bottleneck.
@@ -41,8 +41,8 @@ Host-side memory: CPU DRAM, pinned memory, page tables, PyTorch tensor lifecycle
 |---|---|---|---|---|---|
 | **Observe / Profile** | Host overhead in nsys: GPU idle ratio (>0.30 aggregate/>0.15 generation), host-prep exposed ratio (M3b>0.05), NVTX breakdown, inter-kernel gaps | `host-overhead-profiling` | GPU idle + host-prep verdict metrics; NVTX root-cause breakdown; regression comparison across two traces | TRT-LLM perf-host-analysis @ f33e0e5f | 🟢 |
 | **Diagnose** | YES/NO bottleneck verdict; multi-rank straggler detection; NVTX-to-source function mapping | `host-overhead-profiling` | M3b>0.05 AND M3c>0.50 together confirm host-prep bottleneck | TRT-LLM perf-host-analysis @ f33e0e5f | 🟢 |
-| **Configure** | Pinned memory for fast H2D (>1MB tensors where transfer is measured bottleneck), async H2D via non_blocking=True + stream + explicit synchronize(), Python GIL avoidance (ProcessPoolExecutor, Python 3.13 free-threading PEP 703), NUMA-aware allocation (numactl) | `host-memory-management` | All APIs verified from PyTorch docs, Python docs, numactl manpage | PyTorch docs, Python docs, PEP 703, numactl manpage | 🟢 |
-| **Optimize** | line_profiler loop targeting `_prepare_tp_inputs`; NVTX regression triage to alternative targets (`_fetch_new_requests` +643%, `broadcast_requests`, `_update_requests` +75%) | `host-overhead-optimization` | Iterative profile→identify→optimize→verify loop | TRT-LLM perf-host-optimization @ f33e0e5f | 🟢 |
+| **Configure** | Pinned memory for fast H2D (>1MB tensors where transfer is measured bottleneck), async H2D via non_blocking=True + stream + explicit synchronize(), Python GIL avoidance (ProcessPoolExecutor, Python 3.13 free-threading PEP 703), NUMA-aware allocation (numactl) | `host-memory-management`, `kv-tier-management` (L1 tier sizing, multi-L1 composition) | All APIs verified from PyTorch docs, Python docs, numactl manpage | PyTorch docs, Python docs, PEP 703, numactl manpage; LMCache @ c3b875a | 🟢 |
+| **Optimize** | line_profiler loop targeting `_prepare_tp_inputs`; NVTX regression triage to alternative targets (`_fetch_new_requests` +643%, `broadcast_requests`, `_update_requests` +75%); runtime KV tier management (store/retain/prefetch/evict policies, concurrency-vs-RAM admission dial) | `host-overhead-optimization`, `kv-tier-management` | Iterative profile→identify→optimize→verify loop; RAM-release lever ranking | TRT-LLM perf-host-optimization @ f33e0e5f; LMCache MP mode @ c3b875a | 🟢 |
 | **Verify** | — | `dense-performance-evidence` (evidence levels apply) | — | — | 🟡 (inherited from accelerator row) |
 
 **Second-level targets:** PyTorch tensor lifecycle, request scheduling, KV cache CPU offload
@@ -55,13 +55,15 @@ Storage I/O: model weight loading, checkpoint save/restore, profiling artifact I
 
 | Lifecycle step | What it covers | Candidate Skills | Cases / Experience | Evidence | Maturity |
 |---|---|---|---|---|---|
-| **Observe / Profile** | — | — | — | — | 🔴 (no storage profiling method in any local repo; fio/iostat/page-cache zero hits; logical-vs-physical I/O caveat only in mindie-agent docs) |
+| **Observe / Profile** | iostat/dool side-capture during load benchmarks; logical-vs-physical I/O distinction | `weight-loading-optimization` (§7 measurement protocol) | Phase-timed load benchmarks with storage counters captured alongside | fastsafetensors perf.py @ 219e256; mindie-agent docs @ 6a81b41 | 🟡 (load-benchmark side-capture only; no standalone storage profiling methodology, fio-class tools unsourced) |
 | **Diagnose** | Slow startup (graph capture + weight loading dominating): distinguish compile warmup from I/O | `ascend-graph-mode` (mentions slow startup), `ascend-model-adaptation` (dummy→real sequence) | ACLGraph startup cost is compile + capture, not I/O bound; FP8 weight loading pitfalls | MindIE-SD; vllm-ascend | 🟡 (incidental coverage only) |
 | **Diagnose** | Load-path judgment (source/format/placement/duplication) and startup fixed-overhead accounting (bytes+counts lines, hit-criteria warmup validation) | `weight-loading-optimization` | Four-dimension load-path judgment; fixed-vs-per-request split; 7 accounting errors | MindIE-SD host-opt + host-overhead-account @ 8481d39b | 🟢 |
 | **Configure** | Checkpoint format for fast loading (FP8 paired tensors, shard loading order) | `ascend-model-adaptation` | FP8 paired-tensor loading pattern | vllm-ascend @ bc8115ed | 🟡 |
 | **Optimize** | Serving-level load path: device-side weight prefetch (switch-gated, 50%-of-theoretical start), CPU-tier offload ordering by change surface, duplication removal | `weight-loading-optimization` | `npu_prefetch` decision rules; OOM fallback tiers; construction vs inference OOM | cannbot model-infer-prefetch + diffusers memory-optimization @ 75ec89c; MindIE-SD resource-fallback-tiers @ 8481d39b | 🟢 (serving level) |
-| **Optimize** | Disk-level I/O mechanics: mmap/pinned staging, shard-parallel loading, fio/page-cache benchmarking, checkpoint save/restore I/O, disk-tier offload | — | Negative finding: 8 repos scanned (queries listed in the skill), zero material; big-3 repos are skill-doc-only sparse checkouts | see `skills/weight-loading-optimization/SKILL.md` negative-findings section | 🔴 (needs upstream vLLM/fastsafetensors/lmcache sources) |
-| **Verify** | — | — | — | — | 🔴 |
+| **Optimize** | Disk-level loading mechanics: mmap/mlock/dio/lazy loading modes, pinned bounce-buffer parallel reads, GDS direct-to-device, byte-range/shard-parallel loading, incremental mlock growth | `weight-loading-optimization` (§6-7) | Mode trade-off table; NUMA-disables-prefetch coupling; block-size formula; readiness overlap; static fit planner | ggml-org/llama.cpp @ 3e390af (MIT); foundation-model-stack/fastsafetensors @ 219e256 (Apache-2.0) | 🟢 (wave 5; CUDA/ROCm/POSIX-bound — no Ascend path in these sources) |
+| **Optimize** | Runtime KV-to-disk tier: L2 local adapters (fs/nixl/raw_block/dax), persist/recover, per-adapter serde capacity lever | `kv-tier-management` | Adapter selection table; persist/recover semantics | LMCache MP mode @ c3b875a (Apache-2.0) | 🟢 |
+| **Optimize** | Checkpoint save/restore I/O optimization | — | fastsafetensors `saver.py` located, out of approved wave-5 scope; no other source | see `docs/repo-source-matrix.md` | 🔴 (needs separate approval) |
+| **Verify** | Load-path measurement protocol: phase timers (init/header/io/get), cold-cache runs via fadvise, baseline = stock loader on identical files | `weight-loading-optimization` (§7) | Author-reported numbers labeled as such | fastsafetensors perf.py @ 219e256 | 🟢 (load-path level; block-device-level verify still open) |
 
 **Second-level targets:** Model weight sharding, checkpoint I/O, profiling output archival
 
@@ -95,7 +97,7 @@ System-level: scheduler, DVFS, process isolation, environment variables, driver 
 | **Diagnose** | SIGKILL residual state: per-step time uniformly elevated by ~1 order of magnitude | `ascend-device-health` | npu-smi Health=OK does not prove card is clean; 4-step smoke required | MindIE-SD dit-parallel-opt @ 8481d39b | 🟢 |
 | **Configure** | Card-group selection, env variables (`HCCL_OP_EXPANSION_MODE=AIV`), proc-mem occupancy check | `ascend-device-health` | Card-group change = contract change; all baselines must be re-measured on new group | MindIE-SD dit-parallel-opt + perf-gate @ 8481d39b | 🟢 |
 | **Configure** | Env-preflight: verify device availability, driver health, Python env before measurement | `performance-ceiling-analysis` (env-preflight references TRT-LLM exec-env-check) | TRT-LLM exec-env-check pattern | TRT-LLM @ f33e0e5f | 🟡 |
-| **Optimize** | CPU affinity check-then-pin (accelerator-local NUMA node, cross-round consistency), thread-count env discipline, device-busy preflight with graceful-to-force PID escalation, structured ERROR/WARNING env checks, container flags and ulimits | `os-process-placement` | OMP_NUM_THREADS/PROC_BIND per scenario; `CPU_AFFINITY_CONF`; npu-smi usages preflight; `ASCEND_HOME_PATH` named-var correctness | TRT-LLM perf-host-optimization @ f33e0e5f; awesome-ascend-skills @ 75ec89c | 🟢 (cgroups/cpuset/isolcpus and scheduler priorities explicitly out of scope — no source evidence) |
+| **Optimize** | CPU affinity check-then-pin (accelerator-local NUMA node, cross-round consistency), NUMA placement mode semantics (distribute/isolate/numactl) with page-cache-drop and numa_balancing rules, generation-vs-batch thread/affinity splits, thread-count env discipline, device-busy preflight with graceful-to-force PID escalation, structured ERROR/WARNING env checks, container flags and ulimits | `os-process-placement` | OMP_NUM_THREADS/PROC_BIND per scenario; `CPU_AFFINITY_CONF`; npu-smi usages preflight; `ASCEND_HOME_PATH` named-var correctness | TRT-LLM perf-host-optimization @ f33e0e5f; awesome-ascend-skills @ 75ec89c; ggml-org/llama.cpp @ 3e390af (MIT) | 🟢 (cgroups/cpuset/isolcpus and scheduler priorities explicitly out of scope — no source evidence) |
 | **Verify** | Card health check sequence: npu-smi Health, 4-step smoke verify, proc-mem occupancy | `ascend-device-health` | Health=OK ≠ card usable; SIGKILL residual state only detectable via smoke run | MindIE-SD @ 8481d39b | 🟢 |
 
 **Second-level targets:** NPU driver, CANN runtime, container/process isolation
@@ -106,8 +108,9 @@ System-level: scheduler, DVFS, process isolation, environment variables, driver 
 
 | Gap | Row | Priority | Next action |
 |-----|-----|----------|-------------|
-| Storage profiling (Observe) and disk-level I/O mechanics (mmap/pinned, fio/page-cache, checkpoint save/restore I/O, disk-tier offload) | SSD / Observe, Optimize (disk level) | Low | Negative finding recorded 2026-10-15: 8 local repos scanned, zero material; the three big repos are skill-doc-only sparse checkouts. Needs upstream sources (vLLM safetensors loader, fastsafetensors, lmcache) |
-| OS/System cgroups/cpuset/isolcpus and scheduler priorities | OS / Optimize | Low | No source evidence in any local repo; `os-process-placement` covers placement/affinity/threads/env/container-flags; the remainder needs external OS documentation |
+| Checkpoint save/restore I/O optimization | SSD / Optimize | Low | fastsafetensors `saver.py` located-not-mined (out of approved wave-5 scope); needs a separate repo×subsystem approval before extraction |
+| Standalone block-device profiling (fio-class methodology) | SSD / Observe | Low | No source; wave 5 added only load-benchmark side-capture (iostat/dool + fadvise cold-cache protocol) |
+| OS/System cgroups/cpuset/isolcpus and scheduler priorities | OS / Optimize | Low | No source evidence in any local repo; `os-process-placement` covers placement/affinity/NUMA modes/threads/env/container-flags; the remainder needs external OS documentation |
 
 **Resolved gaps since initial matrix (all high/medium priority cleared):**
 - ~~Host overhead profiling + optimization skills~~ → `host-overhead-profiling`, `host-overhead-optimization` ✅
@@ -118,8 +121,11 @@ System-level: scheduler, DVFS, process isolation, environment variables, driver 
 - ~~Kernel writing skill (Triton-Ascend / AscendC TileIR / CuTe)~~ → `kernel-writing-guide` ✅
 - ~~Host memory lifecycle (pinned memory / GIL / H2D async)~~ → `host-memory-management` ✅
 - ~~Operator-level tuning (pypto-op-perf-tune, AscendC tiling)~~ → `ascend-operator-tuning`, `ascendc-tiling-design` ✅
-- ~~Serving-level weight loading / startup overhead~~ → `weight-loading-optimization` ✅ (disk-level mechanics remain open, see gap table)
+- ~~Serving-level weight loading / startup overhead~~ → `weight-loading-optimization` ✅
 - ~~OS/System Optimize (CPU affinity, NUMA process placement, env discipline)~~ → `os-process-placement` ✅ (cgroups/scheduler priorities remain open, see gap table)
+- ~~Disk-level loading mechanics (mmap/mlock/dio/lazy, pinned staging, parallel reads)~~ → `weight-loading-optimization` §6-7 ✅ (wave 5: llama.cpp, fastsafetensors)
+- ~~Runtime KV-to-disk tiering~~ → `kv-tier-management` ✅ (wave 5: LMCache)
+- ~~Load-path measurement protocol (SSD Verify)~~ → `weight-loading-optimization` §7 ✅ (wave 5: fastsafetensors)
 
 ---
 
@@ -130,8 +136,8 @@ Use this table in the PR description for `opus/meta-skill-bootstrap`.
 | Search Space | Observe / Profile | Diagnose | Configure | Optimize | Verify |
 |---|---|---|---|---|---|
 | **Accelerator** | 🟢 `ascend-performance-analysis`, `ascend-operator-profiling`, `dense-performance-evidence` | 🟢 `ascend-performance-analysis`, `performance-ceiling-analysis` | 🟢 `ascend-graph-mode`, `ascend-model-adaptation`, `ascend-distributed-parallel` | 🟢 `ascend-optimization-casebook`, `optimization-search-policy`, `kernel-writing-guide`, `ascend-operator-tuning`, `ascendc-tiling-design` | 🟢 `dense-performance-evidence`, `rsi-evidence`, `claim-contract` |
-| **RAM / Host** | 🟢 `host-overhead-profiling` | 🟢 `host-overhead-profiling` | 🟢 `host-memory-management` | 🟢 `host-overhead-optimization` | 🟡 (inherited from Accelerator row) |
-| **SSD / Storage** | 🔴 | 🟢 `weight-loading-optimization` (load-path accounting) + 🟡 `ascend-graph-mode` (startup incidental) | 🟡 `ascend-model-adaptation` (FP8 loading) | 🟢 `weight-loading-optimization` (serving level) · 🔴 disk-level mechanics (negative finding recorded) | 🔴 |
+| **RAM / Host** | 🟢 `host-overhead-profiling` | 🟢 `host-overhead-profiling` | 🟢 `host-memory-management`, `kv-tier-management` | 🟢 `host-overhead-optimization`, `kv-tier-management` | 🟡 (inherited from Accelerator row) |
+| **SSD / Storage** | 🟡 (load-benchmark iostat side-capture) | 🟢 `weight-loading-optimization` (load-path accounting) + 🟡 `ascend-graph-mode` (startup incidental) | 🟡 `ascend-model-adaptation` (FP8 loading) | 🟢 `weight-loading-optimization` (serving + disk-level loading) · `kv-tier-management` (KV disk tier) · 🔴 checkpoint save/restore I/O | 🟢 `weight-loading-optimization` (load-path protocol) |
 | **Communication** | 🟢 `ascend-performance-analysis` | 🟢 `ascend-performance-analysis`, `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel`, `ascend-performance-analysis` |
 | **OS / System** | 🟢 `ascend-operator-profiling` (DVFS), `ascend-device-health` (proc-mem) | 🟢 `ascend-device-health`, `ascend-performance-analysis` | 🟢 `ascend-device-health` | 🟢 `os-process-placement` (affinity/threads/env; cgroups out of scope) | 🟢 `ascend-device-health` |
 
@@ -152,6 +158,8 @@ Use this table in the PR description for `opus/meta-skill-bootstrap`.
 - Operator tuning campaign (accuracy gate, staged escalation, metric contract, routing tables)
 - AscendC tiling design (four-element template, fullload-vs-split, per-class routing, chip-generation tables)
 - Weight load path and startup overhead (fixed-overhead accounting, sharded verification, prefetch rules, offload tiers)
-- OS-level process placement (affinity pinning, thread env discipline, device-busy preflight, env checks)
+- OS-level process placement (affinity pinning, NUMA mode semantics, thread env discipline, device-busy preflight, env checks)
+- Loading modes and high-throughput loading (mmap/mlock/dio/lazy, bounce-buffer readers, GDS direct reads, readiness overlap, static fit planner, phase-timer measurement)
+- KV cache tiering (L1/L2 hierarchy, store/retain/prefetch/evict policies, concurrency-vs-RAM admission, local adapters, serde)
 
-**Skill count:** 23 candidate skills. All `status: candidate`. None promoted.
+**Skill count:** 24 candidate skills. All `status: candidate`. None promoted.
