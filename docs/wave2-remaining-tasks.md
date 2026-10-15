@@ -1,7 +1,9 @@
 # Wave 2 — Remaining Work (Parallel Agent Task Breakdown)
 
 Generated: 2026-10-15. Base branch: `opus/meta-skill-bootstrap` at `4b48b69`.
-Worktree: `/d/world_model/RSI-dev/worktrees/omnirsi-meta-skill`.
+Historical Wave 2 task snapshot; not the current execution queue or authorization.
+Local source paths below use portable placeholders for publication.
+Worktree: `<authorized-worktree>`.
 All tasks are exploration-mode: produce candidate skills (status: candidate,
 source-grounded, clearly marked unverified). No A/B evaluation required.
 
@@ -22,9 +24,9 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 skills and what must remain separate. Do not deeply analyze all training repos.
 
 **Sources (already local):**
-- `/d/world_model/RSI-dev/omnirsi-preflight/repos/MindIE-SD/.agents/skills/`
+- `<reference-checkouts>/MindIE-SD/.agents/skills/`
   (look for any training-adjacent skills)
-- PDFs in `/d/world_model/RSI-dev/`:
+- PDFs in `<local-research-materials>/`:
   - `面向智能体的 CUDA Kernel 开发与训练框架.pdf` — kernel dev + training framework
   - `vLLM‑Evolve · 代码如何演化成调度算法.pdf` — scheduling code evolution
 
@@ -54,12 +56,12 @@ capability map, top workflows, and a candidate skill list.
 **Sources:**
 - Do NOT deep-clone Ascend/pytorch or Ascend/op-plugin in this task.
 - Use what is already available:
-  - `/d/world_model/RSI-dev/omnirsi-preflight/repos/awesome-ascend-skills/`
+  - `<reference-checkouts>/awesome-ascend-skills/`
     — check for any pytorch or op-plugin related skills
-  - `/d/world_model/RSI-dev/omnirsi-preflight/repos/akg/` — read
+  - `<reference-checkouts>/akg/` — read
     `akg_agents/` (repo workflow skills already indexed), `README.md`,
     `README_en.md`, `docs/` for capability context
-  - `/d/world_model/RSI-dev/omnirsi-preflight/repos/awesome-ascend-skills/external/cannbot/ops/`
+  - `<reference-checkouts>/awesome-ascend-skills/external/cannbot/ops/`
     — operator development skills
 
 **For each repo, produce:**
@@ -86,11 +88,11 @@ more portable format that works outside the original operator dev workflow.
 
 **Source:**
 ```
-/d/world_model/RSI-dev/omnirsi-preflight/repos/awesome-ascend-skills/external/cannbot/ops/ops-profiling/SKILL.md
+<reference-checkouts>/awesome-ascend-skills/external/cannbot/ops/ops-profiling/SKILL.md
 ```
 Also read (if it exists):
 ```
-/d/world_model/RSI-dev/omnirsi-preflight/repos/awesome-ascend-skills/external/cannbot/ops/pypto-op-perf-tune/SKILL.md
+<reference-checkouts>/awesome-ascend-skills/external/cannbot/ops/pypto-op-perf-tune/SKILL.md
 ```
 
 **Extract and generalize:**
