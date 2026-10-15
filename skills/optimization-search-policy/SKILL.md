@@ -182,3 +182,22 @@ Heuristic allocation across phases of a campaign:
 Adjust for the specific campaign. If prior art is strong, reduce exploration
 and increase exploitation. If the bottleneck is unclear, increase the profiling
 fraction before generating any candidates.
+
+---
+
+## Prior art from related systems
+
+### RRSI (Regularized Recursive Self-Improvement)
+Source: https://arxiv.org/abs/2609.24972
+Mechanism: Feedback loop structure where each completed experiment produces a constraint that narrows the next search. When an experiment fails (worse or inconclusive), extract a constraint from the failure (e.g., "KV cache compression does not help at this sequence length") and record it in the negative record. On subsequent iterations, any new candidate must not violate a constraint from a prior failed experiment. This prevents circular re-exploration of the same dead ends. The system also introduces a regularization term to the reward signal that penalizes hypotheses that are too similar to recently tried candidates, forcing diversity in the solution family rather than just the bottleneck family.
+Answers question: (1) How does an agent avoid repeatedly tuning one familiar solution family? (2) How should previous failed experiments constrain the next search?
+OmniRSI adaptation: Encode negative constraints as structured entries in the experiment record (bottleneck class, hardware/model/workload context, hypothesis, failure reason). At candidate generation phase, query the constraint set before proposing a new candidate. If a candidate would violate a stored constraint, either skip it or require explicit justification for re-trying (burden of proof is higher). This prevents the familiar-solution-bias loop without requiring manual casebook curation.
+
+### CRISP (Critical Step Perception)
+Source: https://arxiv.org/pdf/2608.01867
+Mechanism: Agent learns to classify each step in an experiment as either "critical" (evidence-gathering that informs the next decision) or "redundant" (confirmatory or exploratory without decision impact). During candidate evaluation, the agent prioritizes critical steps and can defer or skip redundant steps, reducing total experiment cost by 15-33% while maintaining accuracy. The mechanism uses a learned model to identify which measurement or profiling steps actually change the verdict; once a critical step has a clear result, subsequent steps are skipped.
+Answers question: (3) How should experiment cost affect candidate selection?
+OmniRSI adaptation: Before launching a multi-regime benchmark, ask: "What is the minimum set of regimes needed to make a verdict?" Rather than running the full benchmark (very high cost), run only critical regimes first (medium cost). If the result is "clearly better", skip full production replay. If the result is "inconclusive", escalate to the next regime. This gives cost-aware stopping within a single experiment, not just between experiments. Track which regimes are critical for which bottleneck classes and reuse that knowledge.
+
+### Stopping via Amdahl + ridge-point (already in this skill)
+The four stopping criteria (ridge-point, Amdahl ceiling, repeated inconclusive, negative-record saturated) already cover when to stop local tuning. These align with prior systems that use performance ceilings and the observation that further work is uneconomical. No new mechanism found beyond what is documented above.

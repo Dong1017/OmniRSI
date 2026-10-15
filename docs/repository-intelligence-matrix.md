@@ -108,3 +108,21 @@ Current answer: no. They have different provenance and different verification re
 - Snapshot knowledge is `locally_verified: false` at import; it describes the system as built.
 - Trace-evolved knowledge has an evaluation trail (held-out task results); it reflects how the system behaves when an agent uses it.
 These are complementary but should not be conflated into a single `SKILL.md` without recording both lineages separately. The `revision.parent` chain captures the evolution; the `sources` list in the knowledge record captures the original import provenance.
+
+---
+
+## Additional methods (web-sourced)
+
+| Method | Source snapshot | Git history | Execution traces | PRs / Issues / Reviews | Output artifact | OmniRSI implication |
+|--------|:--------------:|:-----------:|:----------------:|:----------------------:|-----------------|---------------------|
+| **Change2Task** | ✓ (base snapshot at task derivation) | ✓ primary (diff → task derivation) | — | — | Executable coding task benchmark with paired environment (79.6% verified success rate) | Task benchmark alternative to LearningToCommit; consumes diffs directly rather than commit messages; recovers 29.2% more verified tasks than PR-based approaches; source: arxiv.org/abs/2607.28591 |
+| **Chronos (code evolution reasoning)** | — | ✓ primary (merged PR distillation) | — | ✓ secondary (PR metadata for experience cards) | Software evolution graph: typed knowledge graph of code-level and developer-intent relations from PR merges | Replaces manual repository-evolution-analysis with automated PR→experience-card→graph pipeline; captures temporal causality and intent that AREX snapshot cannot; source: arxiv.org/abs/2610.11578 |
+| **Skill Issue** | no primary source found | — | — | — | — | — |
+
+### Differentiation and OmniRSI priority
+
+**Change2Task vs LearningToCommit:** Both ingest git history to produce task benchmarks, but differ in consumption. LearningToCommit uses commit messages as task labels (task quality depends on message quality); Change2Task uses file diffs as task derivation (produces structured environment-instantiation proof, lower label-quality risk). Change2Task's 29.2% advantage in verified recovery suggests it is more robust for low-documentation repos (kernel, NPU repos). **Priority:** High for bootstrap task generation on new vLLM-Omni forks; consider as pre-filter before LearningToCommit labeling.
+
+**Chronos vs magpie/repository-evolution:** Chronos distills merged PRs into semantic experience cards (PR intent, code changes, trade-offs in one unit); magpie/LTC use full commit history for capability evolution graphs. Chronos is narrower (PR-only, not every commit) and more semantically structured (developer intent encoded). **Priority:** Medium; complements repository-evolution-analysis for repos with high PR review quality; adds intent layer missing from raw diffs.
+
+**Skill Issue:** Web search found GitSkills (dataset of 56K SKILL.md files) and skill defect analysis, but no primary source for a "skill from GitHub issues" system meeting the criteria. Marked as not found.
