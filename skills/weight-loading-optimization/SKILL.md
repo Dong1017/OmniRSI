@@ -255,6 +255,53 @@ Measurement protocol for any load path (how fastsafetensors benchmarks):
 
 ---
 
+## 8. Checkpoint save/restore (fastsafetensors saver pattern)
+
+What the save path actually supports at 219e256 (observed in `saver.py`,
+`docs/overview.md` §"Saving checkpoints", and saver tests):
+
+**Supported:**
+
+- Synchronous, blocking, sharded safetensors writes (`ParallelSaver.save` /
+  `save_entries`, or the `save_sharded` / `plan_shards` / `write_shards`
+  function layer). Default 16 size-balanced shards
+  (`{base}-00001-of-000NN.safetensors`), largest-first packing.
+- Parallel per-tensor fill threads that block on all results before
+  returning — parallel writes, synchronous completion. Custom `fill`
+  encoders accept opaque sources and manage their own parallelism.
+- Per-file atomic publish: each shard is written to a unique temp file,
+  then `os.replace`d to its final path. A failed fill removes all temps —
+  nothing is left at final paths.
+- Disk-space preflight (`min_free_bytes`) before any file is created.
+- fsync of file + mmap + directory is **opt-in** (`fsync=False` default;
+  directory fsync skipped on Windows).
+- Device tensors saved via host copy (detach → contiguous → flat); dtype
+  preserved as-is (F4 packed layout supported). No dtype conversion happens
+  inside the saver — downcast/quantize before entry or inside a custom
+  fill.
+- Reload is the existing loader: returned paths feed `ParallelLoader` /
+  `fastsafe_open` directly (round-trip tested).
+- Every shard header carries `fst.shard.index/count/set` (a per-write id)
+  so a set can be validated later — but `validate_shard_set` is called by
+  no production code and is not exported; set integrity is caller logic.
+
+**Explicitly not supported / unknown — record as unknown, never assume:**
+
+- Whole-set atomic publish — documented: "the set is not published
+  atomically". A mid-rename failure can leave a mixed set (some finals
+  published, temps gone); this path is untested and recovery is a caller
+  obligation.
+- Async checkpointing: no submit/wait split, no futures, no completion
+  callbacks (unlike the loader's producer/consumer pipeline).
+- Distributed / multi-rank save coordination: no rank or process-group
+  logic exists.
+- Crash durability: `fsync=True` flushes file/mmap/directory, but no
+  crash behavior is documented or tested anywhere in the inspected files.
+- GDS / direct-storage writing: not implemented — device tensors go
+  through host copy.
+- Concurrent saves to the same base: last rename wins per path; no
+  locking (in-process threads only).
+
 ## Negative findings and remaining gaps
 
 First-layer scan (8 local repos, 2026-10-15, scoped to inspected
@@ -263,16 +310,18 @@ checkpoint save/restore I/O, no disk-tier offload, no fio-class storage
 benchmarking — recorded because the three big repos are skill-doc-only
 checkouts; absence there is not absence upstream.
 
-Wave-5 approved sources closed part of this: loading modes and mmap/mlock
+Wave-5/6 approved sources closed most of this: loading modes and mmap/mlock
 placement decisions (llama.cpp), pinned-staging parallel-read mechanics and
 a load-path measurement protocol (fastsafetensors), runtime KV-to-disk
-tiering (LMCache → `kv-tier-management`). Still open:
+tiering (LMCache → `kv-tier-management`), block-device measurement
+methodology (fio/sysstat → `storage-io-measurement`), and checkpoint
+save/restore semantics (§8 above). Still open:
 
-- Checkpoint **save/restore** I/O optimization — fastsafetensors `saver.py`
-  is located but was out of approved scope this wave; no other source.
-- Standalone block-device profiling tooling (fio-class) — only the
-  load-path measurement protocol above; general disk benchmarking still
-  unsourced.
+- Save-path **performance optimization** intelligence: the saver has no
+  perf harness, no benchmarks, and no documented tuning levers — what §8
+  records is semantics, not optimization guidance.
+- Async / distributed checkpointing patterns (no source among approved
+  repos).
 
 Measurement caveat (mindie-agent): disk read/write counters include cache
 and pipes — they are **logical I/O, not physical disk writes**; without
