@@ -1,6 +1,6 @@
 # OmniRSI SearchSpace Matrix
 
-**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `3097788`
+**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `8a1e999`
 
 Top-level rows are hardware resource layers.  
 Second-level optimization targets (Kernel, Operator, KV Cache, Attention, Runtime, Distributed, Serving, VAE/Codec) live **inside** the row that owns their bottleneck.
@@ -23,7 +23,7 @@ The primary compute and HBM resource. Most current work lives here.
 | **Configure** | Parallelism strategy (USP/CP/TP/PP), topology-aware card-group selection | `ascend-distributed-parallel` | USP activation requirement, masking upper-bound formula, AlltoAllV workaround | MindIE-SD dit-parallel-opt @ 8481d39b (9 reference files) | 🟢 |
 | **Configure** | Model adapter: FP8 dequantization, KV-head replication, multimodal feature validation order | `ascend-model-adaptation` | vllm-ascend FP8/multimodal lessons | vllm-ascend @ bc8115ed | 🟢 |
 | **Optimize** | Kernel-level: Triton/CuTe/TileIR writing, kernel tuning, fusion scope analysis | `kernel-writing-guide` | Framework routing (Triton vs CuTe vs AscendC), 6 universal correctness rules, verify-before-benchmark workflow | TRT-LLM kernel-triton-writing + kernel-cute-writing @ f33e0e5f | 🟢 |
-| **Optimize** | Operator-level: CANN AscendC operator dev, op performance tuning (pypto-op-perf-tune) | — (candidate skills identified in ascend-npu-repo-map.md: `pypto-op-perf-tune`, `triton-op-designer`, `ascendc-precision-debug`) | ops-profiling iterative loop | awesome-ascend-skills; see `docs/ascend-npu-repo-map.md` | 🟡 |
+| **Optimize** | Operator-level: staged accuracy-gated tuning campaign (code-level → scheduling → instruction-level), metric→action routing; AscendC tiling design per operator class (reduction/broadcast/elewise/matmul/conversion) | `ascend-operator-tuning`, `ascendc-tiling-design` | PyPTO frontend/swimlane/incore playbooks; fullload-vs-split, four-element tiling template, chip-generation (DAV_2201/3510) routing | awesome-ascend-skills pypto-op-perf-tune + ascendc-tiling-design @ 75ec89c | 🟢 |
 | **Optimize** | Casebook of past NPU optimization decisions: AI-CPU fallback, memory-bound, comm-exposed, graph-compilation, scheduling idle gaps | `ascend-optimization-casebook`, `inference-optimization-casebook` | Five bottleneck classes with symptom→diagnosis→action→evidence schema | MindIE-SD profiling-analyze + dit-perf-opt + perf-gate + dit-parallel-opt @ 8481d39b | 🟢 |
 | **Optimize** | Search policy: phase-locked round, negative memory, cost-aware selection, RRSI constraints, CRISP critical-step | `optimization-search-policy` | RRSI constraint propagation; CRISP critical-step classification | vllm-evolve @ 43cc82c; arXiv 2609.24972; arXiv 2608.01867 | 🟢 |
 | **Verify** | Evidence taxonomy (L0 correctness → L5 production), claim-evidence matching | `dense-performance-evidence`, `rsi-evidence`, `claim-contract` | OmniRSI PASS/FAIL/INCONCLUSIVE protocol | OmniRSI @ 4c8e1285 | 🟢 |
@@ -55,10 +55,12 @@ Storage I/O: model weight loading, checkpoint save/restore, profiling artifact I
 
 | Lifecycle step | What it covers | Candidate Skills | Cases / Experience | Evidence | Maturity |
 |---|---|---|---|---|---|
-| **Observe / Profile** | — | — | — | — | 🔴 |
+| **Observe / Profile** | — | — | — | — | 🔴 (no storage profiling method in any local repo; fio/iostat/page-cache zero hits; logical-vs-physical I/O caveat only in mindie-agent docs) |
 | **Diagnose** | Slow startup (graph capture + weight loading dominating): distinguish compile warmup from I/O | `ascend-graph-mode` (mentions slow startup), `ascend-model-adaptation` (dummy→real sequence) | ACLGraph startup cost is compile + capture, not I/O bound; FP8 weight loading pitfalls | MindIE-SD; vllm-ascend | 🟡 (incidental coverage only) |
+| **Diagnose** | Load-path judgment (source/format/placement/duplication) and startup fixed-overhead accounting (bytes+counts lines, hit-criteria warmup validation) | `weight-loading-optimization` | Four-dimension load-path judgment; fixed-vs-per-request split; 7 accounting errors | MindIE-SD host-opt + host-overhead-account @ 8481d39b | 🟢 |
 | **Configure** | Checkpoint format for fast loading (FP8 paired tensors, shard loading order) | `ascend-model-adaptation` | FP8 paired-tensor loading pattern | vllm-ascend @ bc8115ed | 🟡 |
-| **Optimize** | — | — | — | — | 🔴 |
+| **Optimize** | Serving-level load path: device-side weight prefetch (switch-gated, 50%-of-theoretical start), CPU-tier offload ordering by change surface, duplication removal | `weight-loading-optimization` | `npu_prefetch` decision rules; OOM fallback tiers; construction vs inference OOM | cannbot model-infer-prefetch + diffusers memory-optimization @ 75ec89c; MindIE-SD resource-fallback-tiers @ 8481d39b | 🟢 (serving level) |
+| **Optimize** | Disk-level I/O mechanics: mmap/pinned staging, shard-parallel loading, fio/page-cache benchmarking, checkpoint save/restore I/O, disk-tier offload | — | Negative finding: 8 repos scanned (queries listed in the skill), zero material; big-3 repos are skill-doc-only sparse checkouts | see `skills/weight-loading-optimization/SKILL.md` negative-findings section | 🔴 (needs upstream vLLM/fastsafetensors/lmcache sources) |
 | **Verify** | — | — | — | — | 🔴 |
 
 **Second-level targets:** Model weight sharding, checkpoint I/O, profiling output archival
@@ -93,7 +95,7 @@ System-level: scheduler, DVFS, process isolation, environment variables, driver 
 | **Diagnose** | SIGKILL residual state: per-step time uniformly elevated by ~1 order of magnitude | `ascend-device-health` | npu-smi Health=OK does not prove card is clean; 4-step smoke required | MindIE-SD dit-parallel-opt @ 8481d39b | 🟢 |
 | **Configure** | Card-group selection, env variables (`HCCL_OP_EXPANSION_MODE=AIV`), proc-mem occupancy check | `ascend-device-health` | Card-group change = contract change; all baselines must be re-measured on new group | MindIE-SD dit-parallel-opt + perf-gate @ 8481d39b | 🟢 |
 | **Configure** | Env-preflight: verify device availability, driver health, Python env before measurement | `performance-ceiling-analysis` (env-preflight references TRT-LLM exec-env-check) | TRT-LLM exec-env-check pattern | TRT-LLM @ f33e0e5f | 🟡 |
-| **Optimize** | — | — | — | — | 🔴 |
+| **Optimize** | CPU affinity check-then-pin (accelerator-local NUMA node, cross-round consistency), thread-count env discipline, device-busy preflight with graceful-to-force PID escalation, structured ERROR/WARNING env checks, container flags and ulimits | `os-process-placement` | OMP_NUM_THREADS/PROC_BIND per scenario; `CPU_AFFINITY_CONF`; npu-smi usages preflight; `ASCEND_HOME_PATH` named-var correctness | TRT-LLM perf-host-optimization @ f33e0e5f; awesome-ascend-skills @ 75ec89c | 🟢 (cgroups/cpuset/isolcpus and scheduler priorities explicitly out of scope — no source evidence) |
 | **Verify** | Card health check sequence: npu-smi Health, 4-step smoke verify, proc-mem occupancy | `ascend-device-health` | Health=OK ≠ card usable; SIGKILL residual state only detectable via smoke run | MindIE-SD @ 8481d39b | 🟢 |
 
 **Second-level targets:** NPU driver, CANN runtime, container/process isolation
@@ -104,9 +106,8 @@ System-level: scheduler, DVFS, process isolation, environment variables, driver 
 
 | Gap | Row | Priority | Next action |
 |-----|-----|----------|-------------|
-| Operator-level tuning (pypto-op-perf-tune, AscendC tiling) | Accelerator / Optimize | Medium | Mine awesome-ascend-skills pypto-op-perf-tune and cannbot/model-infer-fusion; port to OmniRSI format |
-| Storage I/O profiling and optimization | SSD / Observe, Optimize | Low | No source material; defer until a strong source appears |
-| OS/System Optimize (CPU affinity, NUMA process placement, cgroups) | OS / Optimize | Low | `host-memory-management` covers NUMA allocation; dedicated OS-level scheduling skill needs new sources |
+| Storage profiling (Observe) and disk-level I/O mechanics (mmap/pinned, fio/page-cache, checkpoint save/restore I/O, disk-tier offload) | SSD / Observe, Optimize (disk level) | Low | Negative finding recorded 2026-10-15: 8 local repos scanned, zero material; the three big repos are skill-doc-only sparse checkouts. Needs upstream sources (vLLM safetensors loader, fastsafetensors, lmcache) |
+| OS/System cgroups/cpuset/isolcpus and scheduler priorities | OS / Optimize | Low | No source evidence in any local repo; `os-process-placement` covers placement/affinity/threads/env/container-flags; the remainder needs external OS documentation |
 
 **Resolved gaps since initial matrix (all high/medium priority cleared):**
 - ~~Host overhead profiling + optimization skills~~ → `host-overhead-profiling`, `host-overhead-optimization` ✅
@@ -116,6 +117,9 @@ System-level: scheduler, DVFS, process isolation, environment variables, driver 
 - ~~Same-window A/B acceptance skill~~ → covered in `ascend-optimization-casebook` (per-case evidence schema) ✅
 - ~~Kernel writing skill (Triton-Ascend / AscendC TileIR / CuTe)~~ → `kernel-writing-guide` ✅
 - ~~Host memory lifecycle (pinned memory / GIL / H2D async)~~ → `host-memory-management` ✅
+- ~~Operator-level tuning (pypto-op-perf-tune, AscendC tiling)~~ → `ascend-operator-tuning`, `ascendc-tiling-design` ✅
+- ~~Serving-level weight loading / startup overhead~~ → `weight-loading-optimization` ✅ (disk-level mechanics remain open, see gap table)
+- ~~OS/System Optimize (CPU affinity, NUMA process placement, env discipline)~~ → `os-process-placement` ✅ (cgroups/scheduler priorities remain open, see gap table)
 
 ---
 
@@ -125,11 +129,11 @@ Use this table in the PR description for `opus/meta-skill-bootstrap`.
 
 | Search Space | Observe / Profile | Diagnose | Configure | Optimize | Verify |
 |---|---|---|---|---|---|
-| **Accelerator** | 🟢 `ascend-performance-analysis`, `ascend-operator-profiling`, `dense-performance-evidence` | 🟢 `ascend-performance-analysis`, `performance-ceiling-analysis` | 🟢 `ascend-graph-mode`, `ascend-model-adaptation`, `ascend-distributed-parallel` | 🟢 `ascend-optimization-casebook`, `optimization-search-policy`, `kernel-writing-guide` | 🟢 `dense-performance-evidence`, `rsi-evidence`, `claim-contract` |
+| **Accelerator** | 🟢 `ascend-performance-analysis`, `ascend-operator-profiling`, `dense-performance-evidence` | 🟢 `ascend-performance-analysis`, `performance-ceiling-analysis` | 🟢 `ascend-graph-mode`, `ascend-model-adaptation`, `ascend-distributed-parallel` | 🟢 `ascend-optimization-casebook`, `optimization-search-policy`, `kernel-writing-guide`, `ascend-operator-tuning`, `ascendc-tiling-design` | 🟢 `dense-performance-evidence`, `rsi-evidence`, `claim-contract` |
 | **RAM / Host** | 🟢 `host-overhead-profiling` | 🟢 `host-overhead-profiling` | 🟢 `host-memory-management` | 🟢 `host-overhead-optimization` | 🟡 (inherited from Accelerator row) |
-| **SSD / Storage** | 🔴 | 🟡 `ascend-graph-mode` (startup/loading incidental) | 🟡 `ascend-model-adaptation` (FP8 loading) | 🔴 | 🔴 |
+| **SSD / Storage** | 🔴 | 🟢 `weight-loading-optimization` (load-path accounting) + 🟡 `ascend-graph-mode` (startup incidental) | 🟡 `ascend-model-adaptation` (FP8 loading) | 🟢 `weight-loading-optimization` (serving level) · 🔴 disk-level mechanics (negative finding recorded) | 🔴 |
 | **Communication** | 🟢 `ascend-performance-analysis` | 🟢 `ascend-performance-analysis`, `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel` | 🟢 `ascend-distributed-parallel`, `ascend-performance-analysis` |
-| **OS / System** | 🟢 `ascend-operator-profiling` (DVFS), `ascend-device-health` (proc-mem) | 🟢 `ascend-device-health`, `ascend-performance-analysis` | 🟢 `ascend-device-health` | 🔴 | 🟢 `ascend-device-health` |
+| **OS / System** | 🟢 `ascend-operator-profiling` (DVFS), `ascend-device-health` (proc-mem) | 🟢 `ascend-device-health`, `ascend-performance-analysis` | 🟢 `ascend-device-health` | 🟢 `os-process-placement` (affinity/threads/env; cgroups out of scope) | 🟢 `ascend-device-health` |
 
 **Optimization targets added in this branch:**
 - Kernel profiling (CANN CSV pipeline, 5-layer analysis, operator-level msprof loop)
@@ -145,5 +149,9 @@ Use this table in the PR description for `opus/meta-skill-bootstrap`.
 - Skill evolution (Trace2Skill pool consolidation, SkillOpt bounded edit)
 - Benchmark design (goodput, three-regime, OmniRSI evidence trail)
 - Repository intelligence (LTC temporal split, Magpie patterns, Change2Task, Chronos)
+- Operator tuning campaign (accuracy gate, staged escalation, metric contract, routing tables)
+- AscendC tiling design (four-element template, fullload-vs-split, per-class routing, chip-generation tables)
+- Weight load path and startup overhead (fixed-overhead accounting, sharded verification, prefetch rules, offload tiers)
+- OS-level process placement (affinity pinning, thread env discipline, device-busy preflight, env checks)
 
-**Skill count:** 19 candidate skills. All `status: candidate`. None promoted.
+**Skill count:** 23 candidate skills. All `status: candidate`. None promoted.
