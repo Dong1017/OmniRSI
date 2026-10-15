@@ -1,11 +1,18 @@
-# OmniRSI Repo Source Matrix
+# OmniRSI Reference Matrix
 
-**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `1a9d095`
+**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `96a93d9`
 
-Companion view to `docs/searchspace-matrix.md`:
+One of exactly two primary matrices (decision D01, 2026-10-15). The file
+keeps its `repo-source-matrix.md` name this round (D02); the official name
+is **Reference Matrix**.
 
-- **SearchSpace Matrix** — what optimization intelligence we currently have (lifecycle coverage).
-- **Repo Source Matrix** (this file) — where that intelligence comes from, and what remains unread.
+- **SearchSpace Matrix** (`docs/searchspace-matrix.md`) — resource ×
+  optimization-stage coverage.
+- **Reference Matrix** (this file) — sources, inspected scope, provenance,
+  and extraction: repositories, papers, official documentation, PRs, and
+  expert material; where the intelligence comes from and what remains
+  unread. Skills, knowledge, and cases link the two (D03). Methodology
+  sources live in §2, not in a third matrix.
 
 Status key (per cell): `mined` (source intelligence extracted into a candidate skill/case — **not** experimentally validated) · `located-not-mined` (relevant material identified, not yet extracted) · `unknown` (not investigated at this revision) · `out-of-scope` (repo does not target that layer).
 
@@ -35,6 +42,10 @@ Reading rules:
 | foundation-model-stack/fastsafetensors @ 219e256 | full (shallow pin, wave 5) | out-of-scope — approved scope was model-loading I/O only | mined (partial) — pinned bounce-buffer staging, reader NUMA binding → `weight-loading-optimization` §7 | mined — loading I/O mechanics (no-mmap design, bounce reader, GDS, readiness overlap, partial reads, static planner) + measurement protocol → `weight-loading-optimization` §7; checkpoint save (`saver.py`) located-not-mined (out of approved scope) | located-not-mined — TP sharding as broadcast/scatter with coalesced runs extracted in evidence, not yet distilled | mined (narrow) — reader worker NUMA binding + O_DIRECT per-filesystem policy → `weight-loading-optimization` §7 |
 | LMCache/LMCache @ c3b875a | full (shallow pin, wave 5) | out-of-scope — approved scope was CPU/local-storage KV management | mined — L1 DRAM tier, admission dial, watermark eviction, multi-L1 overflow → `kv-tier-management` | mined — L2 local adapters (fs/nixl/raw_block/dax), serde capacity lever, persist/recover → `kv-tier-management` | out-of-scope — remote adapters noted only | mined (narrow) — MP process/thread concurrency model (isolation, client-affinity pools, TTL locks) → `kv-tier-management` |
 | ggml-org/llama.cpp @ 3e390af | full (shallow pin, wave 5) | out-of-scope — approved scope was loading modes and host placement | mined — mmap/mlock residency, lazy tensors, host weight placement (`--cpu-moe` family), KV host offload → `weight-loading-optimization` §6 | mined — loading modes (mmap/mlock/dio/lazy), page-cache interactions, fit-probe bypass → `weight-loading-optimization` §6 | out-of-scope | mined — NUMA modes (distribute/isolate/numactl), gen-vs-batch thread/affinity splits, numa_balancing rule → `os-process-placement` |
+| axboe/fio @ acb7a302 | pack-mediated (wave 6; HOWTO.rst targeted sections + `examples/aio-read.fio`) | out-of-scope | located-not-mined — cache-state and run-shape material partially feeds the ledger/run-classification rules | mined — workload matching, requested-vs-achieved depth, cache-state ledger, run-shape classification, output schema/units → `storage-io-measurement` | out-of-scope | out-of-scope |
+| sysstat/sysstat @ efd0c445 | pack-mediated (wave 6; `man/iostat.in`, `man/pidstat.1`) | out-of-scope | mined (narrow) — per-process I/O/fault attribution caveats → `storage-io-measurement` §8 | mined — per-device attribution, saturation guards (%util/%iowait) → `storage-io-measurement` §6-7 | out-of-scope | mined (narrow) — CPU-side scheduling-pressure vs disk-hypothesis rules (%wait, context switches) → `storage-io-measurement` §8 |
+| Linux cgroup v2 docs — kernel.org live 2026-10-15 (revision unidentified) + v6.12 `cgroup-v2.rst` (reproducible baseline) | pack-mediated (wave 6; core/CPU/Memory/IO/Cpuset interface sections) | out-of-scope | mined — memory pressure/events triage, high/low/max semantics → `cgroup-resource-controls` | mined (conditional) — io.max caps gated on confirmed block-backed traffic → `cgroup-resource-controls` | out-of-scope | mined — cpu.max/weight quota-vs-contention (cpu.stat vs .local), requested/effective cpuset, hierarchy/delegation preflight → `cgroup-resource-controls` |
+| cann/oam-tools @ `8440935f` (!302 import; later master `f3cf4115` labeled [V2], never merged into !302 claims) | pack-mediated (wave 6; `cann-perf-breakdown`, `cann-multistream-optimize`, `cann-npu-perfanalysis` + selected references/scripts). Lineage: `jinyingqi/*` originals → !302 import — one lineage, not independent corroboration; original SHAs/byte equivalence unverified | mined — representative-step selection, code_ref source ownership, attribution-aware diagnosis, dependency DAG (data/state/event/collective_order), bounded overlap, correctness-first acceptance, metric separation, device-memory domain qualification → `cann-attribution-overlap` | out-of-scope (host RAM not established; device HBM/UB evidence must not fill the RAM row) | out-of-scope | mined — exposed-communication diagnosis, wait pollution, evidence-gated compute/comm overlap → `cann-attribution-overlap` | mined (bridge only) — host-event coverage of device bubbles, uncertainty-aware → `cann-attribution-overlap` |
 
 Home-repo note: ThinkFlowLab/OmniRSI @ 4c8e128 is the scaffold this branch lives
 in (evidence/claim discipline, benchmark hygiene, RunSpec) — not an external
@@ -61,11 +72,17 @@ mining source. The local sibling clone at `codex/skill-eval-bootstrap`
 - Wave-5 approved mining (2026-10-15) closed part of the first negative
   finding: loading modes and mmap/mlock placement (llama.cpp), pinned-staging
   parallel-read mechanics and a load-path measurement protocol
-  (fastsafetensors), runtime KV-to-disk tiering (LMCache). Still open after
-  wave 5: checkpoint save/restore I/O (fastsafetensors `saver.py` located,
-  out of approved scope) and standalone block-device profiling tooling
-  (fio-class). Approval is scoped per `repo × subsystem × SearchSpace gap` —
-  wave-5 rows above reflect only the approved scopes.
+  (fastsafetensors), runtime KV-to-disk tiering (LMCache).
+- Wave-6 pack-mediated mining (2026-10-15) closed the rest: checkpoint
+  save/restore semantics (`weight-loading-optimization` §8) and
+  block-device measurement methodology (`storage-io-measurement`). Pack
+  mediation: the gate owners supplied read-only research packs (fio,
+  sysstat, kernel cgroup-v2 docs, cann/oam-tools); receiving a pack is not
+  mining — extraction into the linked skills happened in this workspace.
+  Pack facts are documentation-level; no benchmarks were run, no caches
+  manipulated, no settings changed.
+- Approval is scoped per `repo × subsystem × SearchSpace gap` — rows above
+  reflect only the approved scopes.
 
 ---
 
