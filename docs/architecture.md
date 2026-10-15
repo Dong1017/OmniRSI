@@ -35,6 +35,7 @@ src/omnirsi/
   cli.py, arguments.py       Existing CLI
   runspec.py, contracts.py   Immutable experiment contract and compatibility export
   catalog.py                Knowledge search and cited context
+  skill_catalog.py          Explicit local skill metadata/instructions/resource resolution
   harness/
     runner.py               One AB/BA loop; execute/snapshot adapter hooks
     evaluation.py           Performance/quality/source-integrity adjudication
@@ -193,6 +194,15 @@ experience records and exported context omit PR links. Evidence levels describe
 guidance or reported measurements independently from a source's merge status.
 Imported skills are source material, not executable tool authority. CPU tests
 do not upgrade imported knowledge to a validated claim.
+
+The optional `skills` CLI reads an explicit local `--root` (default `./skills`),
+using PyYAML from the `skills` extra. It lists only frontmatter, loads only a
+named skill's instructions, and resolves a named resource inside that skill for
+an external file reader. It never installs, routes, executes or updates skills.
+These checkout assets are not wheel package data; the catalog is a projection,
+not another authoritative matrix. Core knowledge commands remain independent
+of the optional parser.
+
 Run evidence remains in the caller-selected run directory; frozen campaign
 plans/results/patches/validators remain under `evidence/`.
 

@@ -1,0 +1,100 @@
+import json
+from pathlib import Path
+
+import pytest
+
+from omnirsi.cli import main
+from omnirsi.skill_catalog import get_skill, skill_instructions, skill_records, skill_resource
+
+PROJECT = Path(__file__).resolve().parents[1]
+
+
+def test_checkout_catalog_is_metadata_only():
+    root = PROJECT / "skills"
+    records = skill_records(root)
+    assert len(records) == len(list(root.glob("*/SKILL.md")))
+    assert len(records) >= 32
+    assert len({record["name"] for record in records}) == len(records)
+    assert all(set(record) <= {"name", "description", "status", "tags"} for record in records)
+    inherited = next(record for record in records if record["name"] == "claim-contract")
+    assert set(inherited) == {"name", "description"}
+    casebook = next(
+        record for record in records if record["name"] == "inference-optimization-casebook"
+    )
+    assert casebook["name"] == "inference-optimization-casebook"
+
+
+def test_listing_never_decodes_instruction_body_or_resources(tmp_path):
+    directory = tmp_path / "selected"
+    directory.mkdir()
+    (directory / "SKILL.md").write_bytes(
+        b"---\nname: selected\ndescription: >\n  Folded YAML\n  description\n---\n\xff\xfe"
+    )
+    (directory / "resource.bin").write_bytes(b"\xff\xfe")
+    assert skill_records(tmp_path) == [
+        {"name": "selected", "description": "Folded YAML description\n"}
+    ]
+    assert get_skill(tmp_path, "selected")["resources"] == ["resource.bin"]
+
+
+def test_explicit_selection_and_resource_resolution(tmp_path, capsys):
+    directory = tmp_path / "selected"
+    directory.mkdir()
+    (directory / "SKILL.md").write_text(
+        '---\nname: selected\ndescription: "Read: exactly one"\n---\n# Selected body\n',
+        encoding="utf-8",
+        newline="\n",
+    )
+    references = directory / "references"
+    references.mkdir()
+    resource = references / "notes.md"
+    resource.write_text("Resource content stays on demand.\n", encoding="utf-8")
+    other = tmp_path / "unselected"
+    other.mkdir()
+    (other / "SKILL.md").write_bytes(b"\xff\xfe")
+    assert skill_instructions(tmp_path, "selected") == "# Selected body\n"
+    assert main(["skills", "--root", str(tmp_path), "show", "selected"]) == 0
+    record = json.loads(capsys.readouterr().out)
+    assert record["instructions"] == "# Selected body\n"
+    assert record["resources"] == ["references/notes.md"]
+    assert "does not authorize" in record["authority"]
+    assert "Resource content" not in json.dumps(record)
+    assert main(
+        ["skills", "--root", str(tmp_path), "resource", "selected", "references/notes.md"]
+    ) == 0
+    assert Path(json.loads(capsys.readouterr().out)["path"]) == resource.resolve()
+    assert skill_resource(tmp_path, "selected", "references/notes.md") == resource.resolve()
+    with pytest.raises(ValueError, match="inside"):
+        skill_resource(tmp_path, "selected", "../unselected/SKILL.md")
+    with pytest.raises(ValueError, match="Unknown"):
+        skill_resource(tmp_path, "selected", "missing.md")
+
+
+def test_cli_list(capsys):
+    assert main(["skills", "--root", str(PROJECT / "skills"), "list", "--json"]) == 0
+    assert json.loads(capsys.readouterr().out) == skill_records(PROJECT / "skills")
+
+
+@pytest.mark.parametrize("name", ["../claim-contract", "unknown", "Claim-Contract", ""])
+def test_selection_rejects_invalid_or_unknown_names(name):
+    with pytest.raises(ValueError):
+        get_skill(PROJECT / "skills", name)
+
+
+@pytest.mark.parametrize(
+    "frontmatter",
+    [
+        "name: selected\n",
+        "---\nname: selected\n",
+        "---\n- selected\n---\n",
+        "---\nname: other\ndescription: test\n---\n",
+        "---\nname: selected\ndescription: test\ntags: string\n---\n",
+        "---\nname: selected\ndescription: [broken\n---\n",
+    ],
+)
+def test_frontmatter_boundary_validation(tmp_path, frontmatter):
+    directory = tmp_path / "selected"
+    directory.mkdir()
+    (directory / "SKILL.md").write_text(frontmatter, encoding="utf-8")
+    with pytest.raises(ValueError):
+        skill_records(tmp_path)

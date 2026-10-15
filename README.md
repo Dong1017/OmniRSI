@@ -76,6 +76,27 @@ omnirsi context --repo-type vllm_omni --backend ascend \
 
 Ready to measure your own model? [Connect your benchmark and quality checks →](docs/quickstart.md#real-remote-experiment)
 
+### Read local candidate skills
+
+Install the optional parser with `python -m pip install '.[skills]'`. From this
+checkout (or pass `--root /path/to/skills` before the subcommand):
+
+```bash
+omnirsi skills list --json
+omnirsi skills show weight-loading-optimization
+omnirsi skills resource <skill-name> <relative-resource-path>
+```
+
+Listing reads frontmatter only. `show` explicitly selects one instruction body
+and lists resource filenames; `resource` resolves one path for your file reader
+without loading its contents or executing it. Skills are local checkout assets,
+not bundled wheel data. There is no installation, client configuration, automatic
+selection or update. Reading instructions does not authorize their commands.
+This generated catalog projects frontmatter; the Reference and SearchSpace
+matrices remain the two authoritative matrices. Offline integration checks do
+not validate candidate effectiveness.
+
+
 <a id="architecture"></a>
 
 ## 🧩 Architecture
