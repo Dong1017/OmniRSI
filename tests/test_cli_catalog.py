@@ -19,6 +19,13 @@ from omnirsi.catalog import get_knowledge, knowledge_records, repository_pack, s
 from omnirsi.cli import main
 
 PROJECT = Path(__file__).resolve().parents[1]
+SOURCE_REPOSITORIES = {
+    "strata": "Niko1221/Strata",
+    "vllm": "vllm-project/vllm",
+    "sglang": "sgl-project/sglang",
+    "sglang_omni": "sgl-project/sglang-omni",
+    "vllm_omni": "vllm-project/vllm-omni",
+}
 
 
 class CatalogTests(unittest.TestCase):
@@ -31,9 +38,12 @@ class CatalogTests(unittest.TestCase):
             self.assertFalse(record["verification"]["locally_verified"])
             for source in record["sources"]:
                 self.assertRegex(source["commit"], r"^[0-9a-f]{40}$")
-                self.assertTrue(
-                    source["url"].startswith("https://github.com/vllm-project/vllm-omni/")
-                )
+                if record["repo"] in SOURCE_REPOSITORIES:
+                    self.assertTrue(
+                        source["url"].startswith(
+                            f"https://github.com/{SOURCE_REPOSITORIES[record['repo']]}/"
+                        )
+                    )
         rocm = search_knowledge(repo="vllm_omni", backend="rocm", limit=50)
         self.assertTrue(rocm)
         self.assertTrue(all(item["backend"] == "common" for item in rocm))
@@ -55,7 +65,7 @@ class CatalogTests(unittest.TestCase):
             get_knowledge("not-a-record")
         with self.assertRaises(ValueError):
             search_knowledge(limit=0)
-        for name in ("vllm", "vllm_omni", "afd_plugin", "vllm_rlt"):
+        for name in catalog.REPO_TYPES:
             pack = repository_pack(name)
             self.assertEqual(pack["execution_support"], "caller_supplied_external_commands")
             self.assertTrue(
@@ -131,14 +141,17 @@ class CatalogTests(unittest.TestCase):
 
 
 def test_knowledge_has_one_canonical_record_and_complete_navigation():
-    root = PROJECT / "src/omnirsi/data/repo_packs/vllm_omni/knowledge"
-    records = knowledge_records()
-    paths = list(root.glob("*/*/*.json"))
-    assert len(records) == len(paths) == 12
-    assert list(root.rglob("*.md")) == [root / "README.md"]
-    index = (root / "README.md").read_text()
-    targets = set(re.findall(r"\]\(([^)]+\.json)\)", index))
-    assert targets == {path.relative_to(root).as_posix() for path in paths}
+    packs = PROJECT / "src/omnirsi/data/repo_packs"
+    records = search_knowledge(tier="contribution", limit=100)
+    assert len(records) == len(list(packs.glob("*/knowledge/*/*/*.json")))
+    for repo in {record["repo"] for record in records}:
+        root = packs / repo / "knowledge"
+        paths = list(root.glob("*/*/*.json"))
+        assert len(paths) == len([record for record in records if record["repo"] == repo])
+        assert list(root.rglob("*.md")) == [root / "README.md"]
+        index = (root / "README.md").read_text(encoding="utf-8")
+        targets = set(re.findall(r"\]\(([^)]+\.json)\)", index))
+        assert targets == {path.relative_to(root).as_posix() for path in paths}
     for record in records:
         assert "/pull/" not in json.dumps(record)
         assert record["verification"]["evidence_level"] in ("guidance", "upstream_reported")

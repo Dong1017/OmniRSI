@@ -1,10 +1,15 @@
 """Run after a noneditable install with PYTHONPATH unset."""
 
-from importlib.resources import files
+import contextlib
+import io
+import json
+import sys
+from importlib.resources import as_file, files
 from pathlib import Path
 
 import omnirsi
 from omnirsi.catalog import knowledge_records, repository_pack, search_knowledge
+from omnirsi.cli import main
 
 assert Path(omnirsi.__file__).resolve().parent.parent.name != "src", (
     "This check requires an installed package"
@@ -17,6 +22,44 @@ assert (
 assert repository_pack("vllm_rlt")["id"] == "vllm_rlt"
 assert search_knowledge(repo="vllm_omni", backend="ascend")
 assert all(not item["verification"]["locally_verified"] for item in records)
+assert files("omnirsi").joinpath("data", "knowledge_packs", "README.md").is_file()
+for tier, count in (("dependency", 6), ("peer", 5)):
+    imported = search_knowledge(tier=tier, limit=100)
+    assert len(imported) >= count, f"Missing installed {tier} records"
+    assert all(item["tier"] == tier for item in imported)
+package = files("omnirsi")
+library = package.joinpath("data", "skill_library")
+manifest = json.loads(library.joinpath("source-manifest.json").read_text(encoding="utf-8"))
+assert len(manifest["sources"]) == 5
+for source in manifest["sources"]:
+    slug = source["skill"]
+    repo = slug.replace("-", "_")
+    assert repository_pack(repo)["id"] == repo
+    imported = [
+        item
+        for item in search_knowledge(repo=repo, backend="cpu", limit=100)
+        if "skill_documents" in item
+    ]
+    assert len(imported) == 3, f"Missing indexed knowledge for {repo}"
+    for language in ("en", "zh-CN"):
+        assert library.joinpath(language, slug, "SKILL.md").is_file()
+        assert library.joinpath(language, slug, "LICENSE").is_file()
+    for record in imported:
+        for reference in record["skill_documents"].values():
+            assert package.joinpath(*reference.split("/")).is_file(), reference
+    output = io.StringIO()
+    with contextlib.redirect_stdout(output):
+        assert main(["context", imported[0]["id"], "--repo-type", repo, "--backend", "cpu"]) == 0
+    assert '"skill_documents"' in output.getvalue()
+    assert '"locally_verified": false' in output.getvalue()
+for language in ("en", "zh-CN"):
+    assert library.joinpath(language, "inference-engine-research", "SKILL.md").is_file()
+    helper = library.joinpath(language, "strata", "scripts", "summarize_trials.py")
+    assert helper.is_file()
+    with as_file(helper) as path:
+        compile(path.read_text(encoding="utf-8"), str(path), "exec")
+inference_modules = {"torch", "vllm", "sglang", "sglang_omni", "vllm_omni", "transformers"}
+assert not inference_modules & sys.modules.keys()
 ascend_image = search_knowledge(
     "Qwen-Image-2.1", repo="vllm_omni", backend="ascend", scenario="diffusion.image_generation"
 )

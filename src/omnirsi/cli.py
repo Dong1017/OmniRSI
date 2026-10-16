@@ -42,6 +42,7 @@ def _context(records: list[dict]) -> str:
                 f"## {record['title']}",
                 f"ID: `{record['id']}` · Status: `{record['status']}` · "
                 f"Backend: `{record['backend']}`",
+                f"Tier: `{record.get('tier', 'contribution')}` · Source repo: `{record['repo']}`",
                 "",
                 record["summary"],
                 "",
@@ -54,6 +55,8 @@ def _context(records: list[dict]) -> str:
             for source in record["sources"]
         )
         boundaries = {key: record.get(key) for key in ("applicability", "verification", "claims")}
+        if record.get("skill_documents"):
+            boundaries["skill_documents"] = record["skill_documents"]
         lines.extend(
             [
                 "",
@@ -63,7 +66,7 @@ def _context(records: list[dict]) -> str:
                 "```",
             ]
         )
-        for field in ("recommendations", "validation_plan", "limitations"):
+        for field in ("downstream_impact", "recommendations", "validation_plan", "limitations"):
             if record.get(field):
                 lines.extend(["", field.replace("_", " ").title() + ":"])
                 lines.extend(f"- {item}" for item in record[field])
@@ -101,6 +104,7 @@ def main(argv: list[str] | None = None) -> int:
                 records = search_knowledge(
                     args.query,
                     repo=args.repo_type,
+                    tier=args.tier,
                     backend=args.backend,
                     scenario=args.scenario,
                     limit=args.limit,
@@ -117,6 +121,7 @@ def main(argv: list[str] | None = None) -> int:
             records = search_knowledge(
                 args.query,
                 repo=args.repo_type,
+                tier=args.tier,
                 backend=args.backend,
                 scenario=args.scenario,
                 limit=args.limit,

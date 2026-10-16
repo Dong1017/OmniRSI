@@ -159,7 +159,10 @@ campaigns out of the common AB/BA scheduler, process cleanup and evaluator.
 | [Quickstart](docs/quickstart.md) | Installation, real A/B experiments, and reports |
 | [Qwen B300](docs/qwen-image-2.1-turbo-b300.md) | Reproduction, profiling, optimization ledger and exact image checks |
 | [Qwen Ascend](docs/qwen-image-2.1-turbo-ascend.md) | NPU results, rejected rounds and verification scope |
-| [Knowledge base](src/omnirsi/data/repo_packs/vllm_omni/knowledge/README.md) | Tuning methods, sources, and applicability |
+| [Knowledge base](src/omnirsi/data/knowledge_packs/README.md) | Three learning tiers: contribution, dependency impact and peer techniques |
+| [Daily learning prompt](docs/daily-learning-prompt.md) | 06:00 Asia/Shanghai L2C + performance workflow and prerequisites |
+| [Five-engine knowledge library (English / 中文)](src/omnirsi/data/skill_library/README.md) | Strata, vLLM, SGLang and both Omni engines: skills, search spaces, sources and CLI retrieval |
+| [vLLM-Omni experience records](src/omnirsi/data/repo_packs/vllm_omni/knowledge/README.md) | Backend-scoped tuning methods, sources, and applicability |
 | [Contributor guide](docs/contributing.md) | Development workflow, evidence contracts, and CI |
 
 **Build with us.** Bring a bottleneck, a reproducible optimization, or a tuning lesson. [Open an issue →](https://github.com/ThinkFlowLab/OmniRSI/issues) Use `git commit -s` for contributions.

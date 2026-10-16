@@ -22,7 +22,7 @@ where = ["src"]
 namespaces = false
 
 [tool.setuptools.package-data]
-omnirsi = ["data/**/*.json", "data/**/*.md"]
+omnirsi = ["data/**/*.json", "data/**/*.md", "data/**/LICENSE", "data/**/scripts/*.py"]
 
 [project.optional-dependencies]
 skills = ["PyYAML>=6.0"]
