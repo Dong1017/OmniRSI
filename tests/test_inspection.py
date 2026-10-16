@@ -1,7 +1,10 @@
 """Inspection facts must not become accelerator compatibility claims."""
 
 import json
+import sys
 import unittest
+from importlib import metadata
+from pathlib import Path
 from unittest.mock import patch
 
 from omnirsi.inspection import inspect_environment
@@ -42,6 +45,43 @@ class InspectionTests(unittest.TestCase):
         missing = self.inspect_cuda("0, GPU-A, NVIDIA H200, 999.0\n", ids=("8",))
         self.assertFalse(missing["device"]["selection_verified"])
         self.assertEqual(missing["device"]["status"], "unavailable")
+
+
+class PythonInspectionTests(unittest.TestCase):
+    def test_real_python_reports_requested_versions(self):
+        result = inspect_environment(
+            str(Path(__file__).resolve().parents[1]),
+            "vllm_omni",
+            "cpu",
+            python=sys.executable,
+        )
+        probe = result["target_python"]
+        self.assertEqual(probe["returncode"], 0, probe["stderr"])
+        self.assertNotIn("parse_error", probe)
+        environment = probe["environment"]
+        self.assertEqual(environment["python"], sys.version)
+        names = (
+            "torch",
+            "vllm",
+            "vllm-omni",
+            "vllm-afd-plugin",
+            "vllm-rlt",
+            "torch-npu",
+            "nvidia-nccl-cu12",
+            "nvidia-nccl-cu13",
+            "nvidia-cuda-runtime-cu12",
+            "nvidia-cuda-runtime-cu13",
+        )
+        self.assertEqual(set(environment["packages"]), set(names))
+        for name in names:
+            with self.subTest(package=name):
+                try:
+                    expected = metadata.version(name)
+                except metadata.PackageNotFoundError:
+                    expected = None
+                self.assertEqual(environment["packages"][name], expected)
+        self.assertEqual(result["device"]["status"], "available")
+        self.assertEqual(result["compatibility"], "unverified")
 
 
 if __name__ == "__main__":
