@@ -41,6 +41,17 @@ actual local system. Exactly two primary matrices remain. Green coverage means
 candidate intelligence with source support, not measured gains or completed A/B
 validation. The earlier [Phase 1 report](PHASE1_REPORT.md) is historical.
 
+Reviewed paper intelligence extends [simulation calibration](skills/calibrate-serving-simulation/SKILL.md),
+[serving-state decisions](skills/assess-serving-preemption/SKILL.md),
+[training memory](skills/plan-activation-residency/SKILL.md),
+[attention diagnosis](skills/diagnose-attention-bottlenecks/SKILL.md) and
+[skill/search methodology](skills/npu-skill-factory/SKILL.md). Exact paper
+versions, readsets, mechanism comparisons and cases remain linked through the two
+matrices. On 2026-10-16 the inventory is **43 branch-added candidates + 5 inherited
+skills = 48 directories**. This is a content-integration count, not an efficacy
+result. The earlier six-paper foundation archive remains an unavailable input;
+new Magpie coordination evidence is still pending.
+
 <a id="results"></a>
 
 ## 📊 From profiling to a 30.60% latency reduction

@@ -32,6 +32,12 @@ current artifacts. Candidate coverage and empirical validation stay separate.
 Paper versions/readsets remain distinct from implementation pins; a shared
 lineage or a linked paper is not independent corroboration.
 
+Reviewed paper comparisons, readsets and cases live under their owning skill's
+`references/` tree; distinct workflows receive their own candidate entrypoints.
+Paper knowledge does not supply repository-only schema fields such as a Git SHA,
+so it remains linked Markdown rather than a parallel registry or fabricated
+`repo_packs` record. The CLI consumption contract is unchanged.
+
 ## Module responsibilities and dependencies
 
 ![Implemented modules and their dependencies](assets/modular-components-en.svg)

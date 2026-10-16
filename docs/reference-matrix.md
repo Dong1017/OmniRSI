@@ -3,7 +3,7 @@
 **Branch:** `opus/meta-skill-bootstrap` | **Integration date:** 2026-10-16 | **Comparison anchor:** `d96ff8d3`
 
 Paper source inspection below is carried from Dot's 2026-10-15 readsets and the
-owner's scoped review, not repeated full-paper extraction. The current working
+owner's scoped review, not repeated full-paper extraction. The 2026-10-16
 integration adds links and reconciles candidate guidance; packaging checks and
 publication status are reported separately. No paper result is a local measurement.
 
