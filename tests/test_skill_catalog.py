@@ -87,10 +87,12 @@ def test_explicit_selection_and_resource_resolution(tmp_path, capsys):
 
 def test_instruction_symlink_escape_rejected(tmp_path):
     # Regression: the skill directory stays inside the selected root, but
-    # SKILL.md symlinks to an outside file.
+    # SKILL.md symlinks to an outside file. The outside file must not be
+    # named SKILL.md under a root-level directory, or the listing glob
+    # would match it as its own skill.
     directory = tmp_path / "selected"
     directory.mkdir()
-    outside = tmp_path / "outside" / "SKILL.md"
+    outside = tmp_path / "outside" / "stolen.md"
     outside.parent.mkdir()
     outside.write_text(
         "---\nname: selected\ndescription: test\n---\n# Outside body\n",
