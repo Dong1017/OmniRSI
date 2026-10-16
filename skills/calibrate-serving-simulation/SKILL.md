@@ -1,11 +1,6 @@
 ---
 name: calibrate-serving-simulation
 description: Build an evidence-gated serving-configuration shortlist from a profiled simulator while separating empirical predictions from physical bounds and near-capacity queueing risk.
-status: candidate
-metadata:
-  status: candidate
-  empirical_validation: not_run
-  source_pack: A
 ---
 
 # Calibrate a serving-simulation shortlist

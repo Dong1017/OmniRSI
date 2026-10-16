@@ -1,18 +1,8 @@
 ---
 name: ascend-graph-mode
-description: >
-  How to configure, debug, and optimize Ascend NPU graph mode (npugraph_ex /
-  aclgraph): capture-and-replay mechanics, FX pass configuration, memory reuse,
-  static kernel compilation, communication-in-graph, forced-eager fallback, and
-  the document-first lookup discipline for CANN configuration options.
-  Source-grounded from awesome-ascend-skills torch-npugraph-ex-knowledge skill.
-tags:
-  - ascend
-  - npu
-  - graph-mode
-  - aclgraph
-  - npugraph-ex
-status: candidate
+description: 'How to configure, debug, and optimize Ascend NPU graph mode (npugraph_ex / aclgraph): capture-and-replay mechanics, FX pass configuration, memory reuse, static kernel compilation, communication-in-graph, forced-eager fallback, and the document-first lookup discipline for CANN configuration options. Source-grounded from awesome-ascend-skills torch-npugraph-ex-knowledge skill.
+
+  '
 ---
 
 # Ascend Graph Mode (npugraph_ex / ACLGraph)

@@ -1,12 +1,8 @@
 ---
 name: host-memory-management
-description: >
-  Configure host memory for inference serving: pinned memory for fast H2D
-  transfers, async transfer streams, Python GIL avoidance patterns, and
-  NUMA-aware allocation. Complements host-overhead-profiling (detect the
-  bottleneck) and host-overhead-optimization (optimize Python execution).
-tags: [host, cpu, memory, pinned-memory, h2d, gil, numa, inference]
-status: candidate
+description: 'Configure host memory for inference serving: pinned memory for fast H2D transfers, async transfer streams, Python GIL avoidance patterns, and NUMA-aware allocation. Complements host-overhead-profiling (detect the bottleneck) and host-overhead-optimization (optimize Python execution).
+
+  '
 ---
 
 # Host Memory Management

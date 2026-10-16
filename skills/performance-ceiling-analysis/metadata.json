@@ -1,6 +1,5 @@
 {
   "schema_version": 1,
-  "name": "performance-ceiling-analysis",
   "status": "candidate",
   "sources": [
     {
@@ -15,7 +14,9 @@
         ".claude/skills/exec-env-check/SKILL.md",
         ".claude/skills/exec-remote-slurm/SKILL.md",
         ".claude/agents/perf-profiling-specialist.md"
-      ]
+      ],
+      "type": "git",
+      "revision_precision": "prefix"
     },
     {
       "url": "https://github.com/hahnyuan/LLM-Viewer",
@@ -25,7 +26,9 @@
         "model_analyzer.py",
         "hardwares/hardware_params.py",
         "configs/DiT.py"
-      ]
+      ],
+      "type": "git",
+      "revision_precision": "prefix"
     },
     {
       "url": "https://github.com/ebugger/Empirical-Roofline-Toolkit",
@@ -35,7 +38,9 @@
         "Empirical_Roofline_Tool-1.1.0/Drivers/driver1.c",
         "Empirical_Roofline_Tool-1.1.0/Kernels/kernel1.c",
         "Empirical_Roofline_Tool-1.1.0/Scripts/roofline.py"
-      ]
+      ],
+      "type": "git",
+      "revision_precision": "prefix"
     }
   ],
   "verification": {
@@ -47,5 +52,41 @@
     "scope": "inference serving systems (LLM, diffusion, audio)",
     "hardware": "any; CUDA examples from sources, NPU adaptation required",
     "prerequisites": "profiler access (nsys/ncu or NPU equivalent), or willingness to work at L1 analytical only"
-  }
+  },
+  "tags": [
+    "performance",
+    "roofline",
+    "profiling",
+    "bottleneck",
+    "inference"
+  ],
+  "profile": "local-skill-v1",
+  "kind": "skill",
+  "origin": [
+    "external"
+  ],
+  "empirical_validation": "not_run",
+  "limitations": [
+    "Source-derived candidate; no local efficacy validation."
+  ],
+  "provenance_readsets": [
+    "references/papers-20261015/cases/decision-cases.md",
+    "references/papers-20261015/govern-optimization-experiments/procedure.md",
+    "references/papers-20261015/govern-optimization-experiments/references/source-notes.md",
+    "references/papers-20261015/INTEGRATION_NOTES.md",
+    "references/papers-20261015/knowledge/bounds-predictions-and-decisions.md",
+    "references/papers-20261015/MECHANISMS.md",
+    "references/papers-20261015/README.md",
+    "references/papers-20261015/READSET.md",
+    "references/papers-20261015/redirect-cross-layer-optimization/procedure.md",
+    "references/papers-20261015/redirect-cross-layer-optimization/references/source-notes.md",
+    "references/papers-20261015/references/agentic-kernel.md",
+    "references/papers-20261015/references/flashvector.md",
+    "references/papers-20261015/references/inferencebench.md",
+    "references/papers-20261015/references/prior-coverage.md",
+    "references/papers-20261015/references/vidur.md",
+    "references/papers-20261015/STATIC_CHECKS.md"
+  ],
+  "references": [],
+  "consumption_mode": "checkout"
 }

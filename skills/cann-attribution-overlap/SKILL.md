@@ -1,18 +1,8 @@
 ---
 name: cann-attribution-overlap
-description: >
-  Attribute NPU trace kernels to model source and plan bounded multistream
-  overlap: select a representative step, map kernels to source owners via
-  code_ref, build the module/operator dependency DAG (data, state, event,
-  collective-order edges), classify serial/candidate/pending groups, choose
-  minimal-first overlap with an explicit execution-mode synchronization
-  contract, and accept only through correctness-first checks. Keeps the
-  !302 import lineage distinct from later revisions, carries known
-  formula/threshold conflicts as unresolved, and qualifies memory evidence
-  by domain (device HBM/UB counters are not host RAM). Planning procedure
-  only — no formula automation for disputed definitions.
-tags: [cann, npu, attribution, dependency-dag, multistream, overlap, trace]
-status: candidate
+description: 'Attribute NPU trace kernels to model source and plan bounded multistream overlap: select a representative step, map kernels to source owners via code_ref, build the module/operator dependency DAG (data, state, event, collective-order edges), classify serial/candidate/pending groups, choose minimal-first overlap with an explicit execution-mode synchronization contract, and accept only through correctness-first checks. Keeps the !302 import lineage distinct from later revisions, carries known formula/threshold conflicts as unresolved, and qualifies memory evidence by domain (device HBM/UB counters are not host RAM). Planning procedure only — no formula automation for disputed definitions.
+
+  '
 ---
 
 # CANN Attribution and Overlap Planning

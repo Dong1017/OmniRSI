@@ -1,13 +1,8 @@
 ---
 name: dcp-async-save-performance
-description: >
-  Diagnose training-visible checkpoint pauses using PyTorch Distributed
-  Checkpoint asynchronous saving and staging. Separate snapshot capture,
-  staging completion, upload completion and backend durability; bound
-  in-flight requests and cached CPU buffers before proposing overlap.
-  Use for DCP save performance, not distributed recovery validation.
-tags: [checkpoint, training, staging, host-memory, storage, pytorch]
-status: candidate
+description: 'Diagnose training-visible checkpoint pauses using PyTorch Distributed Checkpoint asynchronous saving and staging. Separate snapshot capture, staging completion, upload completion and backend durability; bound in-flight requests and cached CPU buffers before proposing overlap. Use for DCP save performance, not distributed recovery validation.
+
+  '
 ---
 
 # DCP Asynchronous Save Performance

@@ -1,17 +1,8 @@
 ---
 name: performance-ceiling-analysis
-description: >
-  Estimate optimization headroom before modifying an inference system.
-  Produces a three-level ceiling model (analytical, empirical component,
-  end-to-end) and a prioritized measurement plan. Use when asked whether
-  a target speedup is worth pursuing, or to identify the binding bottleneck.
-tags:
-  - performance
-  - roofline
-  - profiling
-  - bottleneck
-  - inference
-status: candidate
+description: 'Estimate optimization headroom before modifying an inference system. Produces a three-level ceiling model (analytical, empirical component, end-to-end) and a prioritized measurement plan. Use when asked whether a target speedup is worth pursuing, or to identify the binding bottleneck.
+
+  '
 ---
 
 # Performance Ceiling Analysis

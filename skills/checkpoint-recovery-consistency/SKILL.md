@@ -1,12 +1,8 @@
 ---
 name: checkpoint-recovery-consistency
-description: >
-  Assess distributed checkpoint recovery using DLRover shared-memory readiness
-  and step agreement, and NVIDIA Resiliency Extension complete-iteration
-  selection. Distinguish worker, host and replica loss; separate local publish,
-  collective completeness, application-state validity and durable recovery.
-tags: [checkpoint, recovery, distributed, shared-memory, replication]
-status: candidate
+description: 'Assess distributed checkpoint recovery using DLRover shared-memory readiness and step agreement, and NVIDIA Resiliency Extension complete-iteration selection. Distinguish worker, host and replica loss; separate local publish, collective completeness, application-state validity and durable recovery.
+
+  '
 ---
 
 # Checkpoint Recovery Consistency

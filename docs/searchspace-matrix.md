@@ -256,3 +256,28 @@ The five wave-8 additions are Dot bundle-mediated code/docs intelligence, not
 paper extraction or measured gains. Their source pins are independent; no
 combined stack compatibility is established. No new SSD, Network or OS-priority
 coverage is claimed; device HBM remains separate from host RAM.
+
+
+## RFC 17: existing main knowledge mapped to resources
+
+These are locally inspected **existing imported records**, not new skills or
+new measured effectiveness. The [Reference Matrix reconciliation](reference-matrix.md#rfc-17-reconciliation-inspected-main-corpus)
+links their exact IDs/pins/readsets and the [ownership contract](knowledge-base.md).
+The five resource rows above remain authoritative; no new coverage is credited
+for translation, filename, package installation or an unexamined trace.
+
+| Resource | Stage / named subtargets | Existing canonical support | Boundary |
+|---|---|---|---|
+| Accelerator | Diagnose/Configure/Verify: attention-generation dispatch, paged-decode planning, compiler guards, KV strategies, fusion resource limits | [Dependency records](../src/omnirsi/data/knowledge_packs/README.md); FlashAttention, FlashInfer, PyTorch, Transformers, Triton | Source guidance only; selected backend, pointer lifetime, precision and resource envelope require target validation |
+| Accelerator | Configure/Optimize/Verify: residual reuse, KV compression, sequence partition and pipeline freshness | [Peer records](../src/omnirsi/data/knowledge_packs/README.md); Cache-DiT, LMDeploy, xDiT | Approximation/capacity gains do not establish latency or quality gains; preserved LMDeploy regression |
+| RAM / Host | Diagnose/Configure: group offload staging, CPU expert work, host prefix residency | Diffusers dependency card; [Strata tuning](../src/omnirsi/data/repo_packs/strata/knowledge/common/llm/controlled-execution-tuning.json); SGLang HiCache peer card | Host budget and transfer/recompute cost remain distinct from device HBM |
+| SSD / Storage | Configure/Verify: prefix L3 sharing, prefetch/layout/eviction and hit-state comparisons | [SGLang HiCache](../src/omnirsi/data/knowledge_packs/peer/sglang/cuda/llm/hierarchical-prefix-cache.json) | Storage backend qualification pending; larger private host cache is not cross-instance sharing |
+| Communication / Network | Diagnose/Configure/Verify: disaggregated KV transfer, topology-dependent sequence parallelism | [TRT-LLM disaggregation](../src/omnirsi/data/knowledge_packs/peer/tensorrt_llm/cuda/llm/prefill-decode-disaggregation.json); [xDiT](../src/omnirsi/data/knowledge_packs/peer/xdit/cuda/diffusion/parallelism-freshness-and-topology.json) | Interconnect/layout/queue cost, backpressure and recovery; H2D/IPC are not counted here |
+| OS / System | No new OS-control mechanism credited | Existing OS-specific rows retained | Process/stage ownership and installed access are not scheduler-priority or cgroup evidence |
+| Accelerator / Host | Observe/Verify: actual active batch, admission/drain scope and state lifetime | [Shared internal case](../skills/inference-optimization-casebook/cases/admission-drain-occupancy.md); [main audio guidance](../src/omnirsi/data/repo_packs/vllm_omni/knowledge/cuda/audio/concurrency-scaling-state-and-overlap.json) | Recorded observation versus interpretation; frozen evidence preserved, no new service gain |
+
+The 15 contribution abstracts for Strata, vLLM, SGLang, SGLang-Omni and vLLM-Omni
+supply scoped architecture, tuning and validation navigation, including their
+bilingual procedures. They do not qualify every backend listed by their upstream
+projects. Main-only contribution, dependency and peer material remains at its
+original owners rather than duplicated under local skills.

@@ -1,11 +1,6 @@
 ---
 name: evaluate-elastic-serving-placement
 description: Compare migrating an LLM request between model replicas with changing its sequence-parallel execution group, including state-copy, reservation, recomputation, interruption, and priority costs. Use for cross-instance memory imbalance or highly variable long-context serving, not connector wiring or live scaling.
-status: candidate
-metadata:
-  status: candidate
-  empirical_validation: not_run
-  source_pins: llumnix-2406.03243v1-and-loongserve-2404.09526v2
 ---
 
 # Evaluate elastic serving placement

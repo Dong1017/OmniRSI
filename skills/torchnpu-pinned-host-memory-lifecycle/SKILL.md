@@ -1,10 +1,6 @@
 ---
 name: torchnpu-pinned-host-memory-lifecycle
 description: Diagnose TorchNPU pinned-host RAM allocation, asynchronous-copy lifetime, reuse and cache controls, then propose version-gated host-allocator changes. Use for pin_memory pressure or host allocation stalls, not device HBM or network transport.
-tags: [ascend, torchnpu, host-memory, pinned-memory, lifecycle]
-status: candidate
-metadata:
-  empirical_validation: "not_run"
 ---
 
 # TorchNPU pinned-host memory lifecycle

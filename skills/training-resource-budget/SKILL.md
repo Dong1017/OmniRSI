@@ -1,12 +1,8 @@
 ---
 name: training-resource-budget
-description: >
-  Choose training offload and resource-budget changes using pinned DeepSpeed
-  configuration, attributed expert diagnosis and a historical MindSpeed case.
-  Balance accelerator capacity, CPU work, pinned RAM and local storage; keep
-  host/device transfer exposure distinct from collective network bottlenecks.
-tags: [training, offload, resource-budget, memory, cpu, numa]
-status: candidate
+description: 'Choose training offload and resource-budget changes using pinned DeepSpeed configuration, attributed expert diagnosis and a historical MindSpeed case. Balance accelerator capacity, CPU work, pinned RAM and local storage; keep host/device transfer exposure distinct from collective network bottlenecks.
+
+  '
 ---
 
 # Training Cross-Resource Budget Decisions

@@ -1,12 +1,8 @@
 ---
 name: training-input-pipeline
-description: >
-  Diagnose training input stalls and choose bounded queue, shard-cache and
-  cache-ownership changes from DALI, Mosaic Streaming and FFCV. Preserve
-  execution-mode gates, sample ordering and per-host memory budgets; separate
-  remote downloads, local storage reads and host/device transfers.
-tags: [training, input-pipeline, prefetch, dataset, memory, storage]
-status: candidate
+description: 'Diagnose training input stalls and choose bounded queue, shard-cache and cache-ownership changes from DALI, Mosaic Streaming and FFCV. Preserve execution-mode gates, sample ordering and per-host memory budgets; separate remote downloads, local storage reads and host/device transfers.
+
+  '
 ---
 
 # Training Input Pipeline Decisions

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 from typing import BinaryIO
@@ -46,6 +47,20 @@ def _metadata(directory: Path) -> dict:
             raise ValueError(f"Skill requires {key}: {directory.name}")
     if record["name"] != directory.name:
         raise ValueError(f"Skill name disagrees with directory: {directory.name}")
+    sidecar = directory / "metadata.json"
+    if sidecar.is_file():
+        metadata = json.loads(sidecar.read_text(encoding="utf-8"))
+        if not isinstance(metadata, dict):
+            raise ValueError(f"Skill metadata must be a mapping: {directory.name}")
+        for key in record.keys() & metadata.keys():
+            if record[key] != metadata[key]:
+                raise ValueError(f"Conflicting skill metadata field {key}: {directory.name}")
+        if metadata.get("profile") == "local-skill-v1":
+            if any(key in metadata for key in ("name", "description")):
+                raise ValueError("Local skill name and description belong in SKILL.md")
+            if set(record) != {"name", "description"}:
+                raise ValueError("Local skill structured fields belong in metadata.json")
+        record.update(metadata)
     if "status" in record and not isinstance(record["status"], str):
         raise ValueError(f"Skill status must be a string: {directory.name}")
     if "tags" in record and (
@@ -95,4 +110,20 @@ def skill_resource(root: Path, name: str, resource: str) -> Path:
         raise ValueError("Resource must be inside the selected skill; use show for instructions")
     if not path.is_file():
         raise ValueError(f"Unknown skill resource: {resource}")
+    return path
+
+
+def skill_reference(root: Path, name: str, reference: str) -> Path:
+    """Resolve a declared checkout reference without escaping the skills root."""
+    directory = _directory(root, name)
+    metadata = json.loads((directory / "metadata.json").read_text(encoding="utf-8"))
+    if reference not in metadata.get("references", []):
+        raise ValueError(f"Undeclared skill reference: {reference}")
+    if "\\" in reference or Path(reference).is_absolute():
+        raise ValueError("Reference must use a relative POSIX path")
+    path = (directory / reference).resolve()
+    if not path.is_relative_to(root.resolve()):
+        raise ValueError("Reference must stay inside the skills root")
+    if not path.is_file():
+        raise ValueError(f"Missing skill reference: {reference}")
     return path

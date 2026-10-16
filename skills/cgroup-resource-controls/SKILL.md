@@ -1,17 +1,8 @@
 ---
 name: cgroup-resource-controls
-description: >
-  Diagnose and configure cgroup v2 resource controls for serving/training
-  workloads: distinguish quota stalls from sibling contention (cpu.max vs
-  cpu.weight, cpu.stat vs cpu.stat.local), audit requested-versus-effective
-  cpuset with migration-cost budgeting, triage memory pressure with
-  PSI plus event deltas (high/max/low semantics), and gate io.max caps on
-  confirmed block-backed traffic. Includes hierarchy/delegation/permission
-  preflight and a rollback contract. Extra resource allocation is treated
-  as a capacity spend, never as an efficiency improvement. Control-plane
-  procedures only — applying settings requires separate authorization.
-tags: [cgroup, cgroupv2, cpu, cpuset, memory, io, resource-controls, os]
-status: candidate
+description: 'Diagnose and configure cgroup v2 resource controls for serving/training workloads: distinguish quota stalls from sibling contention (cpu.max vs cpu.weight, cpu.stat vs cpu.stat.local), audit requested-versus-effective cpuset with migration-cost budgeting, triage memory pressure with PSI plus event deltas (high/max/low semantics), and gate io.max caps on confirmed block-backed traffic. Includes hierarchy/delegation/permission preflight and a rollback contract. Extra resource allocation is treated as a capacity spend, never as an efficiency improvement. Control-plane procedures only — applying settings requires separate authorization.
+
+  '
 ---
 
 # Cgroup v2 Resource Controls

@@ -1,18 +1,8 @@
 ---
 name: npu-skill-factory
-description: >
-  Design and operation of the OmniRSI NPU skill factory: artifact lifecycle,
-  skill evaluation contract, corpus selection, hide-and-re-distill procedure,
-  and skill evolution cycle. Use when deciding where new skill artifacts
-  belong, how to distill a candidate skill, or how to run the No-Skill vs
-  Human-Skill vs Distilled-Skill comparison.
-tags:
-  - skill-factory
-  - distillation
-  - evaluation
-  - npu
-  - ascend
-status: candidate
+description: 'Design and operation of the OmniRSI NPU skill factory: artifact lifecycle, skill evaluation contract, corpus selection, hide-and-re-distill procedure, and skill evolution cycle. Use when deciding where new skill artifacts belong, how to distill a candidate skill, or how to run the No-Skill vs Human-Skill vs Distilled-Skill comparison.
+
+  '
 ---
 
 # NPU Skill Factory Design

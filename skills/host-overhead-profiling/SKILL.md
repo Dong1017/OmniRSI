@@ -1,12 +1,8 @@
 ---
 name: host-overhead-profiling
-description: >
-  Detect and diagnose CPU/host overhead in inference serving from nsys traces.
-  Answers: is host overhead the bottleneck? What specific work is causing it?
-  Covers GPU idle ratio, host-prep exposed ratio, NVTX breakdown, inter-kernel
-  gap analysis, and multi-rank straggler detection.
-tags: [host, cpu, profiling, nsys, inference]
-status: candidate
+description: 'Detect and diagnose CPU/host overhead in inference serving from nsys traces. Answers: is host overhead the bottleneck? What specific work is causing it? Covers GPU idle ratio, host-prep exposed ratio, NVTX breakdown, inter-kernel gap analysis, and multi-rank straggler detection.
+
+  '
 ---
 
 # Host Overhead Profiling

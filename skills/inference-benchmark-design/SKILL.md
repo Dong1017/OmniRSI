@@ -1,17 +1,8 @@
 ---
 name: inference-benchmark-design
-description: >
-  How to design a benchmark for inference serving that produces trustworthy,
-  actionable results. Covers workload regime selection, SLO-aware metrics,
-  trace replay, multi-seed evaluation, inconclusive handling, and the
-  common mistakes that invalidate benchmark results. Drawn from vllm-evolve
-  and OmniRSI's evidence framework.
-tags:
-  - benchmark
-  - evaluation
-  - serving
-  - measurement
-status: candidate
+description: 'How to design a benchmark for inference serving that produces trustworthy, actionable results. Covers workload regime selection, SLO-aware metrics, trace replay, multi-seed evaluation, inconclusive handling, and the common mistakes that invalidate benchmark results. Drawn from vllm-evolve and OmniRSI''s evidence framework.
+
+  '
 ---
 
 # Inference Benchmark Design
@@ -168,3 +159,7 @@ evidence/<campaign-id>/
 A run without a frozen RunSpec is INCONCLUSIVE regardless of the metric values.
 A run whose validator was modified after the plan was frozen is INCONCLUSIVE.
 Source: OmniRSI AGENTS.md and rsi-evidence skill @ 4c8e1285.
+
+## Scoped internal experience
+
+Read the single authoritative [admission/drain occupancy case](../inference-optimization-casebook/cases/admission-drain-occupancy.md) when interpreting finite service cohorts. It separates recorded observation, action and interpretation; phase-selected occupancy is not end-to-end gain. The original frozen evidence remains linked, not copied. This shared reference requires the complete skills checkout; standalone folder export is not supported.

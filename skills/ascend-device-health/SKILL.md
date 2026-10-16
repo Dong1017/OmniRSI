@@ -1,13 +1,8 @@
 ---
 name: ascend-device-health
-description: >
-  Pre-run health checks and recovery procedures for Ascend NPU devices on
-  shared machines: card-group topology validation, Health status checks,
-  SIGKILL residual-state detection, 4-step smoke verification, process
-  occupancy check, and DVFS warmup discipline. Use before any experiment
-  that requires a trusted performance baseline.
-tags: [ascend, npu, device-health, topology, shared-machine, os-system]
-status: candidate
+description: 'Pre-run health checks and recovery procedures for Ascend NPU devices on shared machines: card-group topology validation, Health status checks, SIGKILL residual-state detection, 4-step smoke verification, process occupancy check, and DVFS warmup discipline. Use before any experiment that requires a trusted performance baseline.
+
+  '
 ---
 
 # Ascend Device Health and Pre-Run Verification

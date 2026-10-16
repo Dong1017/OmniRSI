@@ -1,17 +1,8 @@
 ---
 name: storage-io-measurement
-description: >
-  Measure storage I/O for LLM/diffusion serving without conflating device
-  metrics with application outcomes: match the fio workload to the observed
-  loader signature, validate requested-versus-achieved I/O depth, keep a
-  cache-state ledger (warm/cold/unknown with method), classify startup vs
-  steady-state runs, read outputs with unit and latency-provenance awareness,
-  attribute traffic per device (iostat) and per process (pidstat), and gate
-  any "storage bottleneck" claim through a saturation-evidence check plus a
-  separate application-outcome layer. Measurement methodology only — running
-  benchmarks or manipulating caches requires separate authorization.
-tags: [storage, fio, iostat, pidstat, measurement, io, evidence]
-status: candidate
+description: 'Measure storage I/O for LLM/diffusion serving without conflating device metrics with application outcomes: match the fio workload to the observed loader signature, validate requested-versus-achieved I/O depth, keep a cache-state ledger (warm/cold/unknown with method), classify startup vs steady-state runs, read outputs with unit and latency-provenance awareness, attribute traffic per device (iostat) and per process (pidstat), and gate any "storage bottleneck" claim through a saturation-evidence check plus a separate application-outcome layer. Measurement methodology only — running benchmarks or manipulating caches requires separate authorization.
+
+  '
 ---
 
 # Storage I/O Measurement

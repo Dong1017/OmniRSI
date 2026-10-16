@@ -1,10 +1,6 @@
 ---
 name: assess-split-backward-schedule
 description: Evaluate memory-capped split-backward and V-shaped pipeline scheduling proposals, preserving synchronous update, global-batch and optimizer-validation semantics.
-status: candidate
-metadata:
-  status: candidate
-  empirical_validation: not_run
 ---
 
 # Assess a split-backward schedule

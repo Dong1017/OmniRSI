@@ -1,11 +1,6 @@
 ---
 name: assess-serving-preemption
 description: Assess whether LLM serving queue delays justify token-boundary priority preemption, accounting for suspended KV, host swapping or recomputation, and long-request service guarantees. Use for admission-versus-service-order diagnosis, not current scheduler implementation or tenant-fairness certification.
-status: candidate
-metadata:
-  status: candidate
-  empirical_validation: not_run
-  source_pins: orca-osdi22-and-fastserve-2305.05920v3
 ---
 
 # Assess serving preemption

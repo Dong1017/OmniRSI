@@ -115,14 +115,16 @@ omnirsi skills show weight-loading-optimization
 omnirsi skills resource <skill-name> <relative-resource-path>
 ```
 
-Listing reads frontmatter only. `show` explicitly selects one instruction body
+Listing reads frontmatter and local sidecar metadata only. `show` explicitly selects one instruction body
 and lists resource filenames; `resource` resolves one path for your file reader
 without loading its contents or executing it. Skills are local checkout assets,
 not bundled wheel data. There is no installation, client configuration, automatic
 selection or update. Reading instructions does not authorize their commands.
-This generated catalog projects frontmatter; the Reference and SearchSpace
+This generated catalog projects metadata; the Reference and SearchSpace
 matrices remain the two authoritative matrices. Offline integration checks do
-not validate candidate effectiveness.
+not validate candidate effectiveness. See the [knowledge-base contract](docs/knowledge-base.md)
+for field ownership, legacy compatibility, shared checkout references and the
+separate read/Collect and writable-store follow-ups to RFC #17.
 
 
 <a id="architecture"></a>

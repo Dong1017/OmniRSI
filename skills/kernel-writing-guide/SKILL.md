@@ -1,13 +1,8 @@
 ---
 name: kernel-writing-guide
-description: >
-  Decision guide for writing custom inference kernels: when to write one,
-  which framework to choose (Triton, CuTe DSL, CUDA C++, AscendC/TileIR),
-  universal correctness rules that apply regardless of framework, and the
-  verify-before-benchmark workflow. Use before starting any kernel
-  implementation to avoid common correctness and performance pitfalls.
-tags: [kernel, triton, cute, cuda, ascendc, performance, accelerator]
-status: candidate
+description: 'Decision guide for writing custom inference kernels: when to write one, which framework to choose (Triton, CuTe DSL, CUDA C++, AscendC/TileIR), universal correctness rules that apply regardless of framework, and the verify-before-benchmark workflow. Use before starting any kernel implementation to avoid common correctness and performance pitfalls.
+
+  '
 ---
 
 # Kernel Writing Guide

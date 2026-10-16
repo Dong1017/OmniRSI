@@ -1,14 +1,8 @@
 ---
 name: ascend-optimization-casebook
-description: >
-  Casebook of NPU optimization cases for Ascend inference systems: symptom →
-  diagnosis → action → evidence records for memory-bound, compute-bound,
-  communication-exposed, graph-compilation, and AI-CPU-fallback bottleneck
-  classes. Use when a bottleneck has been classified and you need prior art
-  for what to try next. Complement to inference-optimization-casebook (which
-  covers the casebook *pattern*; this carries the actual NPU cases).
-tags: [ascend, npu, optimization, casebook, prior-art]
-status: candidate
+description: 'Casebook of NPU optimization cases for Ascend inference systems: symptom → diagnosis → action → evidence records for memory-bound, compute-bound, communication-exposed, graph-compilation, and AI-CPU-fallback bottleneck classes. Use when a bottleneck has been classified and you need prior art for what to try next. Complement to inference-optimization-casebook (which covers the casebook *pattern*; this carries the actual NPU cases).
+
+  '
 ---
 
 # Ascend NPU Optimization Casebook

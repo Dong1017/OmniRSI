@@ -1,10 +1,6 @@
 ---
 name: audit-vllm-kv-lifetimes
 description: Audit vLLM V1 asynchronous KV load/save completion, block retention, preemption, and receive-failure contracts when requests stall or blocks may be reused too early; requires a concrete connector trace.
-tags: [vllm, kv-cache, lifecycle, correctness]
-status: candidate
-metadata:
-  empirical_validation: "not_run"
 ---
 
 # Audit vLLM KV lifetimes

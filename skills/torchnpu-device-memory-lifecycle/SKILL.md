@@ -1,10 +1,6 @@
 ---
 name: torchnpu-device-memory-lifecycle
 description: Diagnose TorchNPU device-HBM reuse, cross-stream lifetimes, cache retention and fragmentation, then propose version-gated allocator changes. Use for NPU allocator OOM or reuse investigations, not pinned-host RAM or network transport.
-tags: [ascend, torchnpu, device-memory, allocator, lifecycle]
-status: candidate
-metadata:
-  empirical_validation: "not_run"
 ---
 
 # TorchNPU device-memory lifecycle

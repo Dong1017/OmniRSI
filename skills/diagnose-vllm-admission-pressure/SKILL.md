@@ -1,10 +1,6 @@
 ---
 name: diagnose-vllm-admission-pressure
 description: Diagnose vLLM V1 admission stalls and KV-pressure preemption by separating token, input, active-request, cache-allocation, and connector-wait constraints at a pinned scheduler revision.
-tags: [vllm, scheduler, admission, kv-cache]
-status: candidate
-metadata:
-  empirical_validation: "not_run"
 ---
 
 # Diagnose vLLM admission pressure

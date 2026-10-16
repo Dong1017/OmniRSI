@@ -1,18 +1,8 @@
 ---
 name: os-process-placement
-description: >
-  Place and configure inference/training processes at the OS level before
-  measuring or optimizing: check then pin CPU affinity to the
-  accelerator-local NUMA node (taskset/numactl), keep affinity constant
-  across measurement rounds, set thread-count environment variables
-  (OMP_NUM_THREADS, OMP_PROC_BIND, CPU_AFFINITY_CONF) per scenario, run a
-  device-busy preflight (npu-smi/nvidia-smi usages, graceful-then-force PID
-  cleanup), and structure environment checks as ERROR vs WARNING with
-  per-failure remediation. Use before any performance measurement on shared
-  multi-socket or multi-tenant hosts. Does not cover cgroups, cpuset,
-  isolcpus, or scheduler priorities — no source evidence for those.
-tags: [os, numa, cpu-affinity, process-placement, threads, environment, preflight]
-status: candidate
+description: 'Place and configure inference/training processes at the OS level before measuring or optimizing: check then pin CPU affinity to the accelerator-local NUMA node (taskset/numactl), keep affinity constant across measurement rounds, set thread-count environment variables (OMP_NUM_THREADS, OMP_PROC_BIND, CPU_AFFINITY_CONF) per scenario, run a device-busy preflight (npu-smi/nvidia-smi usages, graceful-then-force PID cleanup), and structure environment checks as ERROR vs WARNING with per-failure remediation. Use before any performance measurement on shared multi-socket or multi-tenant hosts. Does not cover cgroups, cpuset, isolcpus, or scheduler priorities — no source evidence for those.
+
+  '
 ---
 
 # OS-Level Process Placement and Runtime Configuration

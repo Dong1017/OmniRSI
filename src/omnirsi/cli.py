@@ -80,7 +80,13 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "skills":
             # 可选依赖只在 skills 命令加载，不影响核心 CLI。
-            from .skill_catalog import get_skill, skill_instructions, skill_records, skill_resource
+            from .skill_catalog import (
+                get_skill,
+                skill_instructions,
+                skill_records,
+                skill_reference,
+                skill_resource,
+            )
 
             if args.skills_action == "list":
                 records = skill_records(args.root)
@@ -94,6 +100,8 @@ def main(argv: list[str] | None = None) -> int:
                 record["instructions"] = skill_instructions(args.root, args.name)
                 record["authority"] = "Reading instructions does not authorize their commands."
                 _print(record)
+            elif args.skills_action == "reference":
+                _print({"path": str(skill_reference(args.root, args.name, args.path))})
             else:
                 _print({"path": str(skill_resource(args.root, args.name, args.path))})
             return 0

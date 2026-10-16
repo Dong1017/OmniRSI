@@ -1,16 +1,8 @@
 ---
 name: kv-tier-management
-description: >
-  Manage runtime KV cache tiers (GPU → CPU RAM → local disk) for LLM serving:
-  decide when KV is stored, retained, prefetched, or evicted; size the
-  concurrency-versus-RAM-pressure trade-off with an explicit in-flight
-  admission dial; order RAM-release levers; and measure with token-level
-  L1/L2 hit rates and prefetch-pressure counters. Use when configuring KV
-  offload for a serving stack. Covers runtime KV offload only — model
-  startup/loading, checkpoint save/restore, and block-device profiling are
-  separate concerns (see weight-loading-optimization).
-tags: [kv-cache, offload, l1-l2-tiering, eviction, prefetch, serving, lmcache]
-status: candidate
+description: 'Manage runtime KV cache tiers (GPU → CPU RAM → local disk) for LLM serving: decide when KV is stored, retained, prefetched, or evicted; size the concurrency-versus-RAM-pressure trade-off with an explicit in-flight admission dial; order RAM-release levers; and measure with token-level L1/L2 hit rates and prefetch-pressure counters. Use when configuring KV offload for a serving stack. Covers runtime KV offload only — model startup/loading, checkpoint save/restore, and block-device profiling are separate concerns (see weight-loading-optimization).
+
+  '
 ---
 
 # KV Cache Tier Management

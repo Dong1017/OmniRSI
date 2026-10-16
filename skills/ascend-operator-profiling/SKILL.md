@@ -1,15 +1,8 @@
 ---
 name: ascend-operator-profiling
-description: >
-  Benchmark a single Ascend NPU operator using msprof op: build, collect with warmup,
-  read the 8 CSV metrics files, derive a bottleneck verdict, and iterate. Use when
-  validating operator performance in isolation before system-level profiling.
-tags: [ascend, npu, operator, profiling, msprof, benchmark]
-status: candidate
-synced-from: https://gitcode.com/cann/cannbot-skills external/cannbot/ops/ops-profiling
-synced-date: '2026-05-26'
-synced-commit: ac5bbd2b4cf427d011874e11f8d1e8b1bef66eda
-license: UNKNOWN
+description: 'Benchmark a single Ascend NPU operator using msprof op: build, collect with warmup, read the 8 CSV metrics files, derive a bottleneck verdict, and iterate. Use when validating operator performance in isolation before system-level profiling.
+
+  '
 ---
 
 # Ascend Operator-Level Profiling

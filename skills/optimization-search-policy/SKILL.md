@@ -1,18 +1,8 @@
 ---
 name: optimization-search-policy
-description: >
-  Policy for how an optimization agent should select, order, and stop
-  optimization experiments. Covers candidate generation, exploration vs
-  exploitation, diversity, negative experiment memory, budget allocation,
-  and stopping criteria. Drawn from vllm-evolve (phase-locked optimization
-  round), TRT-LLM casebook (prior-art matching), and SkillOpt (bounded edit
-  + gate). Use when deciding what to try next and when to stop.
-tags:
-  - optimization
-  - search
-  - policy
-  - experiment-design
-status: candidate
+description: 'Policy for how an optimization agent should select, order, and stop optimization experiments. Covers candidate generation, exploration vs exploitation, diversity, negative experiment memory, budget allocation, and stopping criteria. Drawn from vllm-evolve (phase-locked optimization round), TRT-LLM casebook (prior-art matching), and SkillOpt (bounded edit + gate). Use when deciding what to try next and when to stop.
+
+  '
 ---
 
 # Optimization Search Policy

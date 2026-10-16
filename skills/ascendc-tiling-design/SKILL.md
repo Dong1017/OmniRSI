@@ -1,16 +1,8 @@
 ---
 name: ascendc-tiling-design
-description: >
-  Design tiling for a custom AscendC operator: normalize the shape first
-  (axis-collapse or flatten), answer the fullload-vs-split question for UB,
-  apply the universal four-element template (multi-core split, UB split,
-  buffer plan, branch matrix), and route per operator class (reduction,
-  broadcast, elementwise, matmul, conversion) using algorithm-selection and
-  chip-generation tables (DAV_2201 vs DAV_3510). Use when writing or
-  restructuring an AscendC operator's tiling logic, before running any
-  performance tuning campaign.
-tags: [ascend, npu, ascendc, tiling, operator, kernel, ub]
-status: candidate
+description: 'Design tiling for a custom AscendC operator: normalize the shape first (axis-collapse or flatten), answer the fullload-vs-split question for UB, apply the universal four-element template (multi-core split, UB split, buffer plan, branch matrix), and route per operator class (reduction, broadcast, elementwise, matmul, conversion) using algorithm-selection and chip-generation tables (DAV_2201 vs DAV_3510). Use when writing or restructuring an AscendC operator''s tiling logic, before running any performance tuning campaign.
+
+  '
 ---
 
 # AscendC Tiling Design

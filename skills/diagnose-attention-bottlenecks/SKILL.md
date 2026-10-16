@@ -1,11 +1,6 @@
 ---
 name: diagnose-attention-bottlenecks
 description: Diagnose the next attention-kernel bottleneck after IO reduction using evidence about HBM traffic, work ownership, parallelism, scalar work, asynchronous scheduling and precision. Produce a bounded optimization hypothesis and correctness-first verification plan; do not infer current library support or NPU portability from GPU papers.
-status: candidate
-metadata:
-  status: "candidate"
-  empirical_validation: "not_run"
-  source_pins: "2205.14135v2;2307.08691v1;2407.08608v2"
 ---
 
 # Diagnose attention bottlenecks

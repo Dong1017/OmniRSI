@@ -1,10 +1,6 @@
 ---
 name: plan-activation-residency
 description: Propose training activation and gradient memory reductions by distinguishing lifetime reordering, address packing and selective rematerialization from supplied evidence.
-status: candidate
-metadata:
-  status: candidate
-  empirical_validation: not_run
 ---
 
 # Plan activation residency

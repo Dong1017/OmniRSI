@@ -1,17 +1,8 @@
 ---
 name: skill-evolution-playbook
-description: >
-  Practical design choices for evolving agent skills from execution traces:
-  when one trajectory should update a skill, how conflicting lessons are
-  handled, how negative evidence is preserved, how large an edit should be,
-  and when skills should split or merge. Drawn from Trace2Skill and SkillOpt.
-  Use when designing or operating a skill evolution pipeline.
-tags:
-  - skill-evolution
-  - trace2skill
-  - skillopt
-  - rsi
-status: candidate
+description: 'Practical design choices for evolving agent skills from execution traces: when one trajectory should update a skill, how conflicting lessons are handled, how negative evidence is preserved, how large an edit should be, and when skills should split or merge. Drawn from Trace2Skill and SkillOpt. Use when designing or operating a skill evolution pipeline.
+
+  '
 ---
 
 # Skill Evolution Playbook

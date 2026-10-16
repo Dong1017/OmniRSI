@@ -1,19 +1,8 @@
 ---
 name: ascend-performance-analysis
-description: >
-  Diagnose performance bottlenecks on Ascend NPU systems using CANN profiling
-  data. Maps GPU profiling concepts (nsys, ncu, SOL%, roofline) to their NPU
-  equivalents (msprof, torch_npu.profiler, CSV/JSON outputs, AI Core utilization,
-  HCCL communication analysis). Covers measurement discipline on shared NPU
-  machines. Use when profiling data is available and you need to find the
-  bottleneck and its cause.
-tags:
-  - ascend
-  - npu
-  - profiling
-  - performance
-  - cann
-status: candidate
+description: 'Diagnose performance bottlenecks on Ascend NPU systems using CANN profiling data. Maps GPU profiling concepts (nsys, ncu, SOL%, roofline) to their NPU equivalents (msprof, torch_npu.profiler, CSV/JSON outputs, AI Core utilization, HCCL communication analysis). Covers measurement discipline on shared NPU machines. Use when profiling data is available and you need to find the bottleneck and its cause.
+
+  '
 ---
 
 # Ascend NPU Performance Analysis

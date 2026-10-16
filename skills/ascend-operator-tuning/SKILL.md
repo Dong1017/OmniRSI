@@ -1,15 +1,8 @@
 ---
 name: ascend-operator-tuning
-description: >
-  Run a staged, accuracy-gated tuning campaign on a single Ascend NPU operator:
-  set a numeric target up front, block tuning until an on-device accuracy pass
-  is logged, escalate code-level then scheduling then instruction-level tuning
-  with per-stage stall counters and kill-switches, and route each change by the
-  metric contract (core utilization, bubble rate, load balance). Use after
-  ascend-operator-profiling has measured a baseline and the operator is
-  confirmed as the bottleneck.
-tags: [ascend, npu, operator, tuning, performance, pypto, tile]
-status: candidate
+description: 'Run a staged, accuracy-gated tuning campaign on a single Ascend NPU operator: set a numeric target up front, block tuning until an on-device accuracy pass is logged, escalate code-level then scheduling then instruction-level tuning with per-stage stall counters and kill-switches, and route each change by the metric contract (core utilization, bubble rate, load balance). Use after ascend-operator-profiling has measured a baseline and the operator is confirmed as the bottleneck.
+
+  '
 ---
 
 # Ascend Operator-Level Tuning

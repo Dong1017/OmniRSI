@@ -1,11 +1,8 @@
 ---
 name: host-overhead-optimization
-description: >
-  Profile and reduce CPU/host overhead in inference serving using line_profiler.
-  Iterative profile-analyze-optimize-validate loop targeting Python execution
-  in request preparation, scheduling, and model execution coordination.
-tags: [host, cpu, optimization, line-profiler, inference]
-status: candidate
+description: 'Profile and reduce CPU/host overhead in inference serving using line_profiler. Iterative profile-analyze-optimize-validate loop targeting Python execution in request preparation, scheduling, and model execution coordination.
+
+  '
 ---
 
 # Host Overhead Optimization

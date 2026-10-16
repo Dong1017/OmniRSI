@@ -1,18 +1,8 @@
 ---
 name: weight-loading-optimization
-description: >
-  Optimize the serving-level weight load path from storage to device: judge
-  the load path on four dimensions (source, format, placement, duplication),
-  account startup fixed overhead separately from per-request cost with
-  bytes-and-counts lines and hit-criteria warmup validation, verify sharded
-  weight downloads against the safetensors index, apply device-side weight
-  prefetch only on profiled memory-bound hot spots, and order CPU-tier
-  offload candidates by change surface. Includes source-scoped disk-loading
-  modes, pinned staging and synchronous checkpoint save semantics. Use when
-  startup/loading latency dominates; route DCP asynchronous save performance
-  and distributed recovery validity to their separate skills.
-tags: [storage, weight-loading, startup, prefetch, offload, serving, npu]
-status: candidate
+description: 'Optimize the serving-level weight load path from storage to device: judge the load path on four dimensions (source, format, placement, duplication), account startup fixed overhead separately from per-request cost with bytes-and-counts lines and hit-criteria warmup validation, verify sharded weight downloads against the safetensors index, apply device-side weight prefetch only on profiled memory-bound hot spots, and order CPU-tier offload candidates by change surface. Includes source-scoped disk-loading modes, pinned staging and synchronous checkpoint save semantics. Use when startup/loading latency dominates; route DCP asynchronous save performance and distributed recovery validity to their separate skills.
+
+  '
 ---
 
 # Weight Loading and Startup Fixed-Overhead Optimization

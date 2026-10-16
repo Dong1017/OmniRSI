@@ -1,16 +1,8 @@
 ---
 name: inference-optimization-casebook
-description: >
-  How to structure and use a casebook of past optimization decisions as a
-  decision-support tool. Extracts the casebook pattern from TensorRT-LLM's
-  perf-optimization-casebook skill. Use when building a record of optimization
-  experiments or when deciding which optimization to try next based on prior art.
-tags:
-  - optimization
-  - casebook
-  - prior-art
-  - decision-support
-status: candidate
+description: 'How to structure and use a casebook of past optimization decisions as a decision-support tool. Extracts the casebook pattern from TensorRT-LLM''s perf-optimization-casebook skill. Use when building a record of optimization experiments or when deciding which optimization to try next based on prior art.
+
+  '
 ---
 
 # Inference Optimization Casebook Pattern

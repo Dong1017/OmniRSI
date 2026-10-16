@@ -1,16 +1,8 @@
 ---
 name: repository-evolution-analysis
-description: >
-  Analyze a repository's commit history to build a capability-evolution model:
-  what the system can do, how it got there, and what patterns allow it to
-  iterate quickly. Use to produce history-derived knowledge for agent skill
-  conditioning, and to design temporal-split benchmarks for skill evaluation.
-tags:
-  - repository-intelligence
-  - history
-  - skill-distillation
-  - evaluation
-status: candidate
+description: 'Analyze a repository''s commit history to build a capability-evolution model: what the system can do, how it got there, and what patterns allow it to iterate quickly. Use to produce history-derived knowledge for agent skill conditioning, and to design temporal-split benchmarks for skill evaluation.
+
+  '
 ---
 
 # Repository Evolution Analysis

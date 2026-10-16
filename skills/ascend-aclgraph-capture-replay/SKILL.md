@@ -1,10 +1,6 @@
 ---
 name: ascend-aclgraph-capture-replay
 description: Diagnose vLLM-Ascend ACLGraph capture/replay eligibility, stable-input and ordering contracts, and capture-resource failures at a pinned implementation. Use for evidence-gated graph-mode proposals, not allocator, compiler-fusion, or network tuning.
-tags: [ascend, vllm-ascend, aclgraph, runtime]
-status: candidate
-metadata:
-  empirical_validation: "not_run"
 ---
 
 # Diagnose Ascend ACLGraph Capture/Replay

@@ -1,6 +1,5 @@
 {
   "schema_version": 1,
-  "name": "repository-evolution-analysis",
   "status": "candidate",
   "sources": [
     {
@@ -18,12 +17,19 @@
         "system_prompts/learn_reflect.txt",
         "evaluation/pairwise_judge.py",
         "evaluation/programmatic_metrics.py"
-      ]
+      ],
+      "type": "git",
+      "revision_precision": "prefix"
     },
     {
       "url": "https://github.com/yetone/magpie",
       "commit": "77800032",
-      "paths": ["internal/", "docs/"]
+      "paths": [
+        "internal/",
+        "docs/"
+      ],
+      "type": "git",
+      "revision_precision": "prefix"
     }
   ],
   "verification": {
@@ -34,5 +40,23 @@
   "applicability": {
     "scope": "any software repository with a recoverable git history",
     "prerequisites": "git history access, optionally LearningToCommit-style benchmark for evaluation"
-  }
+  },
+  "tags": [
+    "repository-intelligence",
+    "history",
+    "skill-distillation",
+    "evaluation"
+  ],
+  "profile": "local-skill-v1",
+  "kind": "skill",
+  "origin": [
+    "external"
+  ],
+  "empirical_validation": "not_run",
+  "limitations": [
+    "Source-derived candidate; no local efficacy validation."
+  ],
+  "provenance_readsets": [],
+  "references": [],
+  "consumption_mode": "checkout"
 }

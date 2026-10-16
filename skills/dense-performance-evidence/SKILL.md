@@ -1,17 +1,8 @@
 ---
 name: dense-performance-evidence
-description: >
-  Taxonomy of performance evidence an optimization agent needs, ordered by
-  collection cost and diagnostic power. Maps evidence types to the questions
-  they answer and the claims they can support. Use to decide which evidence
-  to collect next, avoid over-claiming from cheap evidence, and structure
-  a measurement campaign.
-tags:
-  - performance
-  - evidence
-  - profiling
-  - measurement
-status: candidate
+description: 'Taxonomy of performance evidence an optimization agent needs, ordered by collection cost and diagnostic power. Maps evidence types to the questions they answer and the claims they can support. Use to decide which evidence to collect next, avoid over-claiming from cheap evidence, and structure a measurement campaign.
+
+  '
 ---
 
 # Dense Performance Evidence Taxonomy
@@ -182,3 +173,7 @@ Do not discard negative evidence. It prevents re-exploring the same path and
 bounds the search space for future candidates.
 Source: SkillOpt blog/gating-reflection-safe-updates @ 343db229 (negative
 evidence preservation in rejected edit records).
+
+## Scoped internal experience
+
+Read the single authoritative [admission/drain occupancy case](../inference-optimization-casebook/cases/admission-drain-occupancy.md) when interpreting finite service cohorts. It separates recorded observation, action and interpretation; phase-selected occupancy is not end-to-end gain. The original frozen evidence remains linked, not copied. This shared reference requires the complete skills checkout; standalone folder export is not supported.

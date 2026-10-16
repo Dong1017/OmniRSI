@@ -1,10 +1,6 @@
 ---
 name: choose-parallel-training-plan
 description: Compare stage, device-mesh and operator-sharding candidates for static distributed training while accounting for memory, topology, resharding and planning cost.
-status: candidate
-metadata:
-  status: candidate
-  empirical_validation: not_run
 ---
 
 # Choose a parallel training plan

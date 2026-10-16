@@ -36,7 +36,10 @@ Reviewed paper comparisons, readsets and cases live under their owning skill's
 `references/` tree; distinct workflows receive their own candidate entrypoints.
 Paper knowledge does not supply repository-only schema fields such as a Git SHA,
 so it remains linked Markdown rather than a parallel registry or fabricated
-`repo_packs` record. The CLI consumption contract is unchanged.
+`repo_packs` record. The [knowledge-base contract](knowledge-base.md) defines
+local sidecar ownership, typed source examples, shared checkout references and
+legacy package compatibility. Normalized Collect and a writable store are separate
+follow-ups; existing commands remain supported.
 
 ## Module responsibilities and dependencies
 
@@ -94,7 +97,9 @@ src/omnirsi/
     artifacts.py            Hashing and evidence writes
     campaign.py             Legacy runner utility facade; transitive helper hashes
   data/
-    repo_packs/             Repository descriptors and versioned tuning knowledge
+    repo_packs/             Contribution descriptors and versioned tuning knowledge
+    knowledge_packs/        Dependency and peer knowledge, preserving existing tiers
+    skill_library/          Bilingual procedures, provenance, licenses and helpers
     platform_packs/         Backend metadata and qualification context
   execution.py              Compatibility entrypoint -> harness.runner
   evaluation.py             Compatibility exports -> harness.evaluation

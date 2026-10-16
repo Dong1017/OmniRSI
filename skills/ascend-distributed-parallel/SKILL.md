@@ -1,13 +1,8 @@
 ---
 name: ascend-distributed-parallel
-description: >
-  Select and validate distributed parallelism strategy on Ascend NPU: topology-aware 
-  card-group selection, USP/CP/TP/PP strategy choice, communication masking setup and 
-  verification, attribution of parallelism gains, and diagnosis of strategies that appear 
-  to activate but have no effect. Covers AlltoAllV defect workaround and HCCL bandwidth 
-  verification.
-tags: [ascend, npu, distributed, parallelism, usp, hccl, communication]
-status: candidate
+description: 'Select and validate distributed parallelism strategy on Ascend NPU: topology-aware  card-group selection, USP/CP/TP/PP strategy choice, communication masking setup and  verification, attribution of parallelism gains, and diagnosis of strategies that appear  to activate but have no effect. Covers AlltoAllV defect workaround and HCCL bandwidth  verification.
+
+  '
 ---
 
 # 分布式并行策略选择与验证
