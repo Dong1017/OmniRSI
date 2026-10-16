@@ -517,3 +517,185 @@ results add portable review rules without changing imported catalog sources,
 verification status, the original frozen plan or its validator.
 
 The metadata-ready and dense-algorithm records are [pinned at runtime 22403f7](https://github.com/david6666666/drama-3-single-b300-inference/tree/22403f7589a1c9ca6264b003199d078c636196ed/evidence/20261016-ceiling).
+
+
+## Measured residency and staged prefix reuse
+
+Eight selected NCU nodes compare native and metadata-ready M128 FC1/FC2 on two
+real layer inputs. All404 correctness/ownership checks pass; four replay passes
+per node preserve the complete predecessors and PDL configuration, while node
+replay serializes the measured workload. Actual active CTAs rise from roughly1
+to1.94–1.96, but FC1 eligible warps and instruction issue fall. DRAM reads change
+by only−0.154% to+2.318% across the four pairs. More residency is therefore an
+observation, not proof of a proportional progress or weight-reuse improvement.
+Node durations cannot be added into a complete-call or serving gain.
+
+The FC1 scale producer reloads a physical route row for16 K blocks. A bounded
+artifact caches that row once per work tile, preserving masks, current routing,
+PDL and all FP8/FP32/BF16 boundaries. Final machine code removes the repeated
+loads without changing allocation or introducing spills. It passes1516 exact
+checks, but complete-MoE screening reductions of3.04%,2.80%,4.19% all miss the5%
+continuation criterion. No repeated or service result follows. Subtracting a
+separately measured older candidate would not isolate the address-cache effect.
+
+A separate native FC1 PC-sampling record passes80 exact checks and collects4815
+samples,3503 marked long-scoreboard, with no reported drop or overflow. It stops
+INCONCLUSIVE: report addresses are loaded PCs rather than disassembly offsets,
+21 sampled PCs have no SASS, and replayer/aggregated-pass fields disagree. A
+later CPU audit finds an explicit report-owned function base, but the21 missing
+PCs still lie outside that function. No base guessing, extra sample or specific
+load attribution follows; the candidate remains NOT_RUN. A per-issue-active
+stall ratio is not a recoverable wall-time percentage or proof of TMA starvation.
+
+An ordered top8 finalizer plus residual RMSNorm fusion passes1355 provenance,
+output, state, guard and RNG checks. One AB100 screen saves1.057/1.036/1.801µs,
+below the declared2.5µs per-call threshold. The control initially passed the wrong
+native ABI boolean and omitted routing scales; an independently archived native
+output caught this before candidate comparison. The failure is retained and the
+corrected control uses the installed ABI. No full-MoE or serving gain is claimed.
+
+Prefix reuse is evaluated in separate stages. Three reconstructed real FIFO
+proxy admission groups preserve74120 equal causal-prefix row/layer pairs across
+40 layers;3360 nonshared controls differ. The key covers all acoustic columns,
+conditioning, position and zero initial state. It is not token-ID-only caching,
+and the proxy membership is not recovered server request-ID metadata. A separate
+1600→1088-row compact-native-parts gate passes5393 checks, retaining all decode
+and padding rows and all eight experts, with original FP8/scales, canonical
+routing, three component outputs, read weights,111 model/request states and RNG.
+Its first scalar-byte-view harness failure remains archived separately.
+
+The subsequent complete mixed graph also passes957 exact checks including all
+111 states, reversed request/slot order and changed reference conditioning. One
+AB100 screen, restoring the same initial full state before every replay, yields
+29.130736→27.997727ms,29.136928→27.994192ms,29.300735→28.023808ms. All three
+reductions3.89–4.36% miss the5% gate. These graphs include backbone, teacher and
+adapter gather/expand; separate sampling towers, codec, host preparation and
+state-restoration copies are outside the timing boundary. The artifact retains
+704027456 extra buffer bytes. No runtime integration, repeated or service result
+follows. Removing redundant adapter copies is a new hypothesis, not grounds to
+retroactively qualify this screen.
+
+Finally, a CPU audit of an older three-replay tower trace finds a1.332ms span
+with373 kernels but only0.014ms uncovered gaps. Summed durations include overlap.
+The entire13-layer FFN segment costs0.388ms including required matrix work, so
+kernel-count arithmetic does not justify a0.3ms fusion saving. Intercepted model
+linear calls omit12 direct tower projections. This is an accounting correction,
+not a current-service roofline or a proof that further optimization is impossible.
+
+All failures, commands, hashes and timing scopes are retained in the runtime
+evidence. Best complete-quality C64 remains4726.771frames/s against6765.407;
+the seven-concurrency repeated quality/performance gate remains incomplete.
+Catalog provenance and imported/unverified status are unchanged.
+
+The current counters and staged-prefix records are [pinned at runtime f5448f0](https://github.com/david6666666/drama-3-single-b300-inference/tree/f5448f0f8cad850ea06b9476f80eb5bb17629c68/evidence/20261016-ceiling).
+
+
+## Inverse-row consumption and transparent compressed allocation
+
+A new prefix adapter preserves the failed expanded-adapter result and removes
+its avoidable copies. Native compact MoE outputs are consumed through an inverse
+row map in the original combination/residual/RMSNorm arithmetic. All1600 residual
+and normalized rows remain, including every decode and original padding row;
+top8, FP8 bytes/scales and numerical boundaries are unchanged. Gathering slots
+once per replay and eliminating120 component expansions reduces adapter launches
+from200 to41. Retained artifact buffers fall704027456→441087536 bytes. Logical
+eliminated copy bytes are not measured DRAM savings.
+
+The initial screen passes603 exact checks and the frozen5% threshold. A separate
+frozen AB/BA/AB protocol then passes2430 checks across three real FIFO proxy
+cases, including reversed order/reused slots and changed conditioning. Every
+pair checks complete graph outputs,111 mutable states, RNG and guards; every
+replay restores the same initial state before its start event. All nine pairs
+reduce latency6.2256–6.7673%, with per-case three-round medians6.2555%,6.2599%,
+and6.7568%. This is one process with reused captures, not independent process
+replications. The boundary includes backbone, teacher tower and adapter; it
+excludes state restores, host admission, separate sampling towers and codec.
+Arbitrary shapes, actual scheduler membership and service throughput remain
+unqualified. Actual JIT resource/binary records are kept separate from AOT.
+
+A different hypothesis tests transparent memory compression while preserving
+native computation. Context-free capability queries and bounded CPU entropy
+samples are followed by47 GPU allocation/lifetime checks. A new complete native
+MoE gate passes3417 checks over15 real/routing fixtures using original tactic(8,5)
+and PDL. The only change is VMM NONE versus GENERIC backing storage for original
+w1/w2 bytes; scales remain identical. All twelve actual allocation flags, original
+weight bytes, live routing maps, intermediates, top8 finalization, guards, RNG,
+owner lifetimes and final cleanup pass.
+
+Its single AB100 screen observes120.874557→120.099201µs forL0,
+100.473280→100.696316µs forL19 and80.344324→80.093756µs forL39. The three-call
+sequence changes295.408325→295.115204µs, only0.0992%, failing the frozen5% gate.
+There are no additional timing rounds or runtime promotion. The sequence contains
+three fixed-input native bodies, not backbone dataflow across three layers;
+common input quantization/logits routing are excluded equally. Actual compression
+flags and mapped capacity do not measure physical compression ratio. No counters
+identify the cause of the negligible timing difference.
+
+The allocator retains the owning primary context and DLPack tensor owners,
+distinguishes unconsumed capsules from transferred owners, and destroys captured
+graphs before allocations. Final native gate counters are live0/destroyed12/
+cleanup_errors0; sampled GPU ownership and an empty post-run list are not proof
+of uninterrupted exclusivity. A CPU follow-up preserves45 original FP8 matrices
+and signed zero in all roundtrips. Complete zero channels are concentrated in
+its L0 samples; the fixed sample is not a whole-model compression or pruning
+budget. No original model computation is removed.
+
+Best full-quality C64 remains4726.771frames/s, with6765.407 and all-concurrency
+acceptance still pending. These results refine portable experiment guidance;
+the imported catalog's verification status remains unchanged.
+
+The new adapter and allocation evidence is [pinned at runtime 0dd72e5](https://github.com/david6666666/drama-3-single-b300-inference/tree/0dd72e518167c7a888db9b63f0fb90cc2087f187/evidence/20261016-ceiling).
+
+
+## Production prefix reuse: correct graphs can still lose at service level
+
+At the user-requested pause, the five-bucket production integration passes 9974
+checks over 30 cases, both graph-capture orders, all 111 mutable states, retained
+output lifetimes, untouched slots and no-reuse fallbacks. The initial harness
+failure remains archived: two arms had different private padding input histories.
+One reused graph retained 53 differing padded prompt rows from a previous case,
+while the newly captured compact graph started with EOS/zero padding. Both public hidden outputs matched; the saved GDN0 mismatch was confined to
+private slot 143. Later states were not checked after the first failure. The corrected
+harness resets full physical input rows identically, validates their identity,
+and reruns the failed case with an unchanged A/A control. It does not change
+production math, filter scratch state or loosen the numeric gate.
+
+The same frozen production source is then compared with reuse off versus on:
+one B300, C64, 64 warmup requests and all 1088 measured requests per arm.
+Throughput falls 4674.814977→4534.131006 frames/s, ratio 0.969905981, below the
+frozen 1.01 continuation gate. TTFA p50/p95 changes 148.562946/274.704463 to
+151.265127/273.353699 ms; mean RTF changes 0.290890 to 0.290618. Both full quality
+groups pass: WER 1.465293%/1.682994%, SIM 64.188428/64.202021. No three-round
+service trial follows and the feature stays default-off.
+
+Reuse activates in 130/200 lifetime opportunities and removes 36096 MoE rows,
+but logical work removal does not establish a throughput gain. Outputs differ
+(102266/102637 returned frames), and last-dispatch-to-final-completion differs
+(1.0461/1.8441 s). The tail remains included. Client accounting cannot identify
+a GPU cause or justify replacing the failed score with an intake-only rate.
+CPU plan construction totals 29.439 ms, excluding later validation/H2D; complete
+service timing includes all of them. Sampled process-memory peaks rise about
+700 MiB and are not exact allocator peaks. All 1808 frozen dependency hashes and
+four completed service/quality runners are checked after cleanup.
+
+A separate producer scale-tile-cache screen passes 1518 native checks and 148
+post-timing checks. Its three complete-body latency reductions are 3.45%, 4.17%
+and 4.42%, all below the frozen 5% gate. It stops without repeated/model/service
+promotion. Comparison with an earlier metadata-ready screen is not a controlled
+causal subtraction. A fixed eight-lane FP8 SIMT proposal also stops, at CPU/AOT:
+conversion and accumulation instruction cost already exceeds the historical
+native GEMM budget under its optimistic issue model. This is conditional on that
+mapping, not a universal hardware limit. The selected FC2 BF16 values matching
+does not prove the original FC1 FP8 boundary or whole-model equivalence.
+
+The user now requests current-results documentation rather than continued
+optimization. The runtime README publishes its actual architecture, explicit
+configuration/optimization status and available metrics. The repeated 1088
+coded-reference standalone/vLLM matrix and historical 192 raw-reference SGLang
+matrix are separated, and the newer single C64 trials do not overwrite either.
+All 63 runs' four metrics were recomputed from 49,728 raw successful records.
+This is documentation validation, not a matched three-framework benchmark or
+acceptance PASS. The success example remains absent and imported catalog
+verification stays false. No further GPU experiment is scheduled.
+
+The final service, CPU and documentation snapshot is [pinned at runtime 47c3d2e](https://github.com/david6666666/drama-3-single-b300-inference/tree/47c3d2ec4e3406d8a71fccc3cb4967783c2650f5/evidence/20261016-ceiling).

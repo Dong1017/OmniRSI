@@ -10,6 +10,7 @@ Coding agents (Cursor, Codex, Claude, etc.) should treat this file as the **entr
 | --- | --- |
 | [README.md](README.md) | Layout, dev smoke, copy checklist |
 | [docs/contributing.md](docs/contributing.md) | Development, acceptance, evidence and CI |
+| [docs/agent-collaboration.md](docs/agent-collaboration.md) | Issue-led human–agent collaboration |
 | [docs/architecture.md](docs/architecture.md) | Module boundaries and extension contracts |
 
 ## Four-lane CI
@@ -108,3 +109,4 @@ ruff check src tests
 1. Read the contribution guide and validation levels before large code or CI changes.
 2. Prefer minimal diffs; match existing layout and naming.
 3. Do not reopen closed campaign work or add pins to shared automation without explicit human direction.
+4. Work Issue-first: confirm the governing Issue's accepted scope before changing code, keep each change a bounded delegated slice with independent review, and report PR readiness and Issue completion separately — see [agent collaboration](docs/agent-collaboration.md).
