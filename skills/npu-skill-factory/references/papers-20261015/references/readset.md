@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Exact readset and availability
 
 Read on 2026-10-15. Direct original-paper HTML and arXiv version history were inspected. The source cache is outside the deliverable; source hashes are in [source-manifest.json](source-manifest.json). No complete paper, repository, prompt template, or implementation source is bundled.

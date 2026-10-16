@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Candidate knowledge records: adaptation interfaces
 
 All records are candidate and empirically unvalidated. F facts are supported in [source notes](../references/source-notes.md); P entries are proposed integration constraints. These records explain when a method can be considered; they do not implement it.

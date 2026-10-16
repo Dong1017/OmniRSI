@@ -1,7 +1,5 @@
 > Supplier delivery snapshot, 2026-10-15. Packaging checks and inventory below refer to the original pack, not to this relocated integration. Empirical validation remains not_run.
 
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Pack E delivery QA
 
 Status: candidate. Behavioral/runtime validation: not_run.

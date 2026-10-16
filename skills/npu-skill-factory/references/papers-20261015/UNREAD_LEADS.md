@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Unread literature lead — separate from the approved extraction
 
 This lead is not evidence for Pack E. Its original paper was not opened, its latest version was not checked, and no implementation was inspected. Following it requires a later scope decision.

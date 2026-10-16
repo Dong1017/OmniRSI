@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # SkillOpt evidence ledger
 
 F — [SkillOpt: Executive Strategy for Self-Evolving Agent Skills](https://arxiv.org/abs/2605.23904v2), Yang et al.; v2, 2026-05-25 (v1 2026-05-22). [§3](https://arxiv.org/html/2605.23904v2#S3), [§4](https://arxiv.org/html/2605.23904v2#S4), Appendices A–C, Algorithm 1. Prior `343db229` is not independently reconciled.

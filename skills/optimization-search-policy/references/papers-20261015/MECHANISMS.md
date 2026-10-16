@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Pack F — which part of an improver should adapt?
 
 Candidate; empirically unvalidated. **F** = historical paper fact; **P** = proposed OmniRSI rule. Exact pins, read locators and evidence context are in [source notes](references/source-notes.md). Existing RRSI/search-policy references were inspected first; this pack contributes missing paper-level interfaces, acceptance conditions and counter-evidence rather than another repository summary.

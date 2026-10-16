@@ -1,7 +1,5 @@
 > Supplier integration proposal, preserved as historical source context (2026-10-15). The local owner review and current two matrices govern acceptance; suggested follow-ups and permission statements below do not authorize work or describe the current inventory.
 
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Pack F integration — search and improver evolution
 
 Candidate; empirical_validation: not_run. Four papers read, no implementations executed, no framework/code changes. Deliverables: [comparison](MECHANISMS.md), [exact readset/evidence](references/source-notes.md), [bounded update proposal](updates/optimization-search-policy.md), [three interface knowledge records](knowledge/adaptation-interfaces.md), and [separate next-gate leads](NEXT_GATE_LEADS.md).

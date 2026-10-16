@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Learning to Commit evidence ledger
 
 F — [Learning to Commit: Generating Organic Pull Requests via Online Repository Memory](https://arxiv.org/abs/2603.26664v1), Li et al.; v1, 2026-03-27, work-in-progress. [Methods](https://arxiv.org/html/2603.26664v1#S3), [experiments](https://arxiv.org/html/2603.26664v1#S4). Prior implementation pin `7e5a1d77` is not independently reconciled with the paper.

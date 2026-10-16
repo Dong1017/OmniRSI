@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Trace2Skill evidence ledger
 
 F — [Trace2Skill: Distill Trajectory-Local Lessons into Transferable Agent Skills](https://arxiv.org/abs/2603.25158v5), Ni et al.; v5, 2026-06-04 (v1 2026-03-26). [§2](https://arxiv.org/html/2603.25158v5#S2), [§§3–4](https://arxiv.org/html/2603.25158v5#S3), Appendices A–I. Prior `3d0b52a` is not a verified paper-version match.

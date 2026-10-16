@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Comparison: choose the artifact before choosing the learning method
 
 All destinations below are P, candidate/not_run. The underlying F records and exact paper locators are in the linked ledgers.

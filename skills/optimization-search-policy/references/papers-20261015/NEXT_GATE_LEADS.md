@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Pack F — next-gate leads only
 
 These titles are cited/discussed in the approved papers; their full texts and repositories were not investigated. They are proposals for the owner's next source-matching gate, not an expanded extraction queue.

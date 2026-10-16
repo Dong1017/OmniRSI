@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Pack F — exact readset and evidence ledger
 
 Candidate; empirical_validation: not_run. F = paper fact or author-reported evidence; P = proposed interpretation. Original full-text PDFs were read, not implementations executed. Retrieved 2026-10-15. No source PDF is redistributed.

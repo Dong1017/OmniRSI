@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Repo-To-Skill evidence ledger
 
 F — [Repo-To-Skill: Distilling GitHub Repositories Into AI4AI Skills](https://arxiv.org/abs/2609.02749v1), Chen et al.; v1, 2026-09-02. Read [§§2–5](https://arxiv.org/html/2609.02749v1#S2), [Appendix A](https://arxiv.org/html/2609.02749v1#A1). Prior implementation pin `ac3fe1af` is carried context, not matched to this paper version.

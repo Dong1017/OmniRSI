@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Protocol details and unreported quantities
 
 F entries below are author-reported protocol details, not recommended OmniRSI settings. P entries identify what cannot safely be inferred. Local validation: not_run.

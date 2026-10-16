@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Candidate knowledge: evidence-to-artifact admission
 
 Status: candidate. Validation: not_run. All rules in this file are P, proposed for reconciliation with existing methodology artifacts. The four [paper ledgers](../COMPARISON.md) provide the F basis; this is a synthesis, not an implementation reproduced from one author.

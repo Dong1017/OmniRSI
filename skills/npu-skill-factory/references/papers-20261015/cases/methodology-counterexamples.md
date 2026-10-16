@@ -1,5 +1,3 @@
-> Historical supplier amendment proposal, 2026-10-15. This is editing context, not a deployed task procedure or an execution grant. The owning SKILL.md records the reconciled amendment.
-
 # Candidate cases: where seemingly useful rules fail
 
 Status: candidate. Local validation: not_run. These are paper-reported historical cases, not OmniRSI executions. P sections are proposed interpretations and boundaries.
