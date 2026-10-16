@@ -200,6 +200,23 @@ For AscendC: consult the CANN AscendC operator development guide for your
 specific SoC (Ascend 910B, 910C, etc.). Templates and intrinsics differ between
 generations.
 
+## Attention mechanisms and scoped acceptance
+
+Use [attention diagnosis](../diagnose-attention-bottlenecks/SKILL.md) when IO
+reduction exposes scalar work, insufficient independent tiles, reduction costs,
+compiler ordering or precision/layout overhead. Its
+[mechanism notes](../diagnose-attention-bottlenecks/references/mechanisms.md)
+retain FlashAttention 1/2/3 assumptions, operation-class costs and counter-signals.
+Tiling, recomputation, ownership and overlap change the resource balance; no
+single utilization threshold or paper tile size selects a winner.
+
+Preserve dense/sparse/quantized semantics, masks, dropout, output/gradient
+accuracy and real buffer lifetimes. Verify the executing instruction schedule
+before claiming overlap. Include conversion/preprocessing and exactness costs
+in the measured boundary. NVIDIA primitives establish no Ascend support.
+[Author-reported cases](../diagnose-attention-bottlenecks/references/papers-20261015/cases/overlap-and-fp8-counter-signals.md)
+are counterexamples to unconditional tuning rules, not local successes.
+
 ## Limitations
 
 - This skill is a routing and correctness guide, not a complete implementation

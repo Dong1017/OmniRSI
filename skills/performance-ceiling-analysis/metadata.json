@@ -41,7 +41,7 @@
   "verification": {
     "locally_verified": false,
     "evidence_level": "source_grounded",
-    "note": "Method extracted from three source repositories. No empirical accelerator measurements on this machine. Empirical fields in the measurement plan are remote-measurement placeholders."
+    "note": "Historical repository methods plus reviewed paper extensions: references/papers-20261015/READSET.md records exact paper versions and inspection scope. Physical/conditional bounds, observed envelopes, simulator predictions and application measurements remain distinct. No local accelerator measurements or automatic calculator."
   },
   "applicability": {
     "scope": "inference serving systems (LLM, diffusion, audio)",

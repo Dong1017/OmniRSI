@@ -123,6 +123,26 @@ Source: MindIE-SD perf-gate skill @ 8481d39b (window discipline for NPU).
 State these scope boundaries explicitly in any report that cites benchmark
 results.
 
+## Search integrity and final-state verification
+
+Freeze workload hashes, output/work semantics, permitted approximations, quality
+checks, timing events and developer-versus-held-out splits. Verify that measured
+work actually occurs; a quality pass does not certify a truthful timing path.
+Keep fast probes separate from full evaluation, and preserve invalid, failed and
+inconclusive trials. A simulator shortlist requires calibrated load/capacity
+coverage and does not replace measurements.
+
+Compare search methods at matched total budgets. Separate search/API cost from
+steady-state serving cost; independent per-engine searches are not one equal-budget
+engine-selection run. Keep different SLOs, baselines, resources and aggregation
+rules explicit. Before reporting, restart the final code/config artifact and
+validate that exact state; report best-seen results separately from delivered ones.
+
+[Reviewed experiment discipline](../performance-ceiling-analysis/references/papers-20261015/govern-optimization-experiments/procedure.md)
+and [source audit](../performance-ceiling-analysis/references/papers-20261015/references/inferencebench.md)
+retain author-reported evidence and counterexamples. No local experiment is
+established by integrating these notes.
+
 ## Evidence trail requirements (OmniRSI compatibility)
 
 A benchmark campaign that claims PASS under OmniRSI's evidence framework

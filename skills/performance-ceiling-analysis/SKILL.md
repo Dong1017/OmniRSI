@@ -108,11 +108,13 @@ Source: `hahnyuan/LLM-Viewer` @ 1893e4b5, `hardwares/hardware_params.py`.
 Source: `hahnyuan/LLM-Viewer` @ 1893e4b5, `configs/DiT.py`, `model_params/DiT.py`.
 
 **Known L1 limitations:**
-- L1 uses vendor datasheet peaks, which are unachievable in practice (typically
-  60-80% of peak is the empirical achievable roof). Use L1 only for order-of-
-  magnitude estimates and as an upper bound.
+- L1 uses vendor datasheet peaks as conditional bounds for a stated algorithm,
+  dtype, memory hierarchy and work/traffic count. No universal achievable
+  percentage follows; calibrate a workload-specific attainable envelope in L2.
 - L1 treats the full model as one roof; it cannot distinguish kernel-level
-  variation or scheduling overhead.
+  variation, mixed operation-class throughput or scheduling overhead. Changing
+  the algorithm can change both work and traffic, so proximity to the old roof
+  does not rule out improvement.
 
 ### L2 — Empirical component ceiling
 
@@ -263,7 +265,7 @@ empirical_roof:
   action: >
     REMOTE: run ERT-style FMA kernel sweep on B300; record empirical peak
     FLOP/s and peak memory bandwidth; compare to datasheet; record achievable
-    fraction (typically 60-80%).
+    fraction for this workload, without assuming a universal percentage.
 
 stage_breakdown:
   status: INSUFFICIENT_EVIDENCE
@@ -313,13 +315,33 @@ recommended_experiments:
 
 ## How to decide whether further optimization is worthwhile
 
-1. Compute the Amdahl ceiling with the measured stage fractions. If the
-   theoretical maximum given plausible per-stage improvements is < 1.2×,
-   further optimization is unlikely to meet a 2× target.
-2. Check whether the dominant stage is near its hardware roof (SOL% > 80%).
-   If it is, the room is small regardless of algorithmic changes.
-3. If the dominant stage is far below its roof (SOL% < 40%), it is worth
-   investigating what prevents it from reaching the roof before committing
-   to a specific optimization.
-4. Distinguish E2E throughput from per-kernel throughput. A kernel at 90%
-   SOL% does not imply the E2E system achieves 90% efficiency.
+1. Compare the conditional Amdahl headroom with the actual target and measured
+   uncertainty. Use nonoverlapping exposed-time fractions; a sum of overlapping
+   kernel durations is not an end-to-end decomposition.
+2. Check the dominant stage against operation-specific attainable envelopes.
+   High utilization can constrain local tuning of the current algorithm while
+   fusion, materialization removal, work ownership or a different algorithm
+   changes its work and traffic. No universal SOL% cutoff establishes saturation.
+3. Treat low utilization as a question: distinguish work supply, scalar versus
+   matrix work, dependency stalls, launch overhead and memory movement before
+   selecting a change. Occupancy, throughput and utilization are different metrics.
+4. Keep four evidence types separate: physical/conditional bound, observed
+   attainable envelope, empirical simulator prediction, and measured application
+   outcome. A predictor needs a matching calibration domain and held-out load
+   coverage, especially near capacity; prediction error does not establish a bound.
+5. Redirect when the expected removable time cannot exceed locally measured
+   noise, or when a change exposes a new owner. Preserve a valid incumbent and
+   verify the final artifact under the application objective and all SLOs.
+
+### Reviewed paper resources
+
+The [modeling comparison](references/papers-20261015/MECHANISMS.md),
+[exact readset](references/papers-20261015/READSET.md),
+[bounds and predictions](references/papers-20261015/knowledge/bounds-predictions-and-decisions.md),
+[cross-layer procedure](references/papers-20261015/redirect-cross-layer-optimization/procedure.md)
+and [decision cases](references/papers-20261015/cases/decision-cases.md) retain
+paper-specific costs, counter-signals and unresolved metric discrepancies.
+Use [simulator calibration](../calibrate-serving-simulation/SKILL.md) for a
+prediction-based shortlist and [attention diagnosis](../diagnose-attention-bottlenecks/SKILL.md)
+for algorithm/operation-class changes. These are candidate guidance, not local
+performance measurements or an automatic ceiling calculator.

@@ -21,6 +21,16 @@ Status: candidate; empirical validation: **not_run**.
 
 Use [diagnose-vllm-admission-pressure](../diagnose-vllm-admission-pressure/SKILL.md) for budget and admission branches. [kv-tier-management](../kv-tier-management/SKILL.md) addresses LMCache tier policy at a different pin; this skill addresses engine/connector ownership, not that backend's conformance or physical storage.
 
+## Paper-derived state-placement decisions
+
+[Elastic serving placement](../evaluate-elastic-serving-placement/SKILL.md)
+adds a separate decision about migrating request ownership or changing sequence
+groups. It requires source/destination reservations, catch-up progress, commit/
+abort ownership and class-specific SLO costs. The
+[hypothetical migration case](../diagnose-vllm-admission-pressure/references/papers-20261015/cases/migration-is-not-free-memory.md)
+is a decision example, not a reproduced bug. Neither the paper nor this connector
+contract establishes current backend conformance, fault tolerance or free memory.
+
 ## Required evidence
 
 Obtain exact engine/connector revisions and class, producer/consumer roles, KV-group count and block namespace, load-failure policy, concurrent-batch mode, graph mode, and the actual worker/model-runner call trace. For a bounded set of request IDs, correlate scheduler metadata, allocated block IDs, matched-token count, load/save start and completion, failed receives/invalid blocks, preemption, finished-request notification, and pool return. Record missing evidence rather than assuming an event occurred.

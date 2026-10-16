@@ -37,6 +37,21 @@ If `host-overhead-profiling` has already been run, use its output to prioritize 
 
 ---
 
+## Cross-layer redirection
+
+When a kernel change exposes serialization, feature materialization or assembly,
+reassign the bottleneck to the actual owner. Compare removable exposed time with
+locally measured uncertainty; the paper's noise percentage is not a universal
+law. Invariant reuse, views/shared buffers and preallocation require explicit
+immutability, lifetime and ordering guarantees. They are not automatically safe.
+
+The [cross-layer procedure](../performance-ceiling-analysis/references/papers-20261015/redirect-cross-layer-optimization/procedure.md)
+and [FlashVector audit](../performance-ceiling-analysis/references/papers-20261015/references/flashvector.md)
+retain the resource trade-offs and SLO counterexample. A component-level gain
+needs matched full-stack measurement before a service claim. Re-profile and
+reconsider batching/instance configuration after a change, under the same budget
+and all SLOs. Reading this skill starts no autonomous loop or deployment.
+
 ## Profiling Setup
 
 ### line_profiler (Primary Method)
@@ -89,7 +104,7 @@ EXTRA_SUFFIX=round1_eliminate_redundant_iter bash profile.sh
 
 Before starting, understand the key insight: **Optimizations are NOT independent.** Fixing a 50ms bottleneck may reveal a 30ms bottleneck that was previously hidden. Always re-profile after each significant change — the bottleneck landscape shifts.
 
-**Ordering principle**: Within each round, prefer zero-risk optimizations (caching, pre-allocation, hoisting invariants) over medium/high-risk ones (graph partition changes, algorithm fusion). Zero-risk changes provide free gains and make subsequent profiling cleaner.
+**Ordering principle**: Prefer the smallest evidence-supported change. Caching, preallocation and hoisting still require lifetime, invalidation, ownership and correctness checks; expected savings must come from the current workload.
 
 Run up to N rounds (default 3) of this cycle:
 
@@ -97,7 +112,7 @@ Run up to N rounds (default 3) of this cycle:
 FOR round = 1 to MAX_ROUNDS:
   1. PROFILE (with Drill-Down if needed)
   2. ANALYZE (Multi-Option)
-  3. OPTIMIZE (Apply Change — prefer zero-risk first)
+  3. OPTIMIZE (Apply Change — prefer evidence-supported first)
   4. TEST (Unit Test Validation)
   5. VALIDATE (Re-Profile — expect bottleneck landscape to shift)
   6. REPORT
@@ -165,7 +180,7 @@ For the chosen hotspot:
 | B | Hoist loop-invariant computation | 10-15% | Low | Medium |
 | C | Fuse separate tensor ops | 15-25% | High | High |
 
-4. **Select the best option** (prefer high-savings + low-risk; follow zero-risk-first ordering)
+4. **Select the best option** (prefer high-savings + low-risk; follow evidence-supported-first ordering)
 
 ### Phase 3: OPTIMIZE (Apply Change)
 

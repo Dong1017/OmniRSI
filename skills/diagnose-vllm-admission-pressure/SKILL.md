@@ -21,6 +21,18 @@ Status: candidate; empirical validation: **not_run**.
 
 Use [audit-vllm-kv-lifetimes](../audit-vllm-kv-lifetimes/SKILL.md) when the blocking branch involves receive completion or retained blocks. [optimization-search-policy](../optimization-search-policy/SKILL.md) governs experiment selection, not scheduler admission. [kv-tier-management](../kv-tier-management/SKILL.md) covers LMCache tier policy at an independent pin; it does not establish this scheduler's behavior.
 
+## Paper-derived scheduling alternatives
+
+[Serving preemption](../assess-serving-preemption/SKILL.md) distinguishes iteration
+eligibility, service ordering and suspended-KV residency.
+[Elastic placement](../evaluate-elastic-serving-placement/SKILL.md) distinguishes
+replica migration from changing a sequence-parallel group. The
+[boundary comparison](references/papers-20261015/knowledge/scheduling-state-boundaries.md)
+and [hypothetical pressure case](references/papers-20261015/cases/preemption-under-kv-pressure.md)
+retain admission, fairness and state-recovery costs. These paper-era proposals
+do not describe implementation at the vLLM pin above. Establish current engine
+support and service-class obligations before recommending a policy change.
+
 ## Required evidence
 
 Collect the deployed revision, scheduler class, effective scheduler/cache configuration, connector class and role, KV-group layout, scheduling policy, speculative/encoder features, and concurrent-batch mode. Obtain a bounded request/step trace: queue/status, actual scheduled tokens, both remaining budgets, allocation result, preemption victim, pending-transfer/free state, and request timing. Separate unavailable observations from zero values. `Scheduler.make_stats` is gated by `log_stats`; its queue/KV fields are useful context but do not expose every branch reason (F7).

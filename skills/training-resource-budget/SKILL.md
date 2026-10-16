@@ -74,6 +74,32 @@ One reported comparison changes layer count; its headline gain is not reused.
 This historical document is not an implementation recipe or proof of current
 Ascend support.
 
+## Paper-derived training decisions
+
+[ZeRO-Offload ownership and semantics](references/papers-20261015/knowledge/offload-delta.md)
+extends the configuration evidence above with CPU optimizer state/compute
+colocation, shard ownership and tiled update/return costs. Compare the whole
+step's critical path, not host capacity alone. Delayed parameter updates change
+training semantics and require explicit approval and quality evidence; ordinary
+overlap does not imply permission for staleness.
+
+Use [activation residency](../plan-activation-residency/SKILL.md) for live-range,
+address-packing and rematerialization choices;
+[parallel training plans](../choose-parallel-training-plan/SKILL.md) for stage,
+mesh and sharding choices; and
+[split backward](../assess-split-backward-schedule/SKILL.md) for input-gradient
+versus weight-gradient ordering and optimizer post-validation. These are distinct
+contracts: activation checkpoints are not restart snapshots, Alpa's conditional
+plans are not unrestricted global optima, and Zero Bubble's rollback preserves
+semantics rather than authorizing ZeRO-Offload's stale updates.
+
+The [mechanism comparison](references/papers-20261015/notes/training-memory-scheduling.md),
+[readset](references/papers-20261015/references/source-readset.md) and
+[hypothetical cases](references/papers-20261015/cases/paper-grounded-cases.md)
+retain resource costs, counter-signals and unresolved table discrepancies.
+Paper versions are separate from the DeepSpeed implementation pin. No current
+runtime, NPU support or measured application outcome follows from these notes.
+
 ## Candidate decision record
 
 For each proposal, retain:

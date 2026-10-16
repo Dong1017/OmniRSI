@@ -1,6 +1,11 @@
 # OmniRSI Reference Matrix
 
-**Branch:** `opus/meta-skill-bootstrap` | **Date:** 2026-10-15 | **Revision:** `d6de1bc`
+**Branch:** `opus/meta-skill-bootstrap` | **Integration date:** 2026-10-16 | **Comparison anchor:** `d96ff8d3`
+
+Paper source inspection below is carried from Dot's 2026-10-15 readsets and the
+owner's scoped review, not repeated full-paper extraction. The current working
+integration adds links and reconciles candidate guidance; packaging checks and
+publication status are reported separately. No paper result is a local measurement.
 
 One of exactly two primary matrices (decision D01, 2026-10-15). The official
 name and path are **Reference Matrix**, `docs/reference-matrix.md`. The user
@@ -76,6 +81,42 @@ in (evidence/claim discipline, benchmark hygiene, RunSpec) — not an external
 mining source. The local sibling clone at `codex/skill-eval-bootstrap`
 (82218b4) is a **different fork lineage**; see §2.
 
+### Reviewed systems-paper mechanisms
+
+`mined` below means pack-mediated extraction into the linked candidate artifacts.
+Readsets preserve exact sections, equations, tables, source hashes where supplied,
+metric denominators and unreported limitations. Versions are paper identities,
+not fabricated implementation SHAs or a version-matched runtime stack.
+
+| Original source / version | Inspected scope and local evidence | Mechanism / consumer | Evidence limits |
+|---|---|---|---|
+| Vidur — [2405.05465v2](https://arxiv.org/abs/2405.05465v2) | [A readset](../skills/performance-ceiling-analysis/references/papers-20261015/READSET.md); §§3–7, A.1–A.2 | mined — operator/queue model calibration and joint-SLO shortlist → [calibrate-serving-simulation](../skills/calibrate-serving-simulation/SKILL.md), ceiling analysis | Empirical prediction, not physical bound; near-capacity CPU overhead and 12.65% maximum error in the specified appendix case; no current runtime calibration |
+| Orca — OSDI 2022 proceedings | [Exact readset](../skills/diagnose-vllm-admission-pressure/references/papers-20261015/references/orca-readset.md); §§3–6, Algorithm 1 | mined — iteration eligibility, selective batching, FCFS/reservation → [assess-serving-preemption](../skills/assess-serving-preemption/SKILL.md) | Historical engine/harness and normalized-median denominators; not present vLLM behavior or fairness proof |
+| FastServe — [2305.05920v3](https://arxiv.org/abs/2305.05920v3) | [Exact readset](../skills/diagnose-vllm-admission-pressure/references/papers-20261015/references/fastserve-readset.md) | mined — service priority, promotion and suspended-state host residency → serving-preemption candidate | Aggregate tail improvement is not tenant fairness; same-engine contrast distinct from historical-vLLM comparison |
+| Llumnix — [2406.03243v1](https://arxiv.org/abs/2406.03243v1) | [Exact readset](../skills/diagnose-vllm-admission-pressure/references/papers-20261015/references/llumnix-readset.md) | mined — replica migration, virtual headroom, pre-copy/downtime and host staging → [evaluate-elastic-serving-placement](../skills/evaluate-elastic-serving-placement/SKILL.md) | Virtual headroom is not physical capacity; normal-class cost and evaluated-artifact fault-tolerance limit retained |
+| LoongServe — [2404.09526v2](https://arxiv.org/abs/2404.09526v2) | [Exact readset](../skills/diagnose-vllm-admission-pressure/references/papers-20261015/references/loongserve-readset.md) | mined — elastic sequence groups, phase-dependent state placement and ongoing attention communication → elastic-placement candidate | Distributed device KV is not host RAM; group transitions have different migration costs; no current engine/NPU claim |
+| ZeRO-Offload — [2101.06840v1](https://arxiv.org/abs/2101.06840v1) | [C readset](../skills/training-resource-budget/references/papers-20261015/references/source-readset.md), ZO1–ZO3 [mechanisms](../skills/training-resource-budget/references/papers-20261015/notes/training-memory-scheduling.md) | mined — CPU optimizer ownership, update/return pipeline and separately gated delayed updates → [training-resource-budget](../skills/training-resource-budget/SKILL.md) | Restricted graph-cut model; Table 1 discrepancy; delayed updates change semantics; not the DeepSpeed config pin |
+| Checkmate — [1910.02653v3](https://arxiv.org/abs/1910.02653v3) | [C readset](../skills/training-resource-budget/references/papers-20261015/references/source-readset.md), CM1–CM2 | mined — event-level retain/recompute and dependency versus capacity feasibility → [plan-activation-residency](../skills/plan-activation-residency/SKILL.md) | Static-cost model and rounded-plan limits; activation rematerialization is not recovery checkpointing |
+| OLLA — [2210.12924v2](https://arxiv.org/abs/2210.12924v2) | [C readset](../skills/training-resource-budget/references/papers-20261015/references/source-readset.md), OL1–OL2 | mined — lifetime shortening and static address packing → activation-residency candidate | Device address placement is not host/SSD tiering; runtime amortization estimate is not measured E2E gain |
+| Alpa — [2201.12023v3](https://arxiv.org/abs/2201.12023v3) | [C readset](../skills/training-resource-budget/references/papers-20261015/references/source-readset.md), AL1–AL2 | mined — stage/mesh/sharding and cross-mesh resharding → [choose-parallel-training-plan](../skills/choose-parallel-training-plan/SKILL.md) | Conditional hierarchical plan, not global optimum; intra-op compute simplification does not describe all stage costs |
+| Zero Bubble — [2401.10241v1](https://arxiv.org/abs/2401.10241v1) | [C readset](../skills/training-resource-budget/references/papers-20261015/references/source-readset.md), ZB1–ZB3 | mined — split input/weight gradients, activation caps, V schedules and optimizer rollback → [assess-split-backward-schedule](../skills/assess-split-backward-schedule/SKILL.md) | Calculated bubbles versus measured throughput; activation cap versus total HBM; rollback is distinct from stale updates |
+| FlashAttention — [2205.14135v2](https://arxiv.org/abs/2205.14135v2) | [D readset](../skills/diagnose-attention-bottlenecks/references/sources.md) and [mechanisms](../skills/diagnose-attention-bottlenecks/references/mechanisms.md) | mined — online statistics, tiled IO and backward recomputation → [diagnose-attention-bottlenecks](../skills/diagnose-attention-bottlenecks/SKILL.md) | Scoped dense exact-attention/fast-memory assumptions; operation mix can change after IO reduction |
+| FlashAttention-2 — [2307.08691v1](https://arxiv.org/abs/2307.08691v1) | Same [D readset](../skills/diagnose-attention-bottlenecks/references/sources.md) | mined — non-matmul work, output ownership and independent query tiles → attention diagnosis | Combined interventions are not isolated causal ablations; Accelerator only |
+| FlashAttention-3 — [2407.08608v2](https://arxiv.org/abs/2407.08608v2) | Same [D readset](../skills/diagnose-attention-bottlenecks/references/sources.md); [author-reported cases](../skills/diagnose-attention-bottlenecks/references/papers-20261015/cases/overlap-and-fp8-counter-signals.md) | mined — async dependencies, compiler/register trade-offs and FP8 layout/accuracy → attention diagnosis | Hopper primitives establish no Ascend support; synthetic accuracy is not model-quality validation |
+
+FlashVector's host materialization/assembly and Agentic Kernel Optimization's
+regime-specific kernel cases are cross-links to the **same** source identities in
+§2 below, not independent corroboration. B/C decision cases are hypothetical;
+D experiments are author-reported. No new SSD or OS mechanism is credited from
+A–F; Network links require actual inter-node state/collective transfer.
+
+**Missing foundation input:** the approved earlier archive
+`omnirsi-paper-intelligence-2026-10-15.zip` (ZeRO-Infinity, FlexGen, Sarathi-Serve,
+DistServe, PagedAttention, Mooncake) is referenced by the packs but absent from
+the supplied local directory. Its six-paper extraction and standalone candidates
+are not imported or counted here. Existing DeepSpeed configuration evidence and
+Mooncake transport discovery are not substitutes for those paper readsets.
+
 ### Negative findings (scoped to inspected paths and revisions)
 
 - **Disk-level storage I/O mechanics** (mmap/pinned staging buffers,
@@ -120,7 +161,7 @@ SSD/OS systems columns.
 | Reference (upstream @ revision) | Role | Used for | Consumed by |
 |---|---|---|---|
 | LearningToCommit/LearningToCommit @ 7e5a1d7 | history learning | temporal-split method (train/test cutoff discipline) | `repository-evolution-analysis` |
-| yetone/magpie @ 77800032 | corpus | production local-LLM-gateway (Go, MIT) evolution history: 3428 commits; commit-size p50, repair-time medians, subsystem coupling | `repository-evolution-analysis` |
+| yetone/magpie @ 77800032 | corpus | carried 3,428-commit history and subsystem analysis; not causal proof of speed or automation | `repository-evolution-analysis`; new coordination case pending Dot delivery and owner review |
 | VectorSpaceLab/AREX-Skill @ ac3fe1af | distillation | repo→skill distillation model, artifact lifecycle, refresh/provenance policy | `npu-skill-factory` |
 | microsoft/SkillOpt @ 343db22 | evolution | bounded-edit skill evolution | `npu-skill-factory`, `skill-evolution-playbook`, `dense-performance-evidence`, `optimization-search-policy` |
 | Qwen-Applications/Trace2Skill @ 3d0b52a | evolution | Trace2Skill pool consolidation | `skill-evolution-playbook` |
@@ -131,6 +172,24 @@ SSD/OS systems columns.
 | arXiv 2608.01867 (CRISP) | search | critical-step classification | `optimization-search-policy` |
 | **A1 / Agent Skills** @ `69ef37e9424c0a7ea9dd2293b559e43ec8176379` | reference; Dot A-approved minimal consumption | Specification frontmatter/body/progressive disclosure and client guide catalog/activation/resource sections directly verified 2026-10-15; format guidance, not an execution permission grant | `src/omnirsi/skill_catalog.py`, existing CLI/arguments; metadata projection + explicit selection + resource resolution; no installer/router/client configuration |
 | **CR6 / Stas Bekman ML Engineering Open Book** @ `ee7517e0f562ff0e7d56c3e88c619d0c0c496ba7` (CC BY-SA 4.0 declared by source skill) | expert methodology | `skills/ml-engineering/SKILL.md` scoped principles, `skills/evaluate-cluster/SKILL.md` first 100 lines, targeted performance README MFU/HFU/NUMA/GC sections; scripts identified only, excluded storage/input/recovery lanes not mined | `training-resource-budget` + explicitly attributed/share-alike `references/stas-decision-notes.md`; Accelerator/RAM/Network/OS diagnosis and proposed verification, no local results |
+
+### Reviewed paper methodology and cases
+
+The following paper versions supplement, rather than replace or certify, the
+repository pins above. `mined` means accepted candidate content. Source inspection
+is supplier/owner evidence dated 2026-10-15; no methodology efficacy was measured
+in OmniRSI. These rows do not create hardware coverage merely from experimental
+hardware or agent-development activity.
+
+| Original source / version | Inspected scope / source notes | Accepted contribution and consumer | Boundary |
+|---|---|---|---|
+| Vidur v2 (same identity as §1) | [A readset](../skills/performance-ceiling-analysis/references/papers-20261015/READSET.md) | mined — calibration/queueing uncertainty and constrained shortlist → ceiling/calibration/search | A cross-link, not a second independent source |
+| InferenceBench — 2607.20468v1 | [Audit](../skills/performance-ceiling-analysis/references/papers-20261015/references/inferencebench.md), A readset §§1–6, A–G | mined — bounded search, independent timing integrity, incumbent/final-artifact preservation → search policy and benchmark design | Within-vLLM two-hour main comparison differs from per-engine grid; displayed date/ID anomaly unresolved |
+| FlashVector — 2609.17391v1 | [Audit](../skills/performance-ceiling-analysis/references/papers-20261015/references/flashvector.md), §§4–5, Algorithm 1, Tables 1–4 | mined — noise-aware cross-layer redirection, host assembly/materialization, full-stack validation → ceiling/host guidance | Component versus service denominators; Model B SLO inconsistency retained; no Network from gRPC alone |
+| Agentic Kernel Optimization — 2608.14560v1 | [Audit](../skills/performance-ceiling-analysis/references/papers-20261015/references/agentic-kernel.md), main text and A–C | mined — regime dispatch, exactness/timing integrity and stalled-direction correction → search/ceiling cases | PyTorch versus FlashInfer baselines differ; SM utilization versus throughput is unresolved without matched definitions; date anomaly retained |
+
+Applied owner-review decisions: R1–R6 for these systems-paper mechanisms.
+Further methodology-paper amendments remain a separate integration step.
 
 A1 preserves Dot A's Vercel/OpenCode observations as supplied context only;
 those clients were not installed, configured or independently runtime-tested.

@@ -93,15 +93,15 @@ Before generating a new candidate, consult:
 
 ## Exploration vs exploitation
 
-**Exploit first, explore when stuck.** If prior art exists for the current
-bottleneck, try it before generating novel candidates. Novel candidates cost
-more to evaluate and have lower prior probability of success.
+**Use prior art as a hypothesis, not a predetermined winner.** Retain a bounded
+shortlist of distinct mechanisms with assumptions, uncertainty, expected impact
+and evaluation cost. A relevant known recipe may be the cheapest first contrast;
+its prior success does not establish superiority in the current workload.
 
-**Diversify the bottleneck, not the solution.** When the current optimization
-family is exhausted (e.g., all memory-bandwidth reductions explored), switch
-to investigating the next largest bottleneck stage, not to trying more
-variants of the same solution. The classification step (which stage to target)
-is where diversity matters most.
+**Diversify mechanisms as well as bottleneck targets.** If local variants fail,
+check whether ownership, work elimination, residency, algorithm or configuration
+changes address the same measured bottleneck. Re-profile when the limiting stage
+moves; do not keep sampling one family solely because budget remains.
 
 **Exploration budget:** reserve a fraction of the experiment budget for
 low-cost exploratory runs (single-seed, Tier A, quick profiling) before
@@ -149,9 +149,10 @@ warrants confirmation at the next level.
 
 Stop local tuning and switch strategy when any of the following is true:
 
-1. **Ridge-point reached:** the dominant bottleneck's SOL% or AI Core
-   utilization exceeds 80%. Further optimization within that bottleneck class
-   will yield diminishing returns.
+1. **Current-mechanism headroom exhausted:** compare potential removable time
+   against the target and locally measured uncertainty. Roofline proximity only
+   constrains the stated work/traffic/operation mix; it does not exclude a better
+   algorithm. No universal utilization threshold is a stopping rule.
 
 2. **Amdahl ceiling reached:** the Amdahl-estimated maximum E2E speedup from
    all remaining stages together is below the target. Local tuning cannot reach
@@ -168,36 +169,48 @@ Stop local tuning and switch strategy when any of the following is true:
    escalate the abstraction level (e.g., change parallelism strategy rather
    than tuning an individual op).
 
-## Budget allocation
+## Budget allocation and final-artifact integrity
 
-Heuristic allocation across phases of a campaign:
+Freeze the useful work, quality contract, allowed approximations, timing boundary
+and resource budget before search. Preserve a complete restartable incumbent:
+code/config identity, launcher, dependencies, cache/initialization state and
+correctness evidence. Count distinct measured configurations separately from
+restarts, failed probes and repeated recovery attempts.
 
-| Phase | Budget fraction |
-|-------|----------------|
-| Context reading + profiling (L2 evidence) | 30% |
-| Exploration (low-cost candidates, single-regime) | 30% |
-| Exploitation (best candidate, multi-regime benchmark) | 30% |
-| Recording and analysis | 10% |
+Prefer controlled contrasts; label coupled changes at candidate level and test
+important interactions explicitly. Quality checks and timing-path integrity are
+independent: inspect work counts, event boundaries and the actual delivered
+artifact. A shortcut outside the authorized semantics is not an optimization.
 
-Adjust for the specific campaign. If prior art is strong, reduce exploration
-and increase exploitation. If the bottleneck is unclear, increase the profiling
-fraction before generating any candidates.
+Reserve finalization time using observed restart, warmup and full-validation
+cost, not a paper's fixed percentage. Restore and verify the best fully valid
+incumbent through its canonical launcher. Report best-seen and delivered outcomes
+separately; a successful probe does not qualify a broken final state.
+
+The [experiment-governance procedure](../performance-ceiling-analysis/references/papers-20261015/govern-optimization-experiments/procedure.md)
+and [decision cases](../performance-ceiling-analysis/references/papers-20261015/cases/decision-cases.md)
+retain the reviewed A-pack mechanism, costs and limits. InferenceBench's
+within-vLLM matched two-hour comparison is separate from its grid of independent
+per-engine two-hour searches. None is an OmniRSI measurement.
 
 ---
 
 ## Prior art from related systems
 
-### RRSI (Regularized Recursive Self-Improvement)
-Source: https://arxiv.org/abs/2609.24972
-Mechanism: Feedback loop structure where each completed experiment produces a constraint that narrows the next search. When an experiment fails (worse or inconclusive), extract a constraint from the failure (e.g., "KV cache compression does not help at this sequence length") and record it in the negative record. On subsequent iterations, any new candidate must not violate a constraint from a prior failed experiment. This prevents circular re-exploration of the same dead ends. The system also introduces a regularization term to the reward signal that penalizes hypotheses that are too similar to recently tried candidates, forcing diversity in the solution family rather than just the bottleneck family.
-Answers question: (1) How does an agent avoid repeatedly tuning one familiar solution family? (2) How should previous failed experiments constrain the next search?
-OmniRSI adaptation: Encode negative constraints as structured entries in the experiment record (bottleneck class, hardware/model/workload context, hypothesis, failure reason). At candidate generation phase, query the constraint set before proposing a new candidate. If a candidate would violate a stored constraint, either skip it or require explicit justification for re-trying (burden of proof is higher). This prevents the familiar-solution-bias loop without requiring manual casebook curation.
+### RRSI methodology boundary
+
+The historical generic constraint summary awaits reconciliation with the reviewed
+RRSI paper evidence. Do not infer a universal acceptance policy from it.
 
 ### CRISP (Critical Step Perception)
 Source: https://arxiv.org/pdf/2608.01867
 Mechanism: Agent learns to classify each step in an experiment as either "critical" (evidence-gathering that informs the next decision) or "redundant" (confirmatory or exploratory without decision impact). During candidate evaluation, the agent prioritizes critical steps and can defer or skip redundant steps, reducing total experiment cost by 15-33% while maintaining accuracy. The mechanism uses a learned model to identify which measurement or profiling steps actually change the verdict; once a critical step has a clear result, subsequent steps are skipped.
 Answers question: (3) How should experiment cost affect candidate selection?
-OmniRSI adaptation: Before launching a multi-regime benchmark, ask: "What is the minimum set of regimes needed to make a verdict?" Rather than running the full benchmark (very high cost), run only critical regimes first (medium cost). If the result is "clearly better", skip full production replay. If the result is "inconclusive", escalate to the next regime. This gives cost-aware stopping within a single experiment, not just between experiments. Track which regimes are critical for which bottleneck classes and reuse that knowledge.
+OmniRSI adaptation: prioritize the least expensive discriminating regimes for screening. Screening may reject a candidate early; it cannot skip the frozen acceptance regimes or substitute for required service-level evidence. The historical CRISP summary is carried, not re-extracted in this wave; its numerical claim is not a local result or a default budget target.
 
-### Stopping via Amdahl + ridge-point (already in this skill)
-The four stopping criteria (ridge-point, Amdahl ceiling, repeated inconclusive, negative-record saturated) already cover when to stop local tuning. These align with prior systems that use performance ceilings and the observation that further work is uneconomical. No new mechanism found beyond what is documented above.
+### Stopping follows the current evidence contract
+
+Use conditional headroom, measurement uncertainty, negative evidence and the
+authorized budget together. Preserve no-change when candidates cannot be
+separated. Reading these procedures authorizes no execution, framework change,
+new resource spending or publication.
