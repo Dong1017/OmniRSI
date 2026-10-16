@@ -57,3 +57,29 @@ def test_declared_reference_escape_and_missing_dependency_fail(tmp_path, referen
     (directory / "metadata.json").write_text(json.dumps({"references": [reference]}))
     with pytest.raises(ValueError, match="inside|Missing"):
         skill_reference(tmp_path, "selected", reference)
+
+
+@pytest.mark.parametrize("references", ["private-notes.md", None, ["notes.md", 3], {"notes.md": 1}])
+def test_malformed_references_fail_listing_and_resolution(tmp_path, references):
+    # Regression: references that is not a string list is rejected by both
+    # listing and reference resolution.
+    directory = tmp_path / "selected"
+    directory.mkdir()
+    (directory / "SKILL.md").write_text("---\nname: selected\ndescription: test\n---\n")
+    (directory / "metadata.json").write_text(json.dumps({"references": references}))
+    with pytest.raises(ValueError, match="references"):
+        skill_records(tmp_path)
+    with pytest.raises(ValueError, match="references"):
+        skill_reference(tmp_path, "selected", "notes.md")
+
+
+def test_string_references_never_authorize_substring_paths(tmp_path):
+    # Regression: a string references value used to degrade membership
+    # testing to substring matching.
+    directory = tmp_path / "selected"
+    directory.mkdir()
+    (directory / "SKILL.md").write_text("---\nname: selected\ndescription: test\n---\n")
+    (directory / "notes.md").write_text("private\n", encoding="utf-8")
+    (directory / "metadata.json").write_text(json.dumps({"references": "private-notes.md"}))
+    with pytest.raises(ValueError, match="references"):
+        skill_reference(tmp_path, "selected", "notes.md")

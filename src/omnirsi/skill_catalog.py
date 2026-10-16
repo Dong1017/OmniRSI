@@ -38,20 +38,46 @@ def _directory(root: Path, name: str) -> Path:
     return directory
 
 
+def _entry(directory: Path, filename: str) -> Path:
+    # The resolved entry file must stay inside the selected skill directory;
+    # reject symlinks that point outside it.
+    path = (directory / filename).resolve()
+    if not path.is_relative_to(directory):
+        raise ValueError(f"Skill {filename} must stay inside the selected skill: {directory.name}")
+    return path
+
+
+def _sidecar(directory: Path) -> dict | None:
+    # metadata.json shares the directory-boundary loading path with SKILL.md.
+    path = _entry(directory, "metadata.json")
+    if not path.is_file():
+        return None
+    metadata = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(metadata, dict):
+        raise ValueError(f"Skill metadata must be a mapping: {directory.name}")
+    return metadata
+
+
+def _references(metadata: dict, name: str) -> list[str]:
+    # references must be a list of strings; a string value would degrade
+    # membership testing to substring matching.
+    references = metadata.get("references", [])
+    if not isinstance(references, list) or any(not isinstance(item, str) for item in references):
+        raise ValueError(f"Skill references must be a string list: {name}")
+    return references
+
+
 def _metadata(directory: Path) -> dict:
-    # 二进制逐行读取，只解析 frontmatter，不解码正文。
-    with (directory / "SKILL.md").open("rb") as stream:
+    # Read bytes line by line; parse only the frontmatter, never decode the body.
+    with _entry(directory, "SKILL.md").open("rb") as stream:
         record = _frontmatter(stream)
     for key in ("name", "description"):
         if not isinstance(record.get(key), str) or not record[key].strip():
             raise ValueError(f"Skill requires {key}: {directory.name}")
     if record["name"] != directory.name:
         raise ValueError(f"Skill name disagrees with directory: {directory.name}")
-    sidecar = directory / "metadata.json"
-    if sidecar.is_file():
-        metadata = json.loads(sidecar.read_text(encoding="utf-8"))
-        if not isinstance(metadata, dict):
-            raise ValueError(f"Skill metadata must be a mapping: {directory.name}")
+    metadata = _sidecar(directory)
+    if metadata is not None:
         for key in record.keys() & metadata.keys():
             if record[key] != metadata[key]:
                 raise ValueError(f"Conflicting skill metadata field {key}: {directory.name}")
@@ -61,6 +87,7 @@ def _metadata(directory: Path) -> dict:
             if set(record) != {"name", "description"}:
                 raise ValueError("Local skill structured fields belong in metadata.json")
         record.update(metadata)
+    _references(record, directory.name)
     if "status" in record and not isinstance(record["status"], str):
         raise ValueError(f"Skill status must be a string: {directory.name}")
     if "tags" in record and (
@@ -97,7 +124,7 @@ def skill_instructions(root: Path, name: str) -> str:
     """Load selected instructions. Reading does not authorize their commands."""
     directory = _directory(root, name)
     _metadata(directory)
-    with (directory / "SKILL.md").open("rb") as stream:
+    with _entry(directory, "SKILL.md").open("rb") as stream:
         _frontmatter(stream)
         return stream.read().decode("utf-8").lstrip("\r\n")
 
@@ -116,8 +143,8 @@ def skill_resource(root: Path, name: str, resource: str) -> Path:
 def skill_reference(root: Path, name: str, reference: str) -> Path:
     """Resolve a declared checkout reference without escaping the skills root."""
     directory = _directory(root, name)
-    metadata = json.loads((directory / "metadata.json").read_text(encoding="utf-8"))
-    if reference not in metadata.get("references", []):
+    metadata = _sidecar(directory)
+    if reference not in _references(metadata or {}, directory.name):
         raise ValueError(f"Undeclared skill reference: {reference}")
     if "\\" in reference or Path(reference).is_absolute():
         raise ValueError("Reference must use a relative POSIX path")

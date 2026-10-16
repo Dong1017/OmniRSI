@@ -1,8 +1,9 @@
 # Knowledge base contract
 
 This implements the K0/K1 content foundation of [RFC #17](https://github.com/ThinkFlowLab/OmniRSI/issues/17).
-The coding agent owns planning, conversation and authorization. Reading material
-never executes a helper or grants permission to change a target system.
+The coding agent owns planning and conversation and acts within explicit scope
+and delegated authority. Reading material never executes a helper or grants
+permission to change a target system.
 
 The three objectives remain **Roofline / optimization headroom**, **repository-evolution
 knowledge**, and the **two-matrix Skill System**. Magpie collaboration rollout is

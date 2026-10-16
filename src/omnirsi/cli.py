@@ -79,7 +79,8 @@ def main(argv: list[str] | None = None) -> int:
     args = argument_parser.parse_args(argv)
     try:
         if args.command == "skills":
-            # 可选依赖只在 skills 命令加载，不影响核心 CLI。
+            # Optional dependencies load only for the skills command; the core
+            # CLI stays independent of them.
             from .skill_catalog import (
                 get_skill,
                 skill_instructions,

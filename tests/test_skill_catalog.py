@@ -4,9 +4,24 @@ from pathlib import Path
 import pytest
 
 from omnirsi.cli import main
-from omnirsi.skill_catalog import get_skill, skill_instructions, skill_records, skill_resource
+from omnirsi.skill_catalog import (
+    get_skill,
+    skill_instructions,
+    skill_records,
+    skill_reference,
+    skill_resource,
+)
 
 PROJECT = Path(__file__).resolve().parents[1]
+
+
+def _symlink(target: Path, link: Path) -> None:
+    # Symlink creation needs Developer Mode or admin rights on Windows;
+    # skip instead of failing where the platform refuses.
+    try:
+        link.symlink_to(target)
+    except OSError as exc:
+        pytest.skip(f"symlink unavailable: {exc}")
 
 
 def test_checkout_catalog_is_metadata_only():
@@ -68,6 +83,44 @@ def test_explicit_selection_and_resource_resolution(tmp_path, capsys):
         skill_resource(tmp_path, "selected", "../unselected/SKILL.md")
     with pytest.raises(ValueError, match="Unknown"):
         skill_resource(tmp_path, "selected", "missing.md")
+
+
+def test_instruction_symlink_escape_rejected(tmp_path):
+    # Regression: the skill directory stays inside the selected root, but
+    # SKILL.md symlinks to an outside file.
+    directory = tmp_path / "selected"
+    directory.mkdir()
+    outside = tmp_path / "outside" / "SKILL.md"
+    outside.parent.mkdir()
+    outside.write_text(
+        "---\nname: selected\ndescription: test\n---\n# Outside body\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    _symlink(outside, directory / "SKILL.md")
+    with pytest.raises(ValueError, match="inside"):
+        skill_records(tmp_path)
+    with pytest.raises(ValueError, match="inside"):
+        skill_instructions(tmp_path, "selected")
+    with pytest.raises(ValueError, match="inside"):
+        get_skill(tmp_path, "selected")
+
+
+def test_metadata_symlink_escape_rejected(tmp_path):
+    # Regression: metadata.json symlinks outside; listing and reference
+    # resolution must both reject it.
+    directory = tmp_path / "selected"
+    directory.mkdir()
+    (directory / "SKILL.md").write_text(
+        "---\nname: selected\ndescription: test\n---\n", encoding="utf-8", newline="\n"
+    )
+    outside = tmp_path / "outside.json"
+    outside.write_text(json.dumps({"status": "candidate", "references": []}))
+    _symlink(outside, directory / "metadata.json")
+    with pytest.raises(ValueError, match="inside"):
+        skill_records(tmp_path)
+    with pytest.raises(ValueError, match="inside"):
+        skill_reference(tmp_path, "selected", "notes.md")
 
 
 def test_cli_list(capsys):

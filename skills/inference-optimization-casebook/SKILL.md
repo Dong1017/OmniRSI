@@ -93,9 +93,13 @@ Add a case when:
 - The prior-art record would have prevented wasted work.
 
 Do NOT add a case for:
-- INCONCLUSIVE results (not enough evidence to characterize the effect).
+- INCONCLUSIVE optimization-effect claims (not enough evidence to characterize
+  the effect). Keep the original campaign verdict and do not manufacture a
+  PASS; a scoped diagnostic observation may still be recorded with its
+  INCONCLUSIVE verdict and stated configuration boundary.
 - Results that only apply to one specific configuration with no plausible
-  generalization.
+  generalization, unless they are scoped diagnostic observations that state
+  their configuration boundary.
 - Results without a real measurement evidence trail.
 
 ## Maintaining the casebook
