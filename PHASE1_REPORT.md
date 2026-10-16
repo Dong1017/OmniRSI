@@ -1,5 +1,13 @@
 # OmniRSI Phase 1 Report — Meta-Skill Bootstrap
 
+> Historical snapshot from 2026-10-14. Its inventory, proposed next steps and
+> sibling-workstream reports are not current implementation or validation status.
+> Use the [three-objective overview](README.md#three-objectives-of-the-current-wip),
+> [Reference Matrix](docs/reference-matrix.md) and
+> [SearchSpace Matrix](docs/searchspace-matrix.md) for current framing and evidence.
+> The original report below is preserved; new Magpie coordination evidence remains
+> pending Dot delivery and owner review.
+
 **Branch:** `opus/meta-skill-bootstrap`
 **Date:** 2026-10-14
 **Base:** `4c8e1285` (ThinkFlowLab/OmniRSI main)

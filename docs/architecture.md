@@ -5,6 +5,33 @@ CLI, RunSpec, knowledge retrieval and existing command contracts remain stable.
 The diagrams below describe implemented code, with the historical compatibility
 boundary called out separately.
 
+## Three-objective delivery framing
+
+The current WIP develops three connected objectives, detailed in the
+[README overview](../README.md#three-objectives-of-the-current-wip):
+
+1. **Roofline / Optimization Headroom:** source-grounded bounds, observed
+   attainable limits, calibrated predictions and experiment selection. The
+   ceiling skill is guidance, not an automatic calculator; application results
+   require their own measurements.
+2. **Dense Commit Coordination:** ownership, concurrent work, review, testing,
+   integration, release and feedback into later changes. The existing Magpie
+   material is history analysis. A first-hand coordination case is pending Dot
+   delivery and owner review; neither that analysis nor paper methodology
+   implements or verifies an autonomous development pipeline.
+3. **Skill System:** reusable candidate skills, knowledge and cases, the
+   [Reference Matrix](reference-matrix.md) and
+   [SearchSpace Matrix](searchspace-matrix.md), and explicit read-only access.
+   The two matrices describe evidence and coverage; they do not drive an
+   automatic router or execution loop.
+
+This framing is presentation and delivery traceability, not a third primary
+matrix. Dot owns source extraction, the owner approves sources and reviews
+content/mappings, and the integration workstream owns reconciliation with the
+current artifacts. Candidate coverage and empirical validation stay separate.
+Paper versions/readsets remain distinct from implementation pins; a shared
+lineage or a linked paper is not independent corroboration.
+
 ## Module responsibilities and dependencies
 
 ![Implemented modules and their dependencies](assets/modular-components-en.svg)
