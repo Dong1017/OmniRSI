@@ -128,14 +128,18 @@ features exist that would share them, not speculatively upfront. This is
 consistent across provider onboarding, library/MCP, and routing. Source: inferred
 from commit date ordering; not causally established.
 
-## Why Magpie iterates quickly
+## Historical Magpie observations and their limits
 
-This is a computed answer from the history analysis.
+These are carried history-analysis results from the earlier corpus, not a fresh
+coordination audit. Commit granularity, repair intervals and subject patterns do
+not causally establish speed, review latency, automation or release reliability.
+The first-hand ownership/concurrency/review/testing/integration/release case is
+pending Dot delivery and owner review; do not reconstruct it from these counts.
 
 **Evidence-grounded findings:**
 
 - **Change granularity**: 71% of commits under 1000 lines; p50 = 151 lines,
-  p75 = 342. Small diffs mean fast code review and isolated risk.
+  p75 = 342. Review speed and change safety were not measured.
   Source: computed from `magpie-commits.jsonl` numstat.
 
 - **Repair latency**: median 1.54 hours from feature commit to related fix
@@ -224,6 +228,22 @@ The temporal split and stratified sampling transfer directly. What must change:
 - Agent tools: kernel tasks require a compiler and profiler in the sandbox, not
   just Bash/Read/Write.
 Source: inferred from LearningToCommit design; not empirically tested on kernel repos.
+
+## Scoped historical lessons
+
+For each lesson, record parent snapshot, task intent, accepted change, the agent's
+specific discrepancy and the narrow applicability condition. Separate file-local
+habits, subsystem invariants and repository-wide conventions. Accepted historical
+code is a contrastive reference, not the unique correct solution or an eternal
+rule. Revise or retire lessons when later accepted evidence contradicts them.
+
+Freeze adaptation inputs before future-task evaluation; audit issue synthesis and
+source access independently. Report correctness, localization, patch size, style
+and resource use separately. The
+[Learning to Commit paper ledger](../npu-skill-factory/references/papers-20261015/references/learning-to-commit.md)
+and [convention-expiry counterexample](../npu-skill-factory/references/papers-20261015/cases/methodology-counterexamples.md#e-c2--better-repository-familiarity-can-produce-unnecessary-caution)
+extend the existing temporal-split method. These methodology papers do not verify
+Magpie's actual development coordination or authorize another history scan.
 
 ## Constructing the capability evolution graph
 

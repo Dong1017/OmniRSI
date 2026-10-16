@@ -197,10 +197,31 @@ per-engine two-hour searches. None is an OmniRSI measurement.
 
 ## Prior art from related systems
 
-### RRSI methodology boundary
+### RRSI — bounded harness proposals and acceptance
 
-The historical generic constraint summary awaits reconciliation with the reviewed
-RRSI paper evidence. Do not infer a universal acceptance policy from it.
+Use [RRSI v3 source evidence](references/papers-20261015/references/source-notes.md#f1--rrsi)
+for the proposal-cardinality, critic, calibrated noise-floor, token-cost and
+structural-novelty mechanisms. These are paper-specific choices, not mandatory
+thresholds. Its grouped ablations do not establish each component's causal
+benefit. A rejected bundle is not proof that every included mechanism failed.
+
+Name the smallest adaptation unit supported by feedback: case, memory item,
+skill, search policy, harness or improver. Preserve hypothesis, diff, outcome,
+score distribution and total cost. Distinguish execution failure, valid regression,
+noisy tie and loss of selection. A code reviewer can detect explicit leakage but
+cannot certify absence of overfitting. Keep a best-ever reference and independent
+validation evidence; contextual failures do not create permanent global bans.
+
+[Dream-RSI, AIDE² and JitRL interface records](references/papers-20261015/knowledge/adaptation-interfaces.md)
+qualify three other targets. Replay requires a legal action interface, observed
+prefix and recorded support; unseen branches need fresh evidence. Action
+reranking requires accessible candidate scoring and a trustworthy reward model;
+a Markdown procedure supplies neither. Task-solving quality and improver quality
+need separate comparisons; AIDE²'s improver experiment remains inconclusive.
+
+The [mechanism comparison](references/papers-20261015/MECHANISMS.md) retains
+per-paper benefits, costs and counter-signals. These methodology amendments
+implement no controller, evaluator repair, logit interface or autonomous loop.
 
 ### CRISP (Critical Step Perception)
 Source: https://arxiv.org/pdf/2608.01867

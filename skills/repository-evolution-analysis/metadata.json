@@ -29,7 +29,7 @@
   "verification": {
     "locally_verified": false,
     "evidence_level": "source_grounded",
-    "note": "Pipeline map extracted from LearningToCommit source. Magpie diff statistics computed from JSONL history. Capability evolution graph edges based on commit diff sampling."
+    "note": "Carried LearningToCommit pipeline and Magpie history analysis, not causal evidence of development speed. The reviewed paper amendment is linked from SKILL.md; paper-to-code equivalence is not established. First-hand Magpie coordination research remains pending Dot delivery and owner review."
   },
   "applicability": {
     "scope": "any software repository with a recoverable git history",

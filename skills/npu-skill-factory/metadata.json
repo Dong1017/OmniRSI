@@ -41,10 +41,10 @@
   "verification": {
     "locally_verified": false,
     "evidence_level": "source_grounded",
-    "note": "Skill bundle schema observed in sibling workstream at 82218b4. AREX and SkillOpt mechanisms extracted from source by research agent. Ascend corpus characterized from repo @ 8481d39b."
+    "note": "Historical repository extraction and sibling schema at 82218b4, not a current local factory implementation. Reviewed paper additions and exact versions live in references/papers-20261015/references/readset.md and docs/reference-matrix.md; no efficacy or paper-to-code equivalence established."
   },
   "applicability": {
     "scope": "OmniRSI skill lifecycle management",
-    "prerequisites": "schemas/skill-bundle.json, omnirsi.harness.skill_distill, omnirsi.harness.skill_eval"
+    "prerequisites": "Current candidate inventory and source/evaluation evidence; historical sibling execution interfaces are not required for read-only artifact admission"
   }
 }

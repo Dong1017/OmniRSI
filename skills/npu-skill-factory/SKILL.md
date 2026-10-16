@@ -17,12 +17,39 @@ status: candidate
 
 # NPU Skill Factory Design
 
-Status: candidate. One Tier A pilot completed in sibling workstream (2026-10-14).
-Procedures have not been promoted.
+Status: candidate. A Tier A pilot was reported by the sibling workstream on
+2026-10-14; it was not integrated or rerun here. This skill supplies methodology,
+not an implemented factory or automatic promotion pipeline.
+
+## Choose the evidence product
+
+Choose a case, reusable knowledge, bounded amendment or new skill according to
+scope and workflow ownership. A new source need not create a new skill; a distinct
+trigger, procedure and output can justify one. The
+[evidence-routing note](references/papers-20261015/knowledge/evidence-routing.md),
+[comparison](references/papers-20261015/COMPARISON.md),
+[counterexamples](references/papers-20261015/cases/methodology-counterexamples.md)
+and [exact paper readset](references/papers-20261015/references/readset.md)
+retain the approved paper-level reasoning alongside the older repository pins.
+
+Keep source fidelity, static usability, execution correctness, behavioral efficacy
+and transfer evidence separate. Construction, selection, deployment-context and
+downstream costs need distinct denominators; a library entry or upstream score
+is not local promotion. Source limitations and unrun checks remain explicit.
+
+Current candidate bundles live under `skills/<name>/`, with linked references and
+cases under their owning skill. Exactly two primary matrices record provenance
+and coverage. Do not invent a paper Git SHA or force these notes into a repository
+knowledge-record schema that requires implementation fields they cannot supply.
+The CLI explicitly reads metadata, instructions and resources; it implements no
+factory, automatic routing or updater. Manual integration is not an AREX/DisCo run.
 
 ## Artifact lifecycle
 
-OmniRSI uses a six-stage lifecycle. Do not skip stages when promoting a skill.
+The following lifecycle and schema are historical design references from the
+sibling workstream and PR #9, not current implemented repository contracts.
+Use the current candidate layout above for integration; historical evaluation
+examples neither launch work nor set universal promotion thresholds.
 
 ```
 1. Raw/preflight evidence
@@ -38,9 +65,9 @@ OmniRSI uses a six-stage lifecycle. Do not skip stages when promoting a skill.
 6. Evolution (bounded edit → re-evaluation → accept/reject)
 ```
 
-**Promotion rule:** `skills/` is for agent-usable, promoted, evaluated skills.
-Do not bulk-copy imported skills into `skills/`. A candidate with no evaluation
-trail is not a promoted skill.
+**Promotion rule:** directory placement does not establish promotion. The current
+`skills/` tree includes explicitly labeled candidates. A candidate without an
+authorized evaluation trail remains unvalidated regardless of packaging.
 
 **Where each artifact belongs:**
 
@@ -217,11 +244,12 @@ One evolution cycle:
    `failure_modes`, or `knowledge_sources` sections, not the `capability` or
    `applicability` contract. Length budget: ±20% of current skill length.
    Do not replace the entire skill.
-3. **Held-out evaluation:** run the three-variant experiment on the same held-out
-   task set used for the initial promotion decision.
-4. **Accept/reject gate:** accept if `task_success(v1) ≥ task_success(v0)` on
-   the held-out set with no regression. Reject if it degrades or produces more
-   inconclusive trials. Record the result under `evidence/<evolution-campaign-id>/`.
+3. **Independent evaluation:** use development/selection evidence to choose the
+   candidate; keep final-test tasks outside adaptive edit selection. Check combined
+   behavior and unrelated successes, not only the triggering failure.
+4. **Accept/reject gate:** apply the frozen task-specific contract. A tie or noisy
+   result is not an improvement. Preserve the incumbent and report regressions or
+   inconclusive outcomes without excluding them silently from success estimates.
 5. **Revision lineage:** on accept, copy the current `SKILL.md` to `history/v0/`
    and write the accepted edit as the new `SKILL.md`. Update `metadata.json`
    with the new `revision.version`.

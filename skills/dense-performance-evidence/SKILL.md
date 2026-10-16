@@ -142,6 +142,23 @@ splitting, and statistical power.
 An optimization agent should always state which evidence level supports each
 claim and avoid upgrading a lower-level result to a higher-level claim.
 
+## Methodology cost and evidence boundaries
+
+For skill/search methods, keep source fidelity, static usability, execution
+correctness, behavioral efficacy and transfer as separate checks. Record build,
+selection, deployment-context and downstream-task cost separately. State whether
+reported changes are absolute points, relative gains, geometric means or rates
+with conditional denominators. Preserve worse metrics and per-task regressions;
+a shared task budget alone does not prove equal total cost. An unresolved source
+protocol/denominator mismatch stays unresolved.
+
+[Paper-method comparison](../npu-skill-factory/references/papers-20261015/COMPARISON.md)
+and [protocol details](../npu-skill-factory/references/papers-20261015/references/protocol-details.md)
+provide the reviewed evidence; neither upstream scores nor local packaging checks
+promote an OmniRSI candidate. For performance predictions, distinguish physical
+bounds, observed envelopes, simulator predictions and measured application results
+as in [ceiling analysis](../performance-ceiling-analysis/SKILL.md).
+
 ## Collection escalation rule
 
 Collect Level 0 before anything. Then:
