@@ -170,6 +170,86 @@ def test_qualified_identity_rules(tmp_path):
     assert package_filter["omissions"] == [{"id": "case.local-only", "reason": "filters"}]
 
 
+def test_legacy_frontmatter_reference_is_a_dependency(tmp_path):
+    (tmp_path / "other").mkdir()
+    (tmp_path / "other" / "SKILL.md").write_text("---\nname: other\ndescription: t\n---\nB")
+    target = tmp_path / "other" / "notes.md"
+    target.write_text("first")
+    (tmp_path / "selected").mkdir()
+    (tmp_path / "selected" / "SKILL.md").write_text(
+        "---\nname: selected\ndescription: t\nreferences: [../other/notes.md]\n"
+        "applicability: {backend: any}\n---\nBody"
+    )
+    reader = KnowledgeReader(skill_root=tmp_path)
+    original = reader.read("selected")
+    assert original.metadata["applicability"] == {"backend": "any"}
+    assert original.content["other/notes.md"] == b"first"
+    assert "other/notes.md" in original.dependencies
+    target.write_text("second")
+    assert reader.read("selected").revision != original.revision
+    target.unlink()
+    with pytest.raises(ValueError, match="Missing skill reference"):
+        reader.read("selected")
+
+
+def _declare(root: Path, **fields) -> None:
+    path = root / "owner" / "cases" / "note.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    path.write_text(json.dumps({**record, **fields}), encoding="utf-8")
+
+
+def test_case_required_resources_are_retained_and_checked(tmp_path):
+    _case(tmp_path, "case.measured")
+    data = tmp_path / "owner" / "cases" / "measurements.csv"
+    data.write_text("a,1", encoding="utf-8")
+    plain = KnowledgeReader(skill_root=tmp_path).read("case.measured")
+    assert plain.metadata["required_resources"] == ["note.md", "case.json"]
+    _declare(tmp_path, required_resources=["measurements.csv"])
+    reader = KnowledgeReader(skill_root=tmp_path)
+    original = reader.read("case.measured")
+    assert original.content["measurements.csv"] == b"a,1"
+    data.write_text("a,2", encoding="utf-8")
+    assert reader.read("case.measured").revision != original.revision
+    data.unlink()
+    with pytest.raises(ValueError, match="Missing case resource"):
+        reader.read("case.measured")
+    data.write_text("a,1", encoding="utf-8")
+    for fields, message in [
+        ({"required_resources": ["../SKILL.md"]}, "Unsafe"),
+        ({"required_resources": "measurements.csv"}, "string list"),
+        ({"required_resources": ["measurements.csv"] * 2}, "repeat"),
+        ({"required_resources": ["case.json"]}, "collides"),
+        ({"required_resources": [], "references": ["x.md"]}, "not supported"),
+        ({"required_resources": [], "dependencies": {}}, "not supported"),
+    ]:
+        path = tmp_path / "owner" / "cases" / "note.json"
+        record = json.loads(path.read_text(encoding="utf-8"))
+        record.pop("references", None)
+        record.pop("dependencies", None)
+        path.write_text(json.dumps({**record, **fields}), encoding="utf-8")
+        with pytest.raises(ValueError, match=message):
+            KnowledgeReader(skill_root=tmp_path).read("case.measured")
+
+
+def test_missing_declared_skill_document_is_explicit():
+    reader = KnowledgeReader()
+    identity, record = next((i, r) for i, r in reader.records().items() if r.get("skill_documents"))
+    library, digest = reader._skill_library()
+    target = next(iter(record["skill_documents"].values()))
+    reader._library = ({k: v for k, v in library.items() if k != target}, digest)
+    with pytest.raises(ValueError, match="Missing declared skill document"):
+        reader.read(identity)
+    result = reader.collect(ids=[identity])
+    assert result["omissions"][0]["reason"] == "invalid"
+
+
+def test_malformed_checkout_discovery_fails_explicitly(tmp_path):
+    _case(tmp_path, "case.broken")
+    (tmp_path / "owner" / "cases" / "note.json").write_text("{", encoding="utf-8")
+    with pytest.raises(ValueError):
+        KnowledgeReader(skill_root=tmp_path).collect(ids=["owner"])
+
+
 @pytest.mark.parametrize("path", ["../outside", "/absolute", "a\\b", "C:/outside", "a/../b"])
 def test_unsafe_resource_paths_fail(path):
     with pytest.raises(ValueError, match="Unsafe"):

@@ -91,6 +91,8 @@ class KnowledgeStore:
     def update(self, bundle: Bundle, *, expected: str, reason: str, evidence: list[dict]) -> str:
         if not expected or not reason.strip():
             raise ValueError("Update requires expected old revision and reason")
+        if not isinstance(evidence, list):
+            raise ValueError("Update evidence must be a list; an empty list means none supplied")
         return self._publish(bundle, expected=expected, reason=reason, evidence=evidence)
 
     def _lineage(self, metadata: dict) -> None:

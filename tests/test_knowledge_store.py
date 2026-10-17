@@ -47,6 +47,8 @@ def test_duplicate_stale_update_and_immutable_resources(tmp_path):
     with pytest.raises(RevisionConflict, match="Duplicate"):
         store.create(original)
     successor = changed(original, b"\nScoped interpretation amendment.\n")
+    with pytest.raises(ValueError, match="evidence must be a list"):
+        store.update(successor, expected=revision, reason="clarify", evidence="log.txt")
     next_revision = store.update(successor, expected=revision, reason="clarify", evidence=[])
     assert next_revision != revision
     with pytest.raises(RevisionConflict, match="Stale"):

@@ -67,7 +67,7 @@ def _references(metadata: dict, name: str) -> list[str]:
     return references
 
 
-def _metadata(directory: Path) -> dict:
+def _effective(directory: Path) -> dict:
     # Read bytes line by line; parse only the frontmatter, never decode the body.
     with _entry(directory, "SKILL.md").open("rb") as stream:
         record = _frontmatter(stream)
@@ -95,7 +95,17 @@ def _metadata(directory: Path) -> dict:
         or any(not isinstance(tag, str) for tag in record["tags"])
     ):
         raise ValueError(f"Skill tags must be a string list: {directory.name}")
+    return record
+
+
+def _metadata(directory: Path) -> dict:
+    record = _effective(directory)
     return {key: record[key] for key in ("name", "description", "status", "tags") if key in record}
+
+
+def skill_metadata(root: Path, name: str) -> dict:
+    """Effective legacy frontmatter plus sidecar fields, after conflict checks."""
+    return _effective(_directory(root, name))
 
 
 def skill_records(root: Path) -> list[dict]:
@@ -143,8 +153,7 @@ def skill_resource(root: Path, name: str, resource: str) -> Path:
 def skill_reference(root: Path, name: str, reference: str) -> Path:
     """Resolve a declared checkout reference without escaping the skills root."""
     directory = _directory(root, name)
-    metadata = _sidecar(directory)
-    if reference not in _references(metadata or {}, directory.name):
+    if reference not in _references(_effective(directory), directory.name):
         raise ValueError(f"Undeclared skill reference: {reference}")
     if "\\" in reference or Path(reference).is_absolute():
         raise ValueError("Reference must use a relative POSIX path")

@@ -271,20 +271,37 @@ class KnowledgeReader:
         if identity in cases:
             path = cases[identity]
             record = json.loads(path.read_text(encoding="utf-8"))
+            for field in ("references", "dependencies"):
+                if field in record:
+                    raise ValueError(f"Case {field} are not supported; declare required_resources")
+            declared = record.get("required_resources", [])
+            if not isinstance(declared, list) or any(not isinstance(p, str) for p in declared):
+                raise ValueError("Case required_resources must be a string list")
+            if len(set(declared)) != len(declared):
+                raise ValueError("Case required_resources must not repeat a path")
             relative = safe_path(record["content"])
-            content_path = path.parent / relative
-            if content_path.is_symlink() or not content_path.resolve().is_relative_to(
-                self.skill_root
-            ):
-                raise ValueError("Case content escapes the skills root")
+            required = [relative, "case.json", *(p for p in declared if p != relative)]
+            content = {"case.json": path.read_bytes()}
+            for resource in [relative, *required[2:]]:
+                safe_path(resource)
+                if resource == "case.json":
+                    raise ValueError("Case resource collides with its case.json record")
+                resource_path = path.parent / resource
+                if resource_path.is_symlink() or not resource_path.resolve().is_relative_to(
+                    self.skill_root
+                ):
+                    raise ValueError(f"Case resource escapes the skills root: {resource}")
+                if not resource_path.is_file():
+                    raise ValueError(f"Missing case resource: {resource}")
+                content[resource] = resource_path.read_bytes()
             return Bundle(
                 {
                     **record,
                     "entrypoint": relative,
                     "sources": _sources(record["sources"]),
-                    "required_resources": [relative, "case.json"],
+                    "required_resources": required,
                 },
-                {relative: content_path.read_bytes(), "case.json": path.read_bytes()},
+                content,
                 {},
             )
         return self._skill(identity)
@@ -301,6 +318,12 @@ class KnowledgeReader:
             library, digest = self._skill_library()
             content.update(library)
             dependencies["data/skill_library"] = digest
+            documents = record["skill_documents"]
+            if not isinstance(documents, dict):
+                raise ValueError(f"skill_documents must map editions to paths: {identity}")
+            for target in documents.values():
+                if not isinstance(target, str) or safe_path(target) not in library:
+                    raise ValueError(f"Missing declared skill document: {target}")
         return Bundle(
             {
                 "id": identity,
@@ -331,14 +354,12 @@ class KnowledgeReader:
         )
 
     def _skill(self, identity: str) -> Bundle:
-        from .skill_catalog import get_skill, skill_reference
+        from .skill_catalog import get_skill, skill_metadata, skill_reference
 
         root = self.skill_root
         record = get_skill(root, identity)
-        directory = root / identity
-        content = _tree(directory, identity)
-        sidecar = directory / "metadata.json"
-        metadata = json.loads(sidecar.read_text(encoding="utf-8")) if sidecar.exists() else {}
+        content = _tree(root / identity, identity)
+        metadata = skill_metadata(root, identity)
         dependencies = {}
         for reference in metadata.get("references", []):
             path = skill_reference(root, identity, reference)

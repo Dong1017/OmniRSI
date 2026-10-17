@@ -34,6 +34,11 @@ returned item payloads, not the omission/control envelope. Each omission carries
 `reason` code (`unknown_identity`, `ambiguous_identity`, `invalid_identity`,
 `duplicate_identity`, `unavailable_revision`, `invalid`, `filters`, `query`,
 `output_limit`) and, for errors, a `detail` message. No-match is explicit.
+Per-item omission applies after identity discovery: a checkout skill or case
+record that cannot be parsed or validated during discovery (for example invalid
+frontmatter or JSON, a name/directory mismatch, conflicting metadata, a missing
+or duplicate case ID) fails the whole reader call explicitly, because
+identities cannot be trusted.
 Deterministic identity order is not a learned relevance ranking.
 
 ## Identity and resources
@@ -46,8 +51,15 @@ or installation rejects an old revision; it never substitutes new bytes.
 This reader does not itself retain history or claim standalone exports.
 
 - Local skills include their complete owner folder (except incidental
-  `__pycache__`, `*.pyc` and `.DS_Store`) and declared cross-skill references. Other links remain navigation in the required full checkout.
+  `__pycache__`, `*.pyc` and `.DS_Store`) and declared cross-skill references,
+  whether declared in the sidecar or in legacy frontmatter. Other links remain navigation in the required full checkout.
 - Local structured cases keep their own identity, observation and source limits.
+  A case bundle holds its record, content and any `required_resources` declared
+  relative to the record; missing, unsafe or escaping resources fail. Case
+  `references`/`dependencies` declarations are rejected rather than ignored;
+  external evidence stays a source pointer.
+- Every declared `skill_documents` edition must be present in the retained
+  library; a missing target fails the read instead of leaving a dangling link.
 - Existing catalog records retain IDs/tiers/state. Bilingual records include the
   entire imported library as one conservative dependency closure: languages,
   manifests, licenses, helpers and transitive references are preserved. This is
