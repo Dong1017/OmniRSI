@@ -88,6 +88,9 @@ Other source records retain their existing evidence rather than fabricated field
 
 ## Identity, revision coverage and the writable boundary
 
+These rules are the contract that the K2 read and write operations implement;
+the K0/K1 readers above do not enforce them by themselves.
+
 | Authority | Owns | Access through Create / Update / Collect |
 |---|---|---|
 | `package` | Installed catalog records and bilingual library | Read-only adapter |
