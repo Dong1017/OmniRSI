@@ -37,12 +37,13 @@ flowchart TB
     P -. "source view" .-> M1
     C -. "coverage view" .-> M2["SearchSpace Matrix"]
     O["K2: normalized reads / Collect"] -. "reuse" .-> R
-    W["Follow-up: Create / Update"] -. "authorized local store only" .-> B["Complete revision bundles"]
+    W["K2: Create / Update"] -. "store-owned candidates only" .-> B["Complete revision bundles"]
 ```
 
-Solid edges describe the K0/K1 foundation; the dashed
-[normalized reads / Collect](knowledge-operations.md) box reuses those readers,
-and Create / Update remains a follow-up. No mandatory ContextPack, conversation manager, crawler or universal
+Solid edges describe the K0/K1 foundation; dashed boxes are the K2
+[normalized reads / Collect](knowledge-operations.md) and
+[authorized local Create / Update](knowledge-store.md) operations, which reuse
+those readers. No mandatory ContextPack, conversation manager, crawler or universal
 performance loop is introduced. A generated catalog is a projection, not a third
 metadata authority or maintained matrix.
 
@@ -82,7 +83,9 @@ dependency and peer remain independent repository relationships.
 
 The legacy readers retain their command contracts. [Normalized reads](knowledge-operations.md)
 identify complete declared dependency bundles and reject unavailable old snapshot
-revisions. An old revision never silently resolves newer resource bytes. Typed source
+revisions. The [authorized store](knowledge-store.md) retains old metadata/resources
+and verifies their bundle digest. An old revision never silently resolves newer
+resource bytes. Typed source
 examples are present for `audit-vllm-kv-lifetimes` (repository),
 `calibrate-serving-simulation` (reviewed Vidur v2 mechanism), and the internal case.
 Other source records retain their existing evidence rather than fabricated fields.
@@ -150,7 +153,7 @@ available after noneditable installation; local `skills/` is not wheel data.
 |---|---|---|
 | PR #12, K0/K1 | Ownership, preserved content, metadata projection, explicit instruction/resource/reference reads, both matrices and reusable case | No normalized Collect or mutation API claim |
 | K2 reads | [`KnowledgeReader`](knowledge-operations.md) facade, typed sources, byte-derived bundle identity, authority-qualified refs with ambiguity rejection, exact revisions/resources and bounded Collect | Historical snapshot material must exist; no crawling or standalone export |
-| PR 3, K2 writes | Separate follow-up | Supplied store-owned candidate Create/Update in one authorized store, adapter-identity collision rejection, duplicate/stale rejection, serialized writes, complete publication and immutable history |
+| K2 writes | Python `KnowledgeStore` for store-owned candidates, adapter-identity reservation, `derived_from` adaptations, SQLite writer serialization, duplicate/stale rejection, complete publication and immutable history | One authorized local directory only; no repository writer, promotion or distributed writer guarantee |
 
 The writer will not edit site-packages, frozen evidence or source checkouts.
 A version field alone provides no concurrency guarantee. No automatic promotion
