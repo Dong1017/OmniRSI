@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import sqlite3
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path, PurePosixPath
@@ -177,8 +178,11 @@ def _tree(node, prefix: str) -> dict[str, bytes]:
 
 
 class KnowledgeReader:
-    def __init__(self, *, skill_root: Path | None = None):
+    def __init__(self, *, skill_root: Path | None = None, store=None):
         self.skill_root = skill_root.resolve() if skill_root is not None else None
+        if store is not None and store.skill_root != self.skill_root:
+            raise ValueError("Store must reserve identities from the same checkout")
+        self.store = store
         self._records: dict[str, dict] | None = None
         self._library: tuple[dict[str, bytes], str] | None = None
 
@@ -210,6 +214,9 @@ class KnowledgeReader:
                 raise IdentityError("collision", "Duplicate identity inside the checkout")
             for identity in local:
                 result.setdefault(identity, []).append("checkout")
+        if self.store is not None:
+            for identity in self.store.identities():
+                result.setdefault(identity, []).append("store")
         return result
 
     def identities(self) -> list[str]:
@@ -250,6 +257,8 @@ class KnowledgeReader:
 
     def _read(self, qualified: str, revision: str | None) -> Bundle:
         authority, _, identity = qualified.partition(":")
+        if authority == "store":
+            return self.store.read(identity, revision=revision)
         bundle = self._checkout(identity) if authority == "checkout" else self._knowledge(identity)
         if revision is not None and bundle.revision != revision:
             raise RevisionConflict(
@@ -455,7 +464,7 @@ class KnowledgeReader:
                     {"id": reference, "reason": "unavailable_revision", "detail": str(exc)}
                 )
                 continue
-            except (ValueError, KeyError, TypeError, AttributeError, OSError) as exc:
+            except (ValueError, KeyError, TypeError, AttributeError, OSError, sqlite3.Error) as exc:
                 omitted.append({"id": reference, "reason": "invalid", "detail": str(exc)})
                 continue
             if not matches(view, authority):
