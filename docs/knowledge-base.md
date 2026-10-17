@@ -36,12 +36,13 @@ flowchart TB
     L -. "source view" .-> M1["Reference Matrix"]
     P -. "source view" .-> M1
     C -. "coverage view" .-> M2["SearchSpace Matrix"]
-    O["Follow-up: normalized reads / Collect"] -. "reuse" .-> R
+    O["K2: normalized reads / Collect"] -. "reuse" .-> R
     W["Follow-up: Create / Update"] -. "authorized local store only" .-> B["Complete revision bundles"]
 ```
 
-Solid edges describe implemented access; dashed operation boxes are planned
-follow-ups. No mandatory ContextPack, conversation manager, crawler or universal
+Solid edges describe the K0/K1 foundation; the dashed
+[normalized reads / Collect](knowledge-operations.md) box reuses those readers,
+and Create / Update remains a follow-up. No mandatory ContextPack, conversation manager, crawler or universal
 performance loop is introduced. A generated catalog is a projection, not a third
 metadata authority or maintained matrix.
 
@@ -79,9 +80,9 @@ dependency and peer remain independent repository relationships.
 | Internal | Issue/run, artifact identity, integrity reference and observation scope | Automatically validated reusable guidance |
 | Local content revision | Required instruction/content bytes, resource bytes and dependency revisions | Upstream source revision or measured engine revision |
 
-The current readers do not yet offer historical content-revision lookup. Follow-up
-reads will identify complete dependency bundles; an old revision must reject drift
-or load retained old bytes, never silently resolve newer resources. Typed source
+The legacy readers retain their command contracts. [Normalized reads](knowledge-operations.md)
+identify complete declared dependency bundles and reject unavailable old snapshot
+revisions. An old revision never silently resolves newer resource bytes. Typed source
 examples are present for `audit-vllm-kv-lifetimes` (repository),
 `calibrate-serving-simulation` (reviewed Vidur v2 mechanism), and the internal case.
 Other source records retain their existing evidence rather than fabricated fields.
@@ -148,7 +149,7 @@ available after noneditable installation; local `skills/` is not wheel data.
 | Slice | Implemented here | Deferred contract |
 |---|---|---|
 | PR #12, K0/K1 | Ownership, preserved content, metadata projection, explicit instruction/resource/reference reads, both matrices and reusable case | No normalized Collect or mutation API claim |
-| PR 2, K2 reads | Separate follow-up | Thin facade, typed sources, byte-derived bundle identity, exact revisions/resources; query/filter or explicit-ID Collect with limits/omissions |
+| K2 reads | [`KnowledgeReader`](knowledge-operations.md) facade, typed sources, byte-derived bundle identity, authority-qualified refs with ambiguity rejection, exact revisions/resources and bounded Collect | Historical snapshot material must exist; no crawling or standalone export |
 | PR 3, K2 writes | Separate follow-up | Supplied store-owned candidate Create/Update in one authorized store, adapter-identity collision rejection, duplicate/stale rejection, serialized writes, complete publication and immutable history |
 
 The writer will not edit site-packages, frozen evidence or source checkouts.
