@@ -1,6 +1,6 @@
 # Knowledge base contract
 
-This implements the K0/K1 content foundation of [RFC #17](https://github.com/ThinkFlowLab/OmniRSI/issues/17).
+This implements the K0/K1 content foundation of [RFC #17](https://github.com/InferMatrixLab/OmniRSI/issues/17).
 The coding agent owns planning and conversation and acts within explicit scope
 and delegated authority. Reading material never executes a helper or grants
 permission to change a target system.
@@ -86,6 +86,33 @@ examples are present for `audit-vllm-kv-lifetimes` (repository),
 `calibrate-serving-simulation` (reviewed Vidur v2 mechanism), and the internal case.
 Other source records retain their existing evidence rather than fabricated fields.
 
+## Identity, revision coverage and the writable boundary
+
+| Authority | Owns | Access through Create / Update / Collect |
+|---|---|---|
+| `package` | Installed catalog records and bilingual library | Read-only adapter |
+| `checkout` | Local `skills/` procedures, metadata, references and cases | Read-only adapter; amendments use scoped repository PRs |
+| `store` | Candidate bundles registered in one explicitly selected writable store | Create / Update and Collect |
+
+- Public IDs are preserved. A reference may be qualified as `<authority>:<id>`;
+  an unqualified ID that resolves in more than one authority is rejected as
+  ambiguous, never resolved by precedence.
+- Create rejects an ID already owned by a read-only adapter. Copying a
+  repository-owned item into the store under the same identity is not an update
+  path. An adaptation uses a distinct ID with `derived_from` provenance.
+- A content revision covers the normalized metadata, entry content, required
+  local resource bytes and explicit dependency revisions. Resource or dependency
+  drift changes the revision or fails. External sources and evidence remain
+  references with stated availability; they do not become retained bundle bytes.
+- A read-only adapter without the requested snapshot reports an unavailable
+  revision. Retained store revisions return their original resources. Neither
+  falls back to the latest content.
+- The store lives outside installed packages, source checkouts and frozen
+  evidence. Runtime operations do not edit raw evidence, either matrix or any
+  adapter source, and do not promote candidates. Matrix links change only
+  through reviewed repository changes; an unexported store candidate is not
+  repository coverage.
+
 ## K1 integration and shared resources
 
 - [Repository-derived procedure](../skills/audit-vllm-kv-lifetimes/SKILL.md): preserve
@@ -119,13 +146,13 @@ available after noneditable installation; local `skills/` is not wheel data.
 |---|---|---|
 | PR #12, K0/K1 | Ownership, preserved content, metadata projection, explicit instruction/resource/reference reads, both matrices and reusable case | No normalized Collect or mutation API claim |
 | PR 2, K2 reads | Separate follow-up | Thin facade, typed sources, byte-derived bundle identity, exact revisions/resources; query/filter or explicit-ID Collect with limits/omissions |
-| PR 3, K2 writes | Separate follow-up | Supplied-content Create/Update in one authorized local store, duplicate/stale rejection, serialized writes, complete publication and immutable history |
+| PR 3, K2 writes | Separate follow-up | Supplied store-owned candidate Create/Update in one authorized store, adapter-identity collision rejection, duplicate/stale rejection, serialized writes, complete publication and immutable history |
 
-The writer will not edit arbitrary site-packages, frozen evidence or source
-checkouts implicitly. A version field alone provides no concurrency guarantee.
-No automatic promotion or LLM generation is required.
+The writer will not edit site-packages, frozen evidence or source checkouts.
+A version field alone provides no concurrency guarantee. No automatic promotion
+or LLM generation is required.
 
-[Issue #15](https://github.com/ThinkFlowLab/OmniRSI/issues/15) can consume the field
+[Issue #15](https://github.com/InferMatrixLab/OmniRSI/issues/15) can consume the field
 ownership, source-linked references and scoped case pattern here. Its mandatory
 perf-loop, fixed skill count, global numeric policies and separate case registry
 are not imported. Exactly two primary matrices remain; HBM is not host RAM and
