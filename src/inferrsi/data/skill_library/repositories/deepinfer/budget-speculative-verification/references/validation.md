@@ -27,7 +27,7 @@ Correctness and benefit are separate questions and need separate runs. Do not co
 |---|---|---|
 | G1 | Every request receives a contiguous prefix of its draft positions, and at least one row | A request receives position `k` without positions `< k`, or receives no row |
 | G2 | The realized row budget equals the value the allocator selected, measured from the built metadata | Metadata disagrees with the allocation, so the budget is not being applied |
-| G3 | The independence property of `SKILL.md` step 7: perturb confidence at positions `j > i` and confirm the verify decision at position `i` is unchanged | A later position's confidence reaches an earlier decision |
+| G3 | Hold the historical global budget, the same proposal's legal cumulative prefix through `i`, and other allocation state fixed; perturb only that proposal's later confidence at `j > i` within its signal contract and confirm the verify decision at `i` is unchanged. Check the actual round and queue used; changing historical rates to select a different total budget is outside this test | The same proposal's later confidence changes inclusion of `i` under those fixed conditions; investigate the causal dependency and complete emitted distribution with G5 |
 
 ### B. Sampling correctness against an independent oracle
 
