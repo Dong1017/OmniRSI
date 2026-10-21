@@ -47,7 +47,7 @@ Read [source-notes.md](references/source-notes.md) for the evidence ledger and [
 
 5. **Allocate per request.** Walk the cumulative rates in descending order and grant one extra row at a time until the global budget is spent. Break ties by request index so the result is deterministic (`F`: `mtp_varlen.hpp:204-214`).
 
-6. **Enforce the floor.** Never allocate fewer rows than the number of requests; that would be slower than plain decode. Assert it rather than trusting the search (`F`: `mtp_varlen.hpp:260`, `TORCH_CHECK(best_bsz >= num_seqs)`).
+6. **Enforce the floor.** Every scheduled request needs at least one row. Assert that the total is no smaller than the number of requests rather than trusting the search (`F`: `mtp_varlen.hpp:260`, `TORCH_CHECK(best_bsz >= num_seqs)`). This is an allocation contract, not a measured comparison with plain decode.
 
 7. **Preserve per-position independence when choosing which round's confidence to read.** Verification of draft position `i` must not depend on confidence at positions `i+1 … n`. A scheme that lets a later position's confidence decide whether an earlier draft is verified changes which tokens are accepted, so it changes the output distribution rather than only the cost. The reference states this requirement directly (`F`: `mtp_varlen.hpp:160`, translated from the source comment: "confidence for positions `i+1, …, nextn` must not affect whether `draft_token_i` is verified").
 

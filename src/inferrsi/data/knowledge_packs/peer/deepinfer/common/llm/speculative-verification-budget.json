@@ -87,7 +87,7 @@
     },
     {
       "kind": "source_observed",
-      "description": "A floor of one row per request is asserted rather than trusted, because fewer rows than requests is slower than plain decode."
+      "description": "The search starts with one row per scheduled request and asserts best_bsz >= num_seqs. This is a row-allocation contract, not a measured speed comparison with plain decode."
     },
     {
       "kind": "source_observed",
