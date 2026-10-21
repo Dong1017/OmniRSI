@@ -339,7 +339,8 @@ does not certify backend compatibility.
 | Accelerator / RAM / Host | Diagnose / Configure / Verify: retained query dependency closure, separately preserved full-layout KV, SWA valid-state bounds and nested ring-sizing gates | [bound-windowed-attention-replay](../src/inferrsi/data/skill_library/repositories/deepinfer/bound-windowed-attention-replay/SKILL.md) | Model-specific boundary/rollback/cache contract; native equivalence and resource measurements unrun |
 | RAM / Host | Observe / Diagnose / Verify: host work overlap, one-step retained state, repair and drain obligations | [Existing host-overhead owner case](../src/inferrsi/data/skill_library/hardware/host/host-overhead-optimization/references/deepinfer-zero-overhead-scheduling.md) | Source-level schedule, no reproduced host-gap reduction or complete-service latency result |
 
-No new measured/green cell is credited. These are source-derived procedures;
+These rows add source-derived procedure guidance; native execution and measured
+gains remain unverified. They do not add measured resource coverage:
 local host scheduling and source references to collectives do not establish new
 SSD, Network or OS-control coverage. Backend and production-service scope remain
 separate from the public release's inspected code paths.

@@ -30,7 +30,8 @@
         "deepinfer/model_executor/models/v4_modules/yoco.py",
         "deepinfer/worker/cache_engine.py",
         "deepinfer/worker/model_runner.py",
-        "deepinfer/environ.py"
+        "deepinfer/environ.py",
+        "LICENSE"
       ],
       "readset": "references/source-notes.md"
     }

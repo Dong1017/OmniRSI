@@ -3,8 +3,8 @@
 ## Provenance and limits
 
 - Upstream: [deepseek-ai/DeepInfer](https://github.com/deepseek-ai/DeepInfer), revision [`8b16149741a4935e1dec8cea27853f273b374c5b`](https://github.com/deepseek-ai/DeepInfer/commit/8b16149741a4935e1dec8cea27853f273b374c5b).
-- Snapshot: `source.tar.xz`, SHA-256 `7de61b01434549e2871779b12dec307fb4e283e5da3255bb19036e7be52c65ea`, 1,086 files. The parent tree was read statically; nothing was built, installed or executed, and no weights were fetched.
-- Apache-2.0 covers the parent repository, which states it is derived from vLLM per file headers. The six vendor submodules carry their own licenses and are not covered by the parent.
+- Snapshot: `source.tar.xz`, SHA-256 `7de61b01434549e2871779b12dec307fb4e283e5da3255bb19036e7be52c65ea`, 1,086 regular files. That is archive size, not reading coverage: selected parent paths were read statically; nothing was built, installed or executed, and no weights were fetched.
+- The parent's [Apache-2.0 license](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/LICENSE#L1-L3) was inspected; source headers attribute the vLLM origin. The six vendor submodules retain independent licenses; this source map does not extend the parent's attribution over them.
 - Bounded excerpts below are attributed to DeepSeek-AI. The operational procedure in `SKILL.md` is proposed here, not an upstream endorsement.
 - **F** means code behaviour at this pin. **P** means a proposed, unvalidated procedure. Empirical validation: **not_run**.
 

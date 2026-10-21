@@ -3,8 +3,8 @@
 ## Provenance and limits
 
 - Upstream: [deepseek-ai/DeepInfer](https://github.com/deepseek-ai/DeepInfer), revision [`8b16149741a4935e1dec8cea27853f273b374c5b`](https://github.com/deepseek-ai/DeepInfer/commit/8b16149741a4935e1dec8cea27853f273b374c5b).
-- Snapshot: `source.tar.xz`, SHA-256 `7de61b01434549e2871779b12dec307fb4e283e5da3255bb19036e7be52c65ea`, 1,086 files, read statically. Nothing was built, installed or executed; no weights were fetched.
-- Apache-2.0 covers the parent. The six vendor submodules carry their own licenses.
+- Snapshot: `source.tar.xz`, SHA-256 `7de61b01434549e2871779b12dec307fb4e283e5da3255bb19036e7be52c65ea`, 1,086 regular files. That is archive size, not reading coverage; the selected paths below were read statically. Nothing was built, installed or executed; no weights were fetched.
+- The parent's [Apache-2.0 license](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/LICENSE#L1-L3) was inspected. The six vendor submodules retain independent licenses.
 - **F** means code behaviour at this pin; **P** means proposed, unvalidated procedure. Empirical validation: **not_run**.
 - The model this implements is DeepSeek-V4.1-Flash. Window sizes, layer counts and ring lengths below are that model's; the *rule* is what transfers, and only the rule.
 

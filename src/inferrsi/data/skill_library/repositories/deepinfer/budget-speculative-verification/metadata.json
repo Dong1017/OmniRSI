@@ -28,7 +28,8 @@
         "deepinfer/sampling_params.py",
         "deepinfer/model_executor/models/mtp/dflash.py",
         "deepinfer/model_executor/layers/sampler.py",
-        "deepinfer/model_executor/layers/tilelang_ops/fused_sample.py"
+        "deepinfer/model_executor/layers/tilelang_ops/fused_sample.py",
+        "LICENSE"
       ],
       "readset": "references/source-notes.md"
     }
