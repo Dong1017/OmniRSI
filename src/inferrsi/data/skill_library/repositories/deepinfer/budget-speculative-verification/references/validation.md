@@ -8,7 +8,7 @@ Nothing below has been run. This file records what would establish or refute eac
 |---|---|---|
 | V1 | Read `EnvVar.bool()` default and confirm the budgeted path is off unless `DEEPINFER_ENABLE_MTP_VARLEN` is set | The budgeted path proves to be default-on, which changes the "off by default" statement |
 | V2 | Confirm the draft forward is not throttled by the budget: trace that draft token count is produced before budget allocation | Draft cost scales with the allocation, which invalidates the "verification only" framing |
-| V3 | Unit-test the cumulative conversion: given per-position independent rates, assert the cumulative vector is non-increasing | The conversion is not order-preserving, which breaks the prefix-grant argument |
+| V3 | Check exact cumulative values: for conditional per-position rates `p_i`, require `c_i = product(p_j, j <= i)`; preserve inputs already cumulative, including ties and zero rates | Values differ from the required products or already-cumulative inputs are multiplied again; monotonicity alone also accepts an incorrect running minimum |
 | V4 | Unit-test the allocator: sorted descending with index tie-break produces a prefix grant for every request, and `best_bsz >= num_seqs` | The allocator can grant a non-prefix set, or the floor can fail |
 | V5 | Unit-test the slope clamp with a synthetic negative slope | Extrapolation can produce a non-positive time |
 | V6 | Confirm which round's rates the allocator reads for batch size versus per-request length, and that the pairing flag selects between the two stored vectors | The two-round description is wrong, or the pairing flag does not control which vector is used |
@@ -34,7 +34,7 @@ Correctness and benefit are separate questions and need separate runs. Do not co
 | # | Check | Refutes if |
 |---|---|---|
 | G4 | Compare the accepted-prefix decision against a separately implemented rejection rule, on synthetic draft and target distributions with known acceptance probabilities | The two disagree beyond the stated tolerance, which means the engine's accept/reject differs from the documented rule |
-| G5 | Compare the distribution of accepted tokens for a fixed prompt against the target distribution over many samples | The accepted-token distribution is skewed away from the target, which is a correctness defect independent of cost |
+| G5 | At a fixed prefix compare the complete emitted next-token distribution against the target over many samples, with proposal `q` different from target `p`; include acceptance, rejection/residual resampling and target fallback | The complete emitted distribution differs from the target beyond the predeclared statistical criterion; accepted drafts alone are a selected subset and need not follow the target distribution |
 | G6 | Grammar-constrained request under budgeting: confirm the per-position mask and the acceptance rate stay independent signals | One is derived from the other, or masks are applied at the wrong position |
 
 Token-for-token equality between budget-on and budget-off runs is **not** a valid check here. Budgeting changes how many drafts are verified, so it can legitimately change the accepted length and the token stream even with a fixed seed, because the sampling path consumes random draws in a different order. Use G4–G6 instead.
@@ -43,7 +43,7 @@ Token-for-token equality between budget-on and budget-off runs is **not** a vali
 
 | # | Check | Refutes if |
 |---|---|---|
-| G7 | Report verification rows per step, accepted tokens per step, and their ratio, budget on versus off | Rows and accepted tokens move together, so the budget is not trading one for the other |
+| G7 | Report verification rows, accepted tokens and total step time, budget on versus off; assess expected accepted tokens per total time alongside G9 | The declared cost objective or matched service acceptance is not met; rows and accepted tokens falling together is allowed if time falls sufficiently, and their ratio alone establishes no benefit |
 | G8 | Report total step time decomposed into draft forward, verify forward and sampler | A component moves in a direction the cost model does not predict |
 | G9 | End-to-end throughput and latency at a stated concurrency, with the draft forward included | The gain disappears once draft cost is counted; this confirms the caveat rather than refuting the mechanism |
 | G10 | Acceptance-uniformity sweep: all-high, all-low, mixed | Any of the three underperforms plain decode by a margin larger than the allocator's overhead, which bounds where the procedure should be applied |

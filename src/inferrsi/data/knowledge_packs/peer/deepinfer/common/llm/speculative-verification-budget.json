@@ -59,6 +59,20 @@
       "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
       "accessed_at": "2026-10-20",
       "content_sha256": "f43ac934284d15f708a0aa07aaa8fff7daa257984e311ca554bd9dbea89e5e1d"
+    },
+    {
+      "url": "https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/layers/sampler.py",
+      "type": "source_code",
+      "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
+      "accessed_at": "2026-10-22",
+      "content_sha256": "81205a12e860041ffa904321b852db2d048bc038bb07d494dbb78b44b522d9a9"
+    },
+    {
+      "url": "https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp",
+      "type": "source_code",
+      "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
+      "accessed_at": "2026-10-22",
+      "content_sha256": "c14de4d5341170227b82ddf2d146d9c6a337937885a6886237aab5a7238da5db"
     }
   ],
   "applicability": {

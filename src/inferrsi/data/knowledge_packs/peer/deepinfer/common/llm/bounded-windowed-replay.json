@@ -67,6 +67,27 @@
       "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
       "accessed_at": "2026-10-20",
       "content_sha256": "a636d60ca5711f6b7c21e68370c3bd9c2de6fc3f4439a7429ca4f572f0edeebe"
+    },
+    {
+      "url": "https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/model_metadata_utils.py",
+      "type": "source_code",
+      "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
+      "accessed_at": "2026-10-22",
+      "content_sha256": "1ef7803d2b0083d025de676c841db9a317235b881fb9ebf6781ec76d49d7b22c"
+    },
+    {
+      "url": "https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/model_runner.py",
+      "type": "source_code",
+      "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
+      "accessed_at": "2026-10-22",
+      "content_sha256": "9e2e18d136c9e0c9f23905ff994e9d23afaa94aa7a133d425e7fc1fc069033ef"
+    },
+    {
+      "url": "https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/models/decoder_layer.py",
+      "type": "source_code",
+      "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
+      "accessed_at": "2026-10-22",
+      "content_sha256": "2189fa14c0665a3a211b47c5440748273fd92b39a68268a0080530d3c95b7297"
     }
   ],
   "applicability": {
