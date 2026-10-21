@@ -22,14 +22,15 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/ddeba86177132c5933cf7ab1e6eb7021fb767e22/src/inferrsi/data/skill_library/hardware/host/host-overhead-optimization/SKILL.md",
-      "commit": "ddeba86177132c5933cf7ab1e6eb7021fb767e22",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/12e13bd35ba98a2d523f80fbb0e6b6d3d4d17be4/src/inferrsi/data/skill_library/hardware/host/host-overhead-optimization/SKILL.md",
+      "commit": "12e13bd35ba98a2d523f80fbb0e6b6d3d4d17be4",
       "paths": [
         "src/inferrsi/data/skill_library/hardware/host/host-overhead-optimization/SKILL.md",
         "src/inferrsi/data/skill_library/hardware/host/host-overhead-optimization/metadata.json",
+        "src/inferrsi/data/skill_library/hardware/host/host-overhead-optimization/references/deepinfer-zero-overhead-scheduling.md",
         "src/inferrsi/data/skill_library/skill-index.json"
       ],
-      "content_sha256": "db8357dab79cfa474561732849b5bb153222f63e6688b6f873f45800595f70b8"
+      "content_sha256": "36ef88826a32ac3147b869001004ded17a8d5a491e25bfe105005ba39ea9d1eb"
     }
   ],
   "index_type": "packaged-skill",
@@ -38,9 +39,10 @@
   },
   "checkout_ref": "checkout:host-overhead-optimization",
   "source_files": {
-    "src/inferrsi/data/skill_library/hardware/host/host-overhead-optimization/SKILL.md": "db8357dab79cfa474561732849b5bb153222f63e6688b6f873f45800595f70b8",
+    "src/inferrsi/data/skill_library/hardware/host/host-overhead-optimization/SKILL.md": "36ef88826a32ac3147b869001004ded17a8d5a491e25bfe105005ba39ea9d1eb",
     "src/inferrsi/data/skill_library/hardware/host/host-overhead-optimization/metadata.json": "90941490debf1ec9f02310fa033658ec294a8e968783d4bb9d004bcded0f73fe",
-    "src/inferrsi/data/skill_library/skill-index.json": "75910d82c93d829cc995e1724f4f7e372625f435682640ec5a2fced45d791a21"
+    "src/inferrsi/data/skill_library/hardware/host/host-overhead-optimization/references/deepinfer-zero-overhead-scheduling.md": "fbdc75816f66af6e0e84ccb280e97baee28524cd374b2ae25216e4ce254bf397",
+    "src/inferrsi/data/skill_library/skill-index.json": "0d58a340ea400d0af89b65c8dd951e4c399ed654c51d796a8010ce8ec8c2bb51"
   },
   "skill_metadata": {
     "name": "host-overhead-optimization",

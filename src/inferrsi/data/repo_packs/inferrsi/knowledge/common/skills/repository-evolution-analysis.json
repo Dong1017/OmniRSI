@@ -21,14 +21,15 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/ddeba86177132c5933cf7ab1e6eb7021fb767e22/src/inferrsi/data/skill_library/methods/repository-evolution-analysis/SKILL.md",
-      "commit": "ddeba86177132c5933cf7ab1e6eb7021fb767e22",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/12e13bd35ba98a2d523f80fbb0e6b6d3d4d17be4/src/inferrsi/data/skill_library/methods/repository-evolution-analysis/SKILL.md",
+      "commit": "12e13bd35ba98a2d523f80fbb0e6b6d3d4d17be4",
       "paths": [
         "src/inferrsi/data/skill_library/methods/repository-evolution-analysis/SKILL.md",
         "src/inferrsi/data/skill_library/methods/repository-evolution-analysis/metadata.json",
+        "src/inferrsi/data/skill_library/methods/repository-evolution-analysis/references/capability-presence-audit.md",
         "src/inferrsi/data/skill_library/skill-index.json"
       ],
-      "content_sha256": "8cac8e0d52fa5bffdf3076425c45a6041a3fe4402ffd5219abdf23ccaf338f38"
+      "content_sha256": "7e20d3390f2501263e5e298e026c47cac16c234f2397833131e15ae5d34c0b97"
     }
   ],
   "index_type": "packaged-skill",
@@ -37,9 +38,10 @@
   },
   "checkout_ref": "checkout:repository-evolution-analysis",
   "source_files": {
-    "src/inferrsi/data/skill_library/methods/repository-evolution-analysis/SKILL.md": "8cac8e0d52fa5bffdf3076425c45a6041a3fe4402ffd5219abdf23ccaf338f38",
+    "src/inferrsi/data/skill_library/methods/repository-evolution-analysis/SKILL.md": "7e20d3390f2501263e5e298e026c47cac16c234f2397833131e15ae5d34c0b97",
     "src/inferrsi/data/skill_library/methods/repository-evolution-analysis/metadata.json": "bbde3cec2545a2613653ec521053f972235742fb53b630badcffd9a61fa5f19f",
-    "src/inferrsi/data/skill_library/skill-index.json": "75910d82c93d829cc995e1724f4f7e372625f435682640ec5a2fced45d791a21"
+    "src/inferrsi/data/skill_library/methods/repository-evolution-analysis/references/capability-presence-audit.md": "fd52c484b2ab5b8ed2c9805c795e33c502a25b1245149b2a4c59af4dd2c98eca",
+    "src/inferrsi/data/skill_library/skill-index.json": "0d58a340ea400d0af89b65c8dd951e4c399ed654c51d796a8010ce8ec8c2bb51"
   },
   "skill_metadata": {
     "name": "repository-evolution-analysis",

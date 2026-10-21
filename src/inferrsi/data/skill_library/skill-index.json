@@ -97,6 +97,14 @@
       "path": "repositories/lmcache/kv-tier-management",
       "backend": "common"
     },
+    "budget-speculative-verification": {
+      "path": "repositories/deepinfer/budget-speculative-verification",
+      "backend": "common"
+    },
+    "bound-windowed-attention-replay": {
+      "path": "repositories/deepinfer/bound-windowed-attention-replay",
+      "backend": "common"
+    },
     "assess-serving-preemption": {
       "path": "methods/assess-serving-preemption",
       "backend": "common"

@@ -116,6 +116,9 @@ speedup numbers whose conditions or isolated contribution are unclear.
 | peer | lmdeploy | [LMDeploy KV quantization: preserve capacity gains and latency counterexamples](peer/lmdeploy/cuda/llm/kv-quantization-capacity-cost.json) |
 | peer | xdit | [xDiT parallelism: separate current-state attention from stale-state pipelines](peer/xdit/cuda/diffusion/parallelism-freshness-and-topology.json) |
 | peer | cache_dit | [Cache-DiT residual reuse needs model- and schedule-specific calibration](peer/cache_dit/common/diffusion/residual-cache-calibration.json) |
+| peer | deepinfer | [DeepInfer zero-overhead scheduling: defer the previous step's post-process to overlap host prep with device work](peer/deepinfer/common/llm/zero-overhead-deferred-scheduling.json) |
+| peer | deepinfer | [DeepInfer verification budget: spend verification rows by marginal acceptance, not by fixed draft width](peer/deepinfer/common/llm/speculative-verification-budget.json) |
+| peer | deepinfer | [DeepInfer bounded replay: retain window plus rollback depth at a producer/consumer boundary, and clamp visibility past cleared state](peer/deepinfer/common/llm/bounded-windowed-replay.json) |
 
 ## Maintaining the tiers
 
