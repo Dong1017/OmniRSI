@@ -9,13 +9,13 @@ description: Bound the replay or prefill cost of a stack whose later layers cons
 
 Use when all of the following hold:
 
-- The architecture has an explicit boundary: layers before it run over the full prefix, layers after it consume only a bounded suffix produced at that boundary. A YoCo-style split, a shared-hidden design, or a preserved-compressed-KV design all qualify.
+- The architecture has an explicit boundary: layers before it run over the full prefix, while layers after it compute a bounded suffix of query rows. Historical keys or other full-layout state may remain preserved separately. A YoCo-style split, a shared-hidden design, or a preserved-compressed-KV design can qualify after deriving its dependencies.
 - That boundary is where replay cost concentrates, so shortening the post-boundary query is what saves the work.
 - You control metadata construction, not only the attention kernel.
 
 Do **not** use when:
 
-- The layer set you intend to shorten has any consumer whose dependency reaches past the region you would keep. This is not decided by whether the layers *look* windowed. Dependencies compose across layers, so a stack of individually bounded layers can still have a consumer that reads a key produced before the retained region. Derive the dependency first (step 1) and stop if you cannot.
+- A retained query needs a value unavailable from retained producer outputs or explicitly preserved historical state, and that value cannot be reconstructed. Reading a historical key outside the retained query suffix is allowed when that key is preserved. Derive the dependency first (step 1) and stop if you cannot establish it.
 - The request needs per-token outputs for the clipped region, such as prompt logprobs.
 - The system relies on bit-identical results across preemption, because recompute moves the retained rectangle's anchor.
 
@@ -39,7 +39,7 @@ Read [source-notes.md](references/source-notes.md) for the evidence ledger and [
 
 ## Procedure
 
-1. **Derive the dependency closure before touching any window arithmetic.** Enumerate, per consumer layer, every producer it reads: previous-layer hidden state, a shared hidden captured at the boundary, a compressed KV written by an earlier layer, a top-k index pool. For each, ask whether the producer's output over the retained region is enough to reconstruct the consumer's input over the same region. If any consumer reads something whose value depends on tokens outside the retained region, stop. Do not substitute the observation "each layer has a finite window" for this derivation: finite per-layer windows do not compose into a finite stack window.
+1. **Derive the dependency closure before touching any window arithmetic.** Enumerate, per consumer layer, every producer it reads: previous-layer hidden state, a shared hidden captured at the boundary, a compressed KV written by an earlier layer, a top-k index pool. For each retained query, establish whether its inputs are available from retained producer outputs or explicitly preserved historical state. Stop if a required value was discarded and cannot be reconstructed. One layer's finite window does not establish the whole stack's dependency horizon; dependencies can extend across layers.
 
 2. **Confirm the boundary hosts a full-length write.** The architecture has to preserve, at the boundary, the state the consumer needs at full length. In the reference this is the captured full hidden plus the main/index KV stored at full length during the compact query's forward (`F`: `deepinfer/model_executor/models/v4_modules/attn.py:672-719`, `decoder_layer.py:134-141`). If no such full-length write exists, shortening the query changes the cache and the procedure does not apply.
 
@@ -53,11 +53,11 @@ Read [source-notes.md](references/source-notes.md) for the evidence ledger and [
    - **Query-row compaction** removes query rows whose visible region is empty. That is where the compute saving comes from.
    - **Historical-key retention** is a separate question. A consumer may legitimately keep full-layout keys in a compressed or shared index while computing over fewer query rows. Compact queries are not evidence that historical keys were dropped.
 
-   Do not state or assume that whole-context compressed attention is incompatible with this procedure. What matters is whether the consumer's *dependency* reaches the dropped region, which is what step 1 establishes. A design that preserves all keys and only shortens queries has no dependency problem at all.
+   Do not state or assume that whole-context compressed attention is incompatible with this procedure. A retained query may read keys outside the retained query region when the required historical state is preserved. Preserving keys alone does not establish that every other hidden-state dependency is available; step 1 must still account for those inputs.
 
 7. **Decide the mode, and keep both.** Provide a diagnostic mode that keeps all rows and only narrows visibility, and a saving mode that drops the clipped rows. In the reference these are `mask` and `compact` (`F`: `deepinfer/environ.py:188`). Make the diagnostic one the target of the equivalence test, because it is compute-neutral and isolates the visibility math from the gather.
 
-8. **Preserve the full layout while building the compact copy.** At the boundary, compute the full-length representation the consumer needs before or alongside producing the compact copy. In the reference the boundary helper returns both the compact inputs and the original full hidden/residual, and the caller stores the full hidden into the cross-layer runtime before continuing with the compact values (`F`: `deepinfer/model_executor/models/v4_modules/yoco.py:93-122`, `decoder_layer.py:134-141`). Note the shape of this requirement: it is "the full-layout value must exist and be stored", not a global ordering that KV writes precede a gather.
+8. **Preserve the full layout while building the compact copy.** At the boundary, compute the full-length representation the consumer needs before or alongside producing the compact copy. In the reference the boundary helper returns both the compact inputs and the original full hidden/residual, and the caller stores the full hidden into the cross-layer runtime before continuing with the compact values (`F`: `deepinfer/model_executor/models/v4_modules/yoco.py:93-122`, `deepinfer/model_executor/models/decoder_layer.py:134-141`). Note the shape of this requirement: it is "the full-layout value must exist and be stored", not a global ordering that KV writes precede a gather.
 
 9. **Handle a fully clipped chunk.** If a chunk lies entirely before the rectangle, keep one row so a sampling position always exists. The reference does this in the clip computation itself, by clamping the clip prefix to `q_len − 1` rather than `q_len` (`F`: `prepare_tensor_input_v4.cpp:225`).
 
@@ -75,7 +75,7 @@ Read [source-notes.md](references/source-notes.md) for the evidence ledger and [
 
 ## Evidence to collect
 
-- **Metadata equivalence**, which needs no weights and runs in seconds: visible-key sets, store slots and compressed-key ranges between diagnostic and saving modes at chunk boundaries.
+- **Metadata equivalence**, using a matching built extension without model weights: visible-key sets, store slots and compressed-key ranges between diagnostic and saving modes at chunk boundaries. Runtime is not measured here.
 - **End-to-end equivalence** on a fixed teacher-forcing trajectory: logprobs and top-k compared element-wise.
 - **Prompt-logprob handling**: confirm the actual behaviour — forced off with a warning, or rejected — rather than assuming either.
 - **Preemption count during the comparison run**: must be zero, or the results are not comparable.
@@ -85,8 +85,8 @@ Read [source-notes.md](references/source-notes.md) for the evidence ledger and [
 - **The dependency closure is the real gate.** A stack of windowed layers is not automatically safe to shorten; only a demonstrated boundary dependency is.
 - **The retain rule is not a suggestion.** Below `window + rollback`, the decoder sees fewer than `window` tokens after a rollback. The failure can be loud (an assert) or numerical (diagnostic mode), depending on the mode.
 - **Diagnostic mode is compute-neutral.** Do not report it as an optimization.
-- **State before the rectangle is undefined.** Any downstream consumer — cache reuse, prefill-to-decode transfer — must not read it.
-- **Ring sizing has two separate additions.** The inference ring is `window + rollback` per sequence, and is zero when the model has no bounded layers (`F`: `deepinfer/worker/cache_engine.py:88-95`). The *prefill/kvstore* ring adds a store-granularity margin only when `DEEPINFER_PREFILL_STORE_EXTRA_STATE` is set, and adds the truncation keep margin only when truncation mode is not `off` (`F`: `cache_engine.py:97-110`). Do not describe the larger ring as unconditional.
+- **Recomputed SWA state before the valid rectangle is unavailable.** Cache reuse and prefill-to-decode transfer must respect that validity boundary. This does not invalidate the separately preserved full-layout main/index KV.
+- **Ring sizing has nested gates.** The inference ring is `window + rollback` per sequence when `window > 0`, otherwise zero (`F`: `deepinfer/worker/cache_engine.py:88-95`). The *prefill/kvstore* ring adds margins only when `DEEPINFER_PREFILL_STORE_EXTRA_STATE` is set: that branch adds the store-granularity margin, plus the truncation keep margin when truncation mode is not `off` (`F`: `cache_engine.py:97-110`). The keep margin therefore requires both gates. Do not describe the larger ring as unconditional.
 - **Chunk boundaries do not align with store boundaries.** Prefill chunks do not land on store boundaries, so a longer ring is required to reassemble a complete window at a store point.
 - **Intermediate chunk samples are discarded.** Only the last prompt chunk's last row produces the token.
 - **Config may not be authoritative.** If the window comes from a config the parser did not read, the check compares against a wrong value.
@@ -104,6 +104,6 @@ Read [source-notes.md](references/source-notes.md) for the evidence ledger and [
 | `DEEPINFER_YOCO_PREFILL_TRUNCATION_MODE` | `off` | `off` / `mask` (diagnostic, compute-neutral) / `compact` (removes clipped query rows) |
 | `DEEPINFER_YOCO_PREFILL_KEEP_TOKENS` | `0` (must be set when truncation is on) | Retained trailing query count. The `> 0` and `>= window + rollback` checks apply only when the mode is not `off`; with `off` the value is unused. |
 | `DEEPINFER_MAX_BACKTRACKING_TOKENS` | `max(value, nextn + 1)` | Rollback depth folded into the retain rule |
-| `DEEPINFER_PREFILL_STORE_EXTRA_STATE` | unset → false | Gates the store-granularity addition to the kvstore ring |
+| `DEEPINFER_PREFILL_STORE_EXTRA_STATE` | unset → false | Gates both kvstore-ring margins; the keep margin also requires truncation mode not `off` |
 
 Truncation is **off by default** in the reference. Enabling it without setting the keep length fails an assertion rather than silently clipping.

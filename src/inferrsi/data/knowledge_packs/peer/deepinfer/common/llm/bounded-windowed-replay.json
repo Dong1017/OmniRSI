@@ -78,7 +78,7 @@
     ],
     "conditions": [
       "The decoder has an explicit boundary: earlier layers run over the full prefix, later consumer layers read only a bounded suffix",
-      "A dependency closure for each consumer is derived and shows nothing it reads depends on tokens outside the retained region",
+      "A dependency closure shows each retained query's inputs are available from retained producer outputs or explicitly preserved historical state",
       "Full-length consumer KV is written at the boundary, independent of the compact query",
       "The rollback depth is known and floored at the speculation width plus one"
     ]
@@ -94,7 +94,7 @@
     },
     {
       "kind": "source_observed",
-      "description": "Visible keys are the intersection of the sliding window start, the retained rectangle's lower bound, and the start of valid state; the third bound exists because recompute clears state below it, and omitting that clamp is a silent numerical bug rather than a crash. An empty visible region is represented explicitly."
+      "description": "The SWA path's visible keys intersect the sliding window start, retained rectangle and valid-state start; recompute clears SWA state below the last bound. This does not constrain all main/index historical KV to the compact query suffix. An empty SWA visible region is represented explicitly."
     },
     {
       "kind": "source_observed",
@@ -106,7 +106,7 @@
     },
     {
       "kind": "source_observed",
-      "description": "Ring sizing has two independent additions. The inference ring is window plus rollback per sequence and is zero when the model has no bounded layers. The kvstore ring adds a store-granularity margin only when the store-extra-state flag is set, and adds the truncation keep margin only when the truncation mode is not off."
+      "description": "For a positive window the inference ring is window plus rollback; otherwise it is zero. Both kvstore-ring additions are gated by the store-extra-state flag. Within that branch the store-granularity margin is added, plus the keep margin only when truncation mode is not off. The keep margin therefore requires both gates."
     },
     {
       "kind": "source_observed",
@@ -120,7 +120,7 @@
     "The mask/compact split is a reusable testing pattern: a compute-neutral diagnostic mode isolates the visibility math from the gather."
   ],
   "recommendations": [
-    "Derive the producer/consumer dependency closure before applying any window arithmetic. Finite per-layer windows do not compose into a finite stack window.",
+    "Derive the producer/consumer dependency closure before applying window arithmetic; one layer's finite window does not determine the whole stack's dependency horizon. Preserved historical state remains a valid input.",
     "Enforce the retain length at every entry, not once, because the value can arrive through an environment variable.",
     "Do not report the diagnostic mode as an optimization; it is compute-neutral by construction.",
     "State whether historical keys are preserved, compacted or compressed, separately from the query-compaction decision.",

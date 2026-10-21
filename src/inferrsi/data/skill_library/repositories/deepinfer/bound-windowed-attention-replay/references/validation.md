@@ -15,7 +15,7 @@ Nothing below has been run. This file records what would establish or refute eac
 | V7 | Confirm `mask` mode produces the same visible-key set as `compact` mode on the same input, at a synthetic chunk boundary | The two modes disagree, so `mask` is not a valid reference |
 | V8 | Confirm the boundary returns both a compact copy and the original full representation, and that the full one is stored | Only the compact copy survives the boundary, which corrupts the full-length KV write |
 | V9 | Confirm the ring length is `window + rollback` per sequence and zero when the model has no SWA layers | The ring is short, so a rollback loses history |
-| V10 | Confirm each addition to the kvstore ring is gated by its own condition (`PREFILL_STORE_EXTRA_STATE`, and truncation mode not `off`), rather than being unconditional | Either addition applies regardless of its condition, which would make the sizing rule wrong in the disabled case |
+| V10 | Confirm `PREFILL_STORE_EXTRA_STATE` gates both kvstore-ring additions; within that branch the keep margin also requires truncation mode not `off` | A keep margin is added without both gates, or a store-granularity margin is added while extra-state is disabled |
 | V11 | Read the hyperconnection state bundle and confirm where its tensors live | The bundle is host-resident, which would make the gather reason different from field structure |
 | V12 | Confirm the prompt-logprob behaviour is forced-off-with-warning rather than rejection | The engine rejects, or returns wrong values instead of doing either |
 
@@ -30,7 +30,7 @@ Nothing below has been run. This file records what would establish or refute eac
 | G5 | Preemption count during the comparison run | Non-zero, which makes the run incomparable and any divergence uninterpretable |
 | G6 | Prompt-logprob request under truncation: record whether it is forced off, warned about, or rejected | The observed behaviour differs from what the engine claims, or per-token values are returned for the clipped region |
 | G7 | Measure the `compact` saving against the `mask` baseline, reporting both | `compact` shows no compute difference from `mask`, so the saving claim is empty |
-| G8 | Peak memory at fixed context length, truncation on versus off | Memory grows instead of shrinking |
+| G8 | Peak memory at fixed context length, truncation on versus off, with the same declared resource budget | Required state is missing or the declared memory budget is exceeded; query compaction alone does not promise lower persistent-KV memory |
 | G9 | A dependency-probe model: keep all historical keys, shorten only the query, and confirm output equality | Shortening the query alone changes the output, which would mean the procedure is not separable from key retention |
 
 ## What a PASS would require

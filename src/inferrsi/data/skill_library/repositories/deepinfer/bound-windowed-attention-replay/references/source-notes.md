@@ -18,7 +18,7 @@ Three properties make the shortening valid, and all three are architectural rath
 
 1. **A shared hidden is captured at the boundary.** The first consumer layer's attention-norm output is the shared hidden; later consumer layers consume it, and some SWA layers project their KV from it (`F`: `yoco.py:24-42`, `decoder_layer.py:145-152`).
 2. **Full-length KV is written at the boundary.** The consumer KV-source layer projects KV from the full hidden and stores main/index KV at full length, so the persistent cache is complete even though the query is compact (`F`: `attn.py:672-719`).
-3. **The consumer's own attention is windowed.** Its visible region is the intersection of the sliding window, the retained rectangle and the valid-state start (F3 below).
+3. **The SWA path has an explicit visible-region rule.** Its visible region intersects the sliding window, retained rectangle and valid-state start (F3 below). This does not restrict every consumer attention path to SWA: the main/index KV path above preserves full historical keys while query rows are compacted.
 
 None of these follows from "the layers have a finite window". A stack of individually windowed layers could still have a consumer whose dependence reaches further back, through a shared state or a compressed index. That is why `SKILL.md` step 1 asks for the dependency closure rather than a per-layer window check.
 
@@ -109,7 +109,7 @@ def get_kvstore_swa_block_size(window_size: int) -> int:
     )
 ```
 
-A window of `-1` means the model has no SWA layers and the ring is zero-length. The inference ring is `window + rollback` per sequence. The kvstore ring is larger, but only under two independent conditions: `DEEPINFER_PREFILL_STORE_EXTRA_STATE` must be set, and the store-granularity margin is added unconditionally within that branch while the truncation margin is added only when the mode is not `off`.
+A nonpositive window produces an inference-ring size of zero. For a positive window, the inference ring is `window + rollback` per sequence. The kvstore function adds margins under nested conditions: `DEEPINFER_PREFILL_STORE_EXTRA_STATE` gates both additions; within that branch the store-granularity margin is added, and the truncation keep margin is added only when the mode is not `off`.
 
 The comment states the store-granularity reason: kvstore writes only at multiples of 128, so prefill may not trigger a write and an extra span is needed to guarantee multi-round hits.
 

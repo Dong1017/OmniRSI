@@ -19,6 +19,13 @@
   ],
   "sources": [
     {
+      "url": "https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/worker.py#L118-L219",
+      "type": "source_code",
+      "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
+      "accessed_at": "2026-10-22",
+      "content_sha256": "ad32e595d9ab289dff1a7709136431ac60dae709e9e5123ae42eb0ebf7c30cbb"
+    },
+    {
       "url": "https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/mtp_varlen.hpp",
       "type": "source_code",
       "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
@@ -84,7 +91,7 @@
     },
     {
       "kind": "source_observed",
-      "description": "The draft forward is full width in both paths; only verification rows are budgeted, so the saving is verification compute only."
+      "description": "The inspected DFlash decode producer samples its configured full width in both paths; variable-length scheduling budgets verification rows. This conclusion comes from sampler.py and DFlash's fixed-width metadata/forward/sample chain, not the non-budgeted verification-length branch."
     },
     {
       "kind": "source_observed",
@@ -92,7 +99,7 @@
     },
     {
       "kind": "source_observed",
-      "description": "The source states a correctness requirement, not only a scheduling convenience: confidence at positions after i must not affect whether draft token i is verified. The two-round N-2 batch-size / N-1 per-request protocol is how that requirement is met under a pipelined scheduler."
+      "description": "The source requires later-position confidence not to affect earlier verification decisions. CPU scheduling takes the total budget from N-2 and reads the latest CPU accept_rates for per-request lengths; when a forward is in flight those rates lag. The overlapping ZOS worker redistributes fixed total_q using the previous sampler's GPU confidence before the main forward, then synchronizes corrected metadata before sampling. This source design is not a runtime sampling-correctness proof."
     },
     {
       "kind": "source_observed",

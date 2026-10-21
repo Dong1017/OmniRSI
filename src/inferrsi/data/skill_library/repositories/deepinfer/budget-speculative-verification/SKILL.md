@@ -30,16 +30,16 @@ Read [source-notes.md](references/source-notes.md) for the evidence ledger and [
 ## Required inputs
 
 1. Draft width and how the engine represents a request's rows — typically one fresh row plus `k` verification rows.
-2. A per-position acceptance estimate with known semantics: per-position independent, or already cumulative. This distinction decides step 2 and cannot be inferred from a field name.
+2. A per-position acceptance estimate with known semantics: individual/conditional confidence estimates, or already cumulative. This distinction decides step 2 and cannot be inferred from a field name or treated as proof of statistical independence.
 3. A table of `(batch_rows, step_time)` for the verify forward, or a way to collect it at warmup.
 4. A sampler cost estimate per batch, because the total step includes sampling.
 5. Which step's acceptance values are available at schedule time. If the scheduler runs ahead of sampling, the current step's values do not exist yet.
 
 ## Procedure
 
-1. **Separate the two costs.** Measure the draft forward and the verify forward independently. In the reference source the draft forward is always full width (`F`: `csrc/engine/mtp_varlen.hpp:155` builds `seqlens_q` from `1 + draft_tokens.size()` only on the non-budgeted path), and only verification is budgeted. If your draft cost scales with requests, the budget must cover both or it will not help.
+1. **Separate the two costs.** Measure the draft forward and the verify forward independently. The inspected DFlash decode path produces drafts at its configured width: the sampler calls `decode_forward`, which builds fixed-width DFlash metadata and samples all `max_MTP_value` positions (`F`: `deepinfer/model_executor/layers/sampler.py:225-251`; `models/mtp/dflash.py:103,141,308-336,367-387`). The variable-length scheduler budgets verification rows; its non-budgeted `1 + draft_tokens.size()` branch alone is not evidence about the draft producer. If a different draft model's cost scales with requested width, include that cost in the decision.
 
-2. **Normalize the acceptance signal to a cumulative rate.** Convert per-position independent probabilities into a non-increasing vector. This is the load-bearing step: a cumulative vector makes any grant of "verify one more draft" a *prefix* grant. Without it a budget could grant position 3 while withholding positions 1 and 2, which has no meaning because verification is sequential.
+2. **Normalize the acceptance signal to a cumulative rate.** Convert individual/conditional per-position confidence estimates according to their defined contract into a non-increasing cumulative vector. The reference multiplies its estimates (`F`: `csrc/engine/scheduler.hpp:1243-1250`); that implementation does not prove the underlying random variables are statistically independent. A cumulative vector makes grants of additional verification rows follow a prefix over draft positions.
 
 3. **Fit a cost model.** `time(rows) ≈ baseline(rows) + slope × rows + sampler(requests)`. Collect the curve at warmup under the graph sizes you will actually replay. Clamp the slope at zero so extrapolation cannot produce a negative or non-positive time (`F`: `mtp_varlen.hpp:226`, `std::max(0.0, _forward_time_slope.get())`).
 
@@ -51,7 +51,7 @@ Read [source-notes.md](references/source-notes.md) for the evidence ledger and [
 
 7. **Preserve per-position independence when choosing which round's confidence to read.** Verification of draft position `i` must not depend on confidence at positions `i+1 … n`. A scheme that lets a later position's confidence decide whether an earlier draft is verified changes which tokens are accepted, so it changes the output distribution rather than only the cost. The reference states this requirement directly (`F`: `mtp_varlen.hpp:160`, translated from the source comment: "confidence for positions `i+1, …, nextn` must not affect whether `draft_token_i` is verified").
 
-   The two-round protocol exists to satisfy that requirement under a pipelined scheduler, not merely to work around a missing value. It takes the global row budget from round N−2 and the per-request split from round N−1, tracked by per-request counters (`F`: `mtp_varlen.hpp:161-183`). If you substitute a different timing — an earlier round, a current-step estimate, or a same-step recompute — treat it as a new design and show that it preserves the same independence property, because a later position's confidence reaching an earlier decision is a correctness defect rather than a tuning choice.
+   The two-round protocol exists to satisfy that requirement under a pipelined scheduler. CPU scheduling takes the global row budget from N−2; its per-request queue always reads `accept_rates`, which is N−1 when schedule/process are paired and N−2 when one forward is still in flight (`F`: `mtp_varlen.hpp:160-207`). In the overlapping ZOS path, the worker uses the previous step's GPU confidence to redistribute the fixed total row budget before the current main forward, then synchronizes corrected metadata back before sampling (`F`: `deepinfer/worker/worker.py:118-152,191-219`). Do not describe the CPU queue alone as the final N−1 allocation. A different timing is a new design and must establish the same decision-independence contract; source comments alone are not a sampling-correctness proof.
 
 8. **Propagate the allocation to the metadata.** The verify kernels read per-request query length and the per-position row map. Both must be built from the budget, not from the draft width.
 

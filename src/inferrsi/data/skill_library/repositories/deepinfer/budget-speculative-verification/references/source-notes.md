@@ -26,7 +26,7 @@ DEEPINFER_MAX_BACKTRACKING_TOKENS = EnvVar(lambda v: max(_int(v), envs.DEEPINFER
 
 ### F2 — Draft cost is full width; only verification is budgeted
 
-[`csrc/engine/mtp_varlen.hpp:155`](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/mtp_varlen.hpp#L150-L158) is the non-budgeted branch: it pushes `1 + draft_tokens.size()` per sequence and returns. The budgeted branch that follows computes a row budget, but nothing in it reduces the number of drafts the head produced. The saving is verification rows only.
+[`csrc/engine/mtp_varlen.hpp:150-158`](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/mtp_varlen.hpp#L150-L158) controls non-budgeted verification lengths, not draft generation. The actual producer chain is [sampler.py:225-251](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/layers/sampler.py#L225-L251) → [DFlash.decode_forward/run_drafts:347-387](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/models/mtp/dflash.py#L347-L387). DFlash's width comes from `USE_NEXTN_DECODE` (`dflash.py:103,141`), builds request-count × fixed-width draft inputs (`:230-239`) and samples every configured position (`:308-336`). The inspected DFlash path remains full width while variable-length scheduling saves verification rows; this is not a claim about arbitrary draft-model implementations.
 
 ### F3 — Cumulative, sorted, prefix grants
 
@@ -74,7 +74,9 @@ The comment continues to describe the two-round protocol as the way to satisfy t
 - `schedule_cnt == process_cnt` — the request's forward and post-process are paired, so `accept_rates` is from round N−1 and `prev_accept_rates` from N−2.
 - `schedule_cnt == process_cnt + 1` — the latest forward has not produced rates yet, so both shift back one round.
 
-The asserted invariant is `process_cnt <= schedule_cnt <= process_cnt + 1`. The batch-size queue always reads the N−2 vector and the per-request queue always reads `accept_rates`, with the pairing flag selecting which of the two stored vectors that is (`:204`, `:207`).
+The asserted invariant is `process_cnt <= schedule_cnt <= process_cnt + 1`. The pairing flag selects the batch-size queue's N−2 vector (`:204`). The per-request CPU queue always reads `accept_rates` (`:207`), hence N−1 when paired and N−2 when one forward is in flight. In the latter overlapping ZOS path, [worker.py:191-219](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/worker.py#L191-L219) uses the previous sampler's GPU confidence to redistribute fixed `total_q`. This correction feeds the current main forward, then its D2H metadata is synchronized before sampling ([worker.py:118-152](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/worker.py#L118-L152)). The CPU queue alone is not the final N−1 per-request allocation.
+
+The source computes cumulative confidence by multiplication ([scheduler.hpp:1243-1250](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp#L1243-L1250)). Its description of individual token estimates must not be read as a demonstrated statistical-independence theorem; DFlash's optional Markov branch uses the preceding sampled token (`dflash.py:308-320`).
 
 ### F7 — Confidence is a model property, not an engine option
 

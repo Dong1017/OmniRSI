@@ -22,6 +22,8 @@
       "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
       "paths": [
         "csrc/engine/mtp_varlen.hpp",
+        "csrc/engine/scheduler.hpp",
+        "deepinfer/worker/worker.py",
         "deepinfer/environ.py",
         "deepinfer/sampling_params.py",
         "deepinfer/model_executor/models/mtp/dflash.py",
