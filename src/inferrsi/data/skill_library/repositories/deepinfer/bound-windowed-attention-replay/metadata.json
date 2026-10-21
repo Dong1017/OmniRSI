@@ -36,7 +36,7 @@
     }
   ],
   "applicability": {
-    "scope": "Decoders with an explicit producer/consumer boundary whose consumer layers read only a bounded suffix",
+    "scope": "Decoders with an explicit producer/consumer boundary and a demonstrated dependency closure for compact query rows, including separately preserved historical state",
     "prerequisites": "A derived dependency closure; a full-length KV write at the boundary; known rollback depth; control over metadata construction",
     "hardware": "Backend-independent retain arithmetic; window sizes, boundary index and ring lengths come from the model config and do not transfer"
   },

@@ -127,6 +127,6 @@ The comment states the store-granularity reason: kvstore writes only at multiple
 ## Not established
 
 - No equivalence run. Metadata equivalence between `mask` and `compact` is argued from the shared `abs_lo` formula, not measured.
-- Whether the same construction is valid for an architecture that preserves all historical keys in a compressed index but has a consumer whose top-k can reach past the retained region was not analysed. The procedure says to derive it; it does not answer it.
+- Transfer to another architecture, including one with a different compressed index or historical top-k dependency, was not analysed. Its required historical state and query dependency closure must be derived independently.
 - Preemption behaviour during a comparison run was not observed; whether recompute moves the anchor in practice was not tested.
 - The kvstore ring's extra span was read from code and comments, not from an executed boundary case.

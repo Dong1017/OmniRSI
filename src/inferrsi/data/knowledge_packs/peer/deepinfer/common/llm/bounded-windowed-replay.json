@@ -6,7 +6,7 @@
   "backend": "common",
   "component": "llm",
   "scenario": "llm.*",
-  "title": "DeepInfer bounded replay: retain window plus rollback depth at a producer/consumer boundary, and clamp visibility past cleared state",
+  "title": "DeepInfer bounded replay: compact query rows with a derived dependency closure and separately preserved historical state",
   "status": "imported",
   "summary": "A decoder stack split at an explicit producer/consumer boundary can replay only a retained suffix if the boundary captures the full-length state the consumer needs. The retain arithmetic is small and transferable; which layers are safe to shorten is a per-model dependency question and must be derived, not assumed from per-layer windowing.",
   "tags": [
@@ -77,7 +77,7 @@
       "deepseek-ai/DeepInfer at 8b16149741a4935e1dec8cea27853f273b374c5b; the model's window sizes and layer boundary come from its config and do not transfer"
     ],
     "conditions": [
-      "The decoder has an explicit boundary: earlier layers run over the full prefix, later consumer layers read only a bounded suffix",
+      "The decoder has an explicit boundary: earlier layers run over the full prefix, later consumer layers run compact query rows while reading all required preserved state",
       "A dependency closure shows each retained query's inputs are available from retained producer outputs or explicitly preserved historical state",
       "Full-length consumer KV is written at the boundary, independent of the compact query",
       "The rollback depth is known and floored at the speculation width plus one"

@@ -8,7 +8,7 @@ experiment; repository conventions stay with their owning repository.
 | --- | --- | --- |
 | Contribution / `contribution` | vLLM, vLLM-Omni, vllm-ascend; legacy repository packs also retain imported Strata, SGLang and SGLang-Omni procedures | L2C blind attempt → comparison → scoped skill; separate performance evidence/candidates |
 | Dependency / `dependency` | FlashInfer, FlashAttention, PyTorch/Inductor, Triton, Diffusers, Transformers | API/capability constraints and downstream impact; no blind coding session required |
-| Peer technique / `peer` | SGLang, TensorRT-LLM, LMDeploy, xDiT, Cache-DiT | Technique, hardware, reported benefit, costs, quality risks and a reproduction hypothesis |
+| Peer technique / `peer` | SGLang, TensorRT-LLM, LMDeploy, xDiT, Cache-DiT, Qwen3-TTS engine, DeepInfer | Technique, hardware, reported benefit, costs, quality risks and a reproduction hypothesis |
 
 This is an acquisition policy, not a ranking or fixed dependency graph.
 Cache-DiT, for example, can also be a direct dependency of vLLM-Omni. Its entry
@@ -37,7 +37,7 @@ against the owning directory as well as ID/repository/backend/component.
 `repo` always identifies the source owner, not a validated downstream target.
 
 The [InferRSI skill catalog](../repo_packs/inferrsi/knowledge/README.md)
-adds generated contribution-tier records for all 48 migrated skills. Their full
+provides generated contribution-tier records for registered skills. Their full
 procedures, sidecars, references and cases now live in the
 [packaged skill library](../skill_library/README.md); `skill_documents.original`
 links each record to its procedure. Hardware guidance lives under the matching
@@ -118,7 +118,7 @@ speedup numbers whose conditions or isolated contribution are unclear.
 | peer | cache_dit | [Cache-DiT residual reuse needs model- and schedule-specific calibration](peer/cache_dit/common/diffusion/residual-cache-calibration.json) |
 | peer | deepinfer | [DeepInfer zero-overhead scheduling: defer the previous step's post-process to overlap host prep with device work](peer/deepinfer/common/llm/zero-overhead-deferred-scheduling.json) |
 | peer | deepinfer | [DeepInfer verification budget: spend verification rows by marginal acceptance, not by fixed draft width](peer/deepinfer/common/llm/speculative-verification-budget.json) |
-| peer | deepinfer | [DeepInfer bounded replay: retain window plus rollback depth at a producer/consumer boundary, and clamp visibility past cleared state](peer/deepinfer/common/llm/bounded-windowed-replay.json) |
+| peer | deepinfer | [DeepInfer bounded replay: compact query rows with a derived dependency closure and separately preserved historical state](peer/deepinfer/common/llm/bounded-windowed-replay.json) |
 
 ## Maintaining the tiers
 

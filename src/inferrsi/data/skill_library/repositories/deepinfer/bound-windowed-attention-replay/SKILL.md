@@ -1,6 +1,6 @@
 ---
 name: bound-windowed-attention-replay
-description: Bound the replay or prefill cost of a stack whose later layers consume a bounded suffix produced by earlier layers. Use when a model has an explicit producer/consumer boundary, shared hidden state, or preserved-compressed KV, and the retained region must be derived rather than assumed. Derives the retain rule from window plus rollback depth, separates query-row compaction from dropping historical keys, and names what becomes unrecoverable.
+description: Bound replay or prefill query rows across a producer/consumer boundary whose retained inputs and separately preserved historical state satisfy the full dependency closure. Use when a model has shared hidden state or preserved-compressed KV and the retained region must be derived rather than assumed. Derives the retain rule from window plus rollback depth, separates query-row compaction from dropping historical keys, and names what becomes unrecoverable.
 ---
 
 # Bound a windowed-attention replay
@@ -31,7 +31,7 @@ Read [source-notes.md](references/source-notes.md) for the evidence ledger and [
 
 ## Required inputs
 
-1. **The producer/consumer split.** Which layers run over the full prefix and write the persistent cache; which layers read only a bounded suffix. Read the layer construction, not the config comment.
+1. **The producer/consumer split.** Which layers run over the full prefix and write the persistent cache; which layers run compact query rows and which historical state they still read. Read the layer construction, not the config comment.
 2. **The dependency closure.** For each consumer, what it reads and where that was produced. Follow it transitively: a consumer reading a shared hidden that was itself computed from a compressed KV needs both accounted for.
 3. The window and rollback depth that apply at the boundary.
 4. The boundary layer index, or a rule that identifies it.
