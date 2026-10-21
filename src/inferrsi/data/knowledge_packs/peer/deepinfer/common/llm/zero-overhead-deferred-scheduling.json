@@ -19,6 +19,20 @@
   ],
   "sources": [
     {
+      "url": "https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/engine/llm_engine.py#L307-L314",
+      "type": "source_code",
+      "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
+      "accessed_at": "2026-10-22",
+      "content_sha256": "a636d60ca5711f6b7c21e68370c3bd9c2de6fc3f4439a7429ca4f572f0edeebe"
+    },
+    {
+      "url": "https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/parallel_utils/parallel_state.py#L89-L94",
+      "type": "source_code",
+      "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
+      "accessed_at": "2026-10-22",
+      "content_sha256": "3565b2449abff4df0df2f979061a73364886c93602218b43c2f86c70f2629801"
+    },
+    {
       "url": "https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/worker.py",
       "type": "source_code",
       "commit": "8b16149741a4935e1dec8cea27853f273b374c5b",
@@ -86,7 +100,7 @@
     },
     {
       "kind": "source_observed",
-      "description": "The scheduler returns plain metadata and does not issue device work, which is what makes deferring it possible. The replicated step-type vote is a MIN all-reduce over the data-parallel process group; which backend that group uses is a deployment decision, not fixed at the call site."
+      "description": "The scheduler releases the GIL; the standard ZOS engine constructor selects its CPU data-parallel group, created with Gloo, and the scheduler's Gloo vote uses a CPU tensor. This is a constructor/code path observation, not proof that every scheduler branch avoids device synchronization."
     },
     {
       "kind": "source_observed",
@@ -94,18 +108,18 @@
     },
     {
       "kind": "source_observed",
-      "description": "Forward and sample launches are wrapped in a guard that raises on any torch-visible CPU-GPU sync in scope; event-based waits are exempt, so the deliberate device-to-host points in the deferred path are unaffected."
+      "description": "Forward and sample launches use a torch-visible synchronization debug guard. Event.synchronize is outside its coverage, another thread's allow scope can lift enforcement, and an environment setting disables it. Guard presence alone does not prove synchronization-free execution."
     }
   ],
   "downstream_impact": [
-    "The host-overhead profiling procedure already measures the exposed-prep ratio (M3a) and its throughput cost (M3b); this case is the strongest worked instance of moving that prep rather than shrinking it.",
+    "The host-overhead profiling procedure measures exposed preparation; this source case illustrates moving that preparation rather than shrinking it, without a reproduced gain.",
     "A vLLM or vLLM-family engine could adopt the reorder only if its scheduler is device-free and it can enumerate the stale quantities; neither is established here.",
     "Ascend: the mechanism is arithmetic and metadata, but the reference asserts unsupported combinations rather than degrading, so the transfer hypothesis needs its own gate check."
   ],
   "recommendations": [
     "Treat the staleness list as the deliverable, not the code. An engine that cannot enumerate what becomes stale cannot safely pipeline.",
     "Confirm the drain path before measuring anything; without it tokens are silently lost at the end of a request.",
-    "Treat the distributed vote placement as a deployment constraint; leaving it on a device collective makes the pipeline look enabled and gain nothing."
+    "Preserve the standard ZOS constructor's host DP-group ordering, or re-establish the ordering for a custom construction before measuring overlap."
   ],
   "validation_plan": [
     "Profile with named regions before and after, reporting the idle window separately from kernel time.",
@@ -116,7 +130,7 @@
   "limitations": [
     "No DeepInfer build or run was performed; nothing here is a measured gain.",
     "The reference is an offline engine for one model; transfer to a serving engine with continuous batching is unproven.",
-    "Preemption of an in-flight decode sequence may free a state slot or KV block that a running kernel still writes; no guard was found at this pin.",
+    "Scheduler stale-output guards, sample-event synchronization and deferred metadata release exist. Their presence does not establish complete in-flight KV/state reuse safety; a reachable preemption race was neither proved nor reproduced, so it remains a validation question rather than a known defect.",
     "Numeric timer thresholds and any reported throughput belong to the source deployment and are not reproduced."
   ],
   "verification": {

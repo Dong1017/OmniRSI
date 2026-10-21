@@ -2,7 +2,7 @@
 
 A worked, source-level instance of hiding exposed host prep behind device execution. It is the same trade-off this skill's loop optimizes, applied one layer down: instead of making the Python cheaper, it moves the Python so it runs while the GPU is busy.
 
-Source: `deepseek-ai/DeepInfer` @ `8b16149741a4935e1dec8cea27853f273b374c5b` (Apache-2.0), read statically. Nothing was built or run. **F** is code behaviour at this pin; **P** is proposed.
+Source: [deepseek-ai/DeepInfer @ 8b16149741a4935e1dec8cea27853f273b374c5b](https://github.com/deepseek-ai/DeepInfer/tree/8b16149741a4935e1dec8cea27853f273b374c5b) (Apache-2.0), read statically. Nothing was built or run. **F** is observed source behaviour at this pin; **P** is proposed. The bounded readset is the cited worker, engine, scheduler, remap, constructor and synchronization paths; it does not establish native preemption safety or an end-to-end speedup.
 
 ## What the bubble is
 
@@ -20,7 +20,7 @@ The D2H wait plus post-process plus schedule sit between two device launches, so
 forward(N) -> post-process(N-1) -> sample(N) -> [defer post-process(N)]
 ```
 
-`F`: `deepinfer/worker/worker.py:183-188`. Prompt steps never defer; only decode steps, and only when `DEEPINFER_ZERO_OVERHEAD_SCHEDULING` is on:
+`F`: [deepinfer/worker/worker.py:182-187](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/worker.py#L182-L187). Prompt steps never defer; only decode steps, and only when `DEEPINFER_ZERO_OVERHEAD_SCHEDULING` is on:
 
 ```python
 if is_prompt or not envs.DEEPINFER_ZERO_OVERHEAD_SCHEDULING:
@@ -30,7 +30,7 @@ else:
     self.prev_step_state = curr_step_state
 ```
 
-The next step begins by post-processing the retained state (`worker.py:143-144`), so the CPU work overlaps `forward(N)`.
+After launching the next forward, the worker post-processes the retained previous state ([worker.py:113-144](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/worker.py#L113-L144)). This is the source's intended overlap; its duration was not measured here.
 
 ## What becomes stale, and the repair
 
@@ -38,11 +38,11 @@ This is the part worth copying. Three quantities the scheduler reads are now one
 
 | Quantity | Why it is stale | Repair |
 |---|---|---|
-| Per-request query length | Under adaptive speculation the row count depends on the *previous* step's acceptance | Recomputed on device from previous-step confidence rates |
+| Per-request query length | Under adaptive verification the per-request split uses previous-step confidence estimates | Redistributed on device from those estimates while preserving the CPU-selected total row budget |
 | Per-request key length | Rejected drafts mean the previous step accepted fewer tokens than it requested | Recomputed on device from previous-step accepted counts |
 | Input token ids | Rows continuing from the previous batch reuse the previous step's sampled ids | Scatter from the previous batch via a remap |
 
-`F`: `worker.py:191-224`. The remap matches current batch slots to previous batch slots by stable sequence id; `-1` marks a fresh row. It short-circuits to the direct path when the batch order matches exactly.
+`F`: [worker.py:191-245](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/worker.py#L191-L245). The remap matches current batch slots to previous batch slots by stable sequence id; `-1` marks a fresh row. Equal batch order produces an identity remap; otherwise an ID lookup builds it. The correction path is skipped when there is no overlap, not merely when order matches ([csrc/engine/zos.cpp:142-175](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/zos.cpp#L142-L175)).
 
 ```python
 if envs.DEEPINFER_ENABLE_MTP_VARLEN:
@@ -51,22 +51,22 @@ if self.nextn > 0:
     compute_seqlens_k_zos(...)
 ```
 
-The remap construction itself is `F`: `csrc/engine/zos.cpp:142-160` (`prepare_zos_inputs`), with the fresh/continuing distinction at `:105`.
+Input-token repair consumes that remap and the previous sampled/draft IDs in [prepare_tensor_input_zos.py:235-244](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/input_metadata/prepare_tensor_input_zos.py#L235-L244), with fresh rows prepared in [zos.cpp:104-113](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/zos.cpp#L104-L113). Corrected query lengths feed the main forward, then the worker synchronizes their D2H metadata before current-step sampling ([worker.py:118-152](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/worker.py#L118-L152)).
 
 Note the dependency this creates: the deferred path is only correct because the *next* step repairs what the deferred post-process would have produced. If your engine cannot enumerate the stale quantities, deferring the post-process silently produces wrong metadata rather than a crash.
 
-## The three conditions that make it work
+## Conditions and their source support
 
-1. **The scheduler must not touch the device.** `Scheduler::_schedule` releases the GIL and returns plain metadata. If scheduling needed a device kernel, deferring it would not overlap anything.
-2. **The DP vote must run on the host.** The replicated step-type vote is a `MIN` all-reduce over the data-parallel `ProcessGroup` (`F`: `csrc/engine/scheduler.hpp:316,318,332`, with the group passed in at `:83`). Placing it on a device collective would serialize against the work being overlapped. Which backend that group uses is a deployment decision, not something the call site fixes.
-3. **Nothing may synchronize in the launch scope.** The forward and sample launches are wrapped in `forbid_cuda_sync()`, which raises on any torch-visible CPU-GPU sync in scope (`F`: `deepinfer/worker/model_runner.py:321,357`; definition at `deepinfer/utils.py:119-131`). Event-based waits are explicitly exempt, so the deliberate D2H points are unaffected.
+1. **Keep host scheduling independent of the device work being hidden.** The inspected [Scheduler::_schedule releases the GIL](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp#L275-L277). This permits other Python work; it is not by itself a proof that every scheduler branch is free of device synchronization.
+2. **The standard ZOS constructor selects a host DP group.** [LLMEngine._create_scheduler selects cpu_data_parallel_group when ZOS is enabled](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/engine/llm_engine.py#L307-L314); [that group is created with Gloo](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/parallel_utils/parallel_state.py#L89-L94). The scheduler [recognizes Gloo](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp#L109-L111) and [uses a CPU tensor for its synchronous vote](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp#L169-L181). The alternate group path can use the default device; do not generalize the host property to arbitrary scheduler construction.
+3. **The launch scope has a synchronization debug guard.** Forward and sample launches use `forbid_cuda_sync()` ([model_runner.py:321-324](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/model_runner.py#L321-L324), [356-359](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/model_runner.py#L356-L359)). It targets torch-visible CPU-GPU synchronization, but Event.synchronize is outside its coverage, another thread's allow scope lifts enforcement, and DEEPINFER_DISABLE_SYNC_GUARD disables it ([utils.py:119-132](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/utils.py#L119-L132)). Guard presence is not a measured absence of synchronization.
 
 ## The cost
 
 - One extra step of retained metadata, request outputs, state slots and KV blocks.
 - A device-side repair path that must be maintained alongside the scheduler.
-- Output latency: callers see results one step late, so the entrypoint needs a drain that flushes the last in-flight step.
-- The DP collectives must be on a host-capable backend, which is a deployment constraint, not a code change.
+- Deferred output delivery needs a final drain; the worker supplies [flush_inflight_reqs](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/worker.py#L274-L283). End-to-end output latency was not measured.
+- The standard ZOS path's CPU DP group must remain available; a custom construction must preserve the intended host/device ordering.
 
 ## Relevance to this skill
 
@@ -76,5 +76,7 @@ Do not copy the repair list. It is specific to engines where speculation width a
 
 ## Unresolved
 
-- Preemption of an in-flight decode sequence may free a state slot or KV block that a running kernel is still writing. No guard was found at this pin. Treat the pipeline as unsafe under preemption until that is resolved.
-- The default depends on how the engine object was built. `DEEPINFER_ZERO_OVERHEAD_SCHEDULING` is `EnvVar.bool()`, which defaults false (`F`: `deepinfer/environ.py:70-71`). `EngineArgs.__post_init__` sets it with `setdefault` from `engine_type.default_zero_overhead_scheduling`, which is true for `NORMAL` and `COMPLETION` and false for `PROMPT` (`F`: `deepinfer/engine/arg_utils.py:52-55`, `engine_type.py:15-17`). A README claim of "enabled by default" and a false environment-variable default can both be true of different entrypoints: the former describes construction through `EngineArgs`, the latter describes a process that never constructs one.
+- **F — preemption bookkeeping has guards.** [The scheduler rejects COMPLETION recompute configuration](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp#L98-L104). Its [_preempt path either stops the request or resets it to WAITING for recompute](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp#L766-L789). Deferred decode output [skips WAITING requests](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp#L917-L925), as does [MTP post-processing](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp#L1212-L1224). Therefore "no guard found" is not an accurate description of this readset.
+- **F — some resource release is explicitly deferred.** [Worker post-processing synchronizes the step's sample event before its callback](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/worker.py#L259-L271); the engine [collects sequence metadata after post-processing](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/engine/llm_engine.py#L1010-L1015). [DeferredRelease releases collected metadata/output objects and waits for a clone event before unpinning clone resources](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/engine/llm_engine.py#L89-L116). These are specific lifetimes, not a proof about every state-slot or KV-block reuse path.
+- **HYPOTHESIS / not established — device resource reuse under preemption.** An unsafe reuse claim would need a concrete in-flight write, release/reallocation path and ordering that allows them to conflict. No native experiment was run; the bounded source readset establishes neither such a reachable race nor complete preemption safety. Preserve it as an unvalidated lifetime question, not a known bug or a verdict that ZOS is unsafe.
+- **The default is constructor-dependent.** [EnvVar.bool defaults false](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/environ.py#L69-L71), while [EngineArgs sets the unset variable and rearms it](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/engine/arg_utils.py#L48-L55) from [NORMAL/COMPLETION true, PROMPT false](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/engine/engine_type.py#L15-L17). This supports the README's default description for the standard NORMAL/COMPLETION path without treating the standalone environment default as a contradiction. Explicit environment overrides remain effective.
