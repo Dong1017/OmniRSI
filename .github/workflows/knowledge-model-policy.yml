@@ -34,4 +34,4 @@ jobs:
       - name: Evaluate declarations with trusted main code
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python tools/check_knowledge_model_policy.py --policy-sha "$(git rev-parse HEAD)"
+        run: bash tools/run_knowledge_model_policy.sh

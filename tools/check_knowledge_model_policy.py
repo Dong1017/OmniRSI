@@ -14,6 +14,32 @@ DECLARATION = "knowledge-model-policy"
 APPROVAL = "knowledge-policy-approval"
 SHA = re.compile(r"[0-9a-f]{40}")
 ROOT = Path(__file__).resolve().parents[1]
+# Exit codes: published results are final, a rejection is final, but stale work must be rerun.
+EXIT_COMPLIANT = 0
+EXIT_NONCOMPLIANT = 1
+EXIT_RERUN = 2
+# Bounded in-run re-evaluation before the run reports the work as unfinished.
+ATTEMPTS = 3
+API_ERRORS = (ValueError, KeyError, TypeError, OSError)
+# Outcome kinds, reported separately so evaluator noise is never read as a rejection.
+KINDS = ("compliant", "noncompliant", "evaluator-error", "deferred", "closed",
+         "publication-failed")
+FAILING_KINDS = {"noncompliant", "evaluator-error", "deferred", "publication-failed"}
+
+
+def summarize(results):
+    counts = {kind: sum(result["kind"] == kind for result in results) for kind in KINDS}
+    return {"kind_counts": counts, "results": len(results),
+            "failed": sum(result["kind"] in FAILING_KINDS for result in results),
+            "rerun": any(result["rerun"] for result in results)}
+
+
+def exit_code(results):
+    # Unfinished (rerun) work keeps open PRs fail-closed; a real rejection alone exits 1.
+    if any(result["rerun"] for result in results):
+        return EXIT_RERUN
+    return EXIT_NONCOMPLIANT if any(result["kind"] in FAILING_KINDS for result in results) \
+        else EXIT_COMPLIANT
 
 
 def unique_object(pairs):
@@ -207,8 +233,10 @@ def assess(pr, paths, policy, comments=(), contributors=()):
         except (ValueError, TypeError):
             errors.append("Missing, invalid or stale knowledge author declaration")
     applicable = bool(protected or controls)
+    # Pure metadata: same state, but a kind so a rejection is never confused with evaluator noise.
     return {
         "state": "failure" if errors else "success",
+        "kind": "noncompliant" if errors else "compliant",
         "description": ("Declaration or policy approval failed" if errors else
                         "Declaration compliance only" if applicable else "Not applicable"),
         "errors": errors,
@@ -277,12 +305,25 @@ def require_unique_head(prs, number, head):
         raise ValueError("Head must belong to exactly one open PR; shared heads are ineligible")
 
 
+def deferred(reason):
+    # Not a verdict: the target must be re-evaluated before anything is published.
+    return {"state": "failure", "kind": "deferred", "description": "Evaluation deferred",
+            "errors": [reason], "retry": True}
+
+
 def evaluation_failure(error):
     message = (f"GitHub API HTTP {error.code}" if isinstance(error, HTTPError)
                else "GitHub API unavailable" if isinstance(error, OSError)
                else str(error) if isinstance(error, ValueError)
                else "Invalid GitHub API response")
-    return {"state": "failure", "description": "Policy evaluation failed", "errors": [message]}
+    return {"state": "failure", "kind": "evaluator-error",
+            "description": "Policy evaluation failed", "errors": [message], "retry": True}
+
+
+def refused(reason):
+    # Deterministic refusal by admission metadata, not an evaluator failure; still fail-closed.
+    return {"state": "failure", "kind": "noncompliant",
+            "description": "Eligibility refused", "errors": [reason], "retry": False}
 
 
 def read_pr_result(api, pr, policy, policy_sha, open_prs):
@@ -290,12 +331,14 @@ def read_pr_result(api, pr, policy, policy_sha, open_prs):
     head = pr["head"]["sha"]
     comments = []
     try:
-        if pr["state"] != "open" or pr["base"]["ref"] != policy["base_branch"]:
-            raise ValueError("PR is not open against the supported policy branch")
         require_unique_head(open_prs, number, head)
-        base_route = f"git/ref/heads/{policy['base_branch']}"
-        if api.get(base_route)["object"]["sha"] != policy_sha:
-            raise ValueError("Trusted policy checkout is stale; rerun on the current base")
+    except ValueError as error:
+        return refused(str(error)), comments
+    base_route = f"git/ref/heads/{policy['base_branch']}"
+    if api.get(base_route)["object"]["sha"] != policy_sha:
+        # The trusted checkout moved: this verdict belongs to no publishable base.
+        return deferred("Trusted policy checkout is stale; rerun on the current base"), comments
+    try:
         pages = [api.get(f"pulls/{number}/files?per_page=100&page={page}")
                  for page in file_page_numbers(pr["changed_files"])]
         files = assemble_file_pages(pages, pr["changed_files"])
@@ -322,64 +365,104 @@ def read_pr_result(api, pr, policy, policy_sha, open_prs):
                         contributors.add(commit[field]["login"])
             comments = api.pages(f"issues/{number}/comments")
         result = assess(pr, paths, policy, comments, contributors)
-        # 发布前重读元数据与批准，防止正文、head、base 或例外已变化。
-        if (snapshot(api.get(f"pulls/{number}")) != snapshot(pr)
-                or api.get(base_route)["object"]["sha"] != policy_sha):
-            raise ValueError("PR or base changed during evaluation; rerun required")
+        # Anything that moved since the snapshot invalidates this verdict; the base ref must
+        # still match the trusted checkout, or the verdict belongs to no publishable base.
+        if snapshot(api.get(f"pulls/{number}")) != snapshot(pr):
+            return deferred("PR changed during evaluation; rerun required"), comments
+        if api.get(base_route)["object"]["sha"] != policy_sha:
+            return deferred("Base advanced during evaluation; rerun required"), comments
         if (controls or request is not None) and comments != api.pages(f"issues/{number}/comments"):
-            raise ValueError("Approval comments changed during evaluation; rerun required")
-    except (ValueError, KeyError, TypeError, OSError) as error:
+            # Re-read approvals that were read, not only approvals that changed the verdict.
+            return deferred("Approval comments changed during evaluation; rerun required"), comments
+    except API_ERRORS as error:
         result = evaluation_failure(error)
     return result, comments
 
 
 def admission_snapshot(pr):
-    # list PR API 不含 changed_files；head/base 相同才可复用已验证的文件列表。
+    # list PR API 不含 changed_files；head/base/body/state 相同才可复用已验证的文件列表。
     return (pr["head"]["sha"], pr["base"]["ref"], pr["base"]["sha"],
             pr.get("body"), pr["state"])
+
+
+def addressable(pr, policy):
+    return pr["state"] == "open" and pr["base"]["ref"] == policy["base_branch"]
 
 
 def check_prs(api, policy, policy_sha, dry_run, numbers=None):
     open_prs = api.pages("pulls?state=open")
     if numbers is None:
-        numbers = [pr["number"] for pr in open_prs if pr["base"]["ref"] == policy["base_branch"]]
-    pending = []
-    for number in numbers:
-        pr = api.get(f"pulls/{number}")
-        head = pr["head"]["sha"]
-        if not SHA.fullmatch(head):
-            raise ValueError("Invalid PR head")
-        if not dry_run:
-            api.status(head, "pending", "Checking current declaration against trusted base policy")
-        result, comments = read_pr_result(api, pr, policy, policy_sha, open_prs)
-        pending.append((pr, result, comments))
-    # 整轮只扫描两次 open PR；最终索引同时复核共享 head 与正文等元数据。
-    try:
-        current = api.pages("pulls?state=open")
-        if api.get(f"git/ref/heads/{policy['base_branch']}")["object"]["sha"] != policy_sha:
-            raise ValueError("Trusted policy checkout is stale; rerun on the current base")
-        by_number = {pr["number"]: pr for pr in current}
-        refresh_error = None
-    except (ValueError, KeyError, TypeError, OSError) as error:
-        refresh_error = error
-    results = []
-    for pr, result, comments in pending:
-        number, head = pr["number"], pr["head"]["sha"]
-        try:
-            if refresh_error is not None:
-                raise refresh_error
-            require_unique_head(current, number, head)
-            if admission_snapshot(by_number[number]) != admission_snapshot(pr):
-                raise ValueError("PR changed before batch publication; rerun required")
+        numbers = [pr["number"] for pr in open_prs if addressable(pr, policy)]
+    published = {}
+    retry = list(numbers)
+    # Results are published only from a fresh scan, and only for a target that still matches
+    # the evaluated metadata. Stale or moved work is re-evaluated instead of being written to
+    # a captured head; a closed target receives no publication at all.
+    for attempt in range(ATTEMPTS):
+        staged, retry_next = [], []
+        for number in retry:
+            pr = api.get(f"pulls/{number}")
+            head = pr["head"]["sha"]
+            if not SHA.fullmatch(head):
+                raise ValueError("Invalid PR head")
+            if not addressable(pr, policy):
+                published[number] = {"head": head, "state": "success", "kind": "closed",
+                                     "description": "Not open against the policy branch",
+                                     "errors": [], "retry": False}
+                continue
+            # No pending write: a run that stops early must not leave a stale pending status
+            # on a head that merges or otherwise leaves the sweep.
+            result, comments = read_pr_result(api, pr, policy, policy_sha, open_prs)
+            if result.pop("retry", False) and attempt + 1 < ATTEMPTS:
+                retry_next.append(number)
+            else:
+                staged.append((pr, result, comments))
+        open_prs = api.pages("pulls?state=open")
+        current = {pr["number"]: pr for pr in open_prs}
+        for pr, result, comments in staged:
+            number, head = pr["number"], pr["head"]["sha"]
+            live = current.get(number)
+            if live is None or not addressable(live, policy):
+                published[number] = {"head": head, "state": "success", "kind": "closed",
+                                     "description": "Closed before publication", "errors": [],
+                                     "retry": False}
+                continue
+            if admission_snapshot(live) != admission_snapshot(pr):
+                retry_next.append(number)
+                continue
             if comments and comments != api.pages(f"issues/{number}/comments"):
-                raise ValueError(
-                    "Approval comments changed before batch publication; rerun required")
-        except (ValueError, KeyError, TypeError, OSError) as error:
-            result = evaluation_failure(error)
-        if not dry_run:
-            api.status(head, result["state"], result["description"])
-        results.append({"pull_request": number, "head_sha": head, "policy_sha": policy_sha,
-                        "dry_run": dry_run, **result})
+                # Approvals read for this verdict must still be current at publication.
+                retry_next.append(number)
+                continue
+            try:
+                require_unique_head(open_prs, number, head)
+            except ValueError as error:
+                result = refused(str(error))
+            # Only a fresh, fully revalidated verdict reaches a head; a shared head is refused
+            # above, so each head is written at most once per round.
+            if not dry_run:
+                try:
+                    api.status(head, result["state"], result["description"])
+                except API_ERRORS as error:
+                    result = {**result, "kind": "publication-failed",
+                              "errors": [*result["errors"],
+                                         evaluation_failure(error)["errors"][0]]}
+            published[number] = {"head": head, **result}
+        retry = sorted(set(retry_next) - set(published))
+        if not retry:
+            break
+    # After the attempt budget, an unfinished target stays failed and asks for a fresh run.
+    for number in retry:
+        published.setdefault(number, {"head": "", "state": "failure", "kind": "deferred",
+                                      "description": "Evaluation incomplete", "errors": []})
+    results = []
+    for number in sorted(published):
+        item = published[number]
+        results.append({"pull_request": number, "head_sha": item["head"],
+                        "policy_sha": policy_sha, "dry_run": dry_run,
+                        "rerun": item["kind"] == "deferred", "state": item["state"],
+                        "kind": item["kind"], "description": item["description"],
+                        "errors": item["errors"]})
     return results
 
 
@@ -421,11 +504,11 @@ def main(argv=None):
         event = json.loads(Path(args.event_path).read_text(encoding="utf-8"))
         # 所有触发共用一个 writer；待运行事件被合并时仍覆盖全部 open PR。
         numbers = None if refresh_event(event, os.environ["GITHUB_EVENT_NAME"]) else []
-    failed = False
-    for result in check_prs(api, policy, args.policy_sha, args.dry_run, numbers):
+    results = check_prs(api, policy, args.policy_sha, args.dry_run, numbers)
+    for result in results:
         print(json.dumps(result, ensure_ascii=True))
-        failed |= result["state"] == "failure"
-    return int(failed)
+    print(json.dumps(summarize(results), ensure_ascii=True))
+    return exit_code(results)
 
 
 if __name__ == "__main__":

@@ -11,6 +11,9 @@ import yaml
 from tools.check_knowledge_model_policy import (
     APPROVAL,
     DECLARATION,
+    EXIT_COMPLIANT,
+    EXIT_NONCOMPLIANT,
+    EXIT_RERUN,
     GitHub,
     approved,
     assemble_file_pages,
@@ -19,12 +22,14 @@ from tools.check_knowledge_model_policy import (
     check_pr,
     check_prs,
     declaration,
+    exit_code,
     file_page_numbers,
     json_block,
     matching,
     model_errors,
     refresh_event,
     snapshot,
+    summarize,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -305,6 +310,11 @@ def test_workflow_never_executes_pr_code_and_refreshes_metadata_and_base():
     steps = value["jobs"]["declarations"]["steps"]
     assert steps[0]["with"] == {"ref": "main", "persist-credentials": False}
     assert all("pip install" not in step.get("run", "") for step in steps)
+    assert steps[-1]["run"] == "bash tools/run_knowledge_model_policy.sh"
+    runner = (ROOT / "tools/run_knowledge_model_policy.sh").read_text(encoding="utf-8")
+    # The runner refetches trusted main and reruns only for the stale-base exit code.
+    assert "git fetch --quiet origin main" in runner
+    assert "--policy-sha" in runner and 'status" -ne 2' in runner
     assert "pull_request.head" not in json.dumps(value)
     assert "knowledge-model-policy" not in (
         ROOT / ".github/workflows/ci-ready.yml"
@@ -315,7 +325,7 @@ def test_workflow_never_executes_pr_code_and_refreshes_metadata_and_base():
 def api_fixture():
     # 本机 HTTP fixture 使用真实 GitHub adapter，记录实际 POST 的共享 status。
     state = {"prs": {123: pr()}, "comments": {}, "statuses": [], "requests": [],
-             "before_request": None, "errors": []}
+             "before_request": None, "errors": [], "base": BASE}
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -347,7 +357,7 @@ def api_fixture():
                          if len(values) > page * 100 else None)
                 self.respond(values[(page - 1) * 100:page * 100], links)
             elif route == "git/ref/heads/main":
-                self.respond({"object": {"sha": BASE}})
+                self.respond({"object": {"sha": state["base"]}})
             elif route.startswith("pulls/"):
                 parts = route.split("/")
                 number = int(parts[1])
@@ -522,3 +532,82 @@ def test_api_batch_revalidates_earlier_pr_before_publication(api_fixture, policy
     assert [r["state"] for r in results] == ["failure", "success"]
     assert latest_status(state)["state"] == "failure"
     assert latest_status(state, "c" * 40)["state"] == "success"
+
+
+def test_api_merge_during_evaluation_publishes_nothing_to_the_merged_head(api_fixture, policy):
+    api, state = api_fixture
+
+    def merge(route):
+        if route == "pulls/123/files":
+            state["prs"][123]["state"] = "closed"
+
+    state["before_request"] = merge
+    results = check_prs(api, policy, BASE, False, [123])
+    assert [r["kind"] for r in results] == ["closed"]
+    assert state["statuses"] == []
+    assert exit_code(results) == EXIT_COMPLIANT
+
+
+def test_api_base_advance_defers_instead_of_failing_the_captured_head(api_fixture, policy):
+    api, state = api_fixture
+    state["base"] = "e" * 40
+    results = check_prs(api, policy, BASE, False, [123])
+    assert [r["kind"] for r in results] == ["deferred"]
+    assert results[0]["rerun"] is True
+    # Open work stays fail-closed, but the published status never claims a declaration verdict.
+    assert latest_status(state)["state"] == "failure"
+    assert latest_status(state)["description"] == "Evaluation deferred"
+    assert exit_code(results) == EXIT_RERUN
+    # A rerun against the advanced main publishes the real verdict.
+    assert check_pr(api, 123, policy, "e" * 40, False)["state"] == "success"
+    assert latest_status(state)["state"] == "success"
+
+
+def test_api_closed_target_keeps_historical_status_and_reopen_reevaluates(api_fixture, policy):
+    api, state = api_fixture
+    assert check_pr(api, 123, policy, BASE, False)["state"] == "success"
+    state["prs"][123]["state"] = "closed"
+    result = check_pr(api, 123, policy, BASE, False)
+    assert result["kind"] == "closed"
+    assert len(state["statuses"]) == 1  # The earlier verdict is not rewritten.
+    state["prs"][123]["state"] = "open"
+    state["prs"][123]["body"] = None
+    assert check_pr(api, 123, policy, BASE, False)["state"] == "failure"
+    assert latest_status(state)["state"] == "failure"
+
+
+def test_api_peer_sharing_a_merged_head_keeps_its_own_verdict(api_fixture, policy):
+    api, state = api_fixture
+    state["prs"][124] = {**pr(), "number": 124}
+    results = check_prs(api, policy, BASE, False, [123, 124])
+    assert [(r["pull_request"], r["kind"]) for r in results] == [(123, "noncompliant"),
+                                                                (124, "noncompliant")]
+    assert "shared heads" in results[0]["errors"][0]
+    assert latest_status(state)["state"] == "failure"
+    # One peer closes: the merged PR is dropped from the sweep and the survivor keeps the head
+    # under a fresh evaluation instead of inheriting the shared-head refusal.
+    state["prs"][123]["state"] = "closed"
+    results = check_prs(api, policy, BASE, False, [123, 124])
+    assert [(r["pull_request"], r["kind"]) for r in results] == [(123, "closed"),
+                                                                (124, "compliant")]
+    assert latest_status(state)["state"] == "success"
+
+
+def test_api_batch_separates_rejection_from_lifecycle_outcomes(api_fixture, policy):
+    api, state = api_fixture
+    state["prs"][124] = separate_pr(124, "c" * 40)
+    state["prs"][124]["body"] = None
+    state["prs"][125] = separate_pr(125, "d" * 40)
+    state["prs"][125]["state"] = "closed"
+    results = check_prs(api, policy, BASE, False, [123, 124, 125])
+    kinds = {r["pull_request"]: r["kind"] for r in results}
+    assert kinds == {123: "compliant", 124: "noncompliant", 125: "closed"}
+    assert latest_status(state)["state"] == "success"
+    assert latest_status(state, "c" * 40)["state"] == "failure"
+    assert all(s["sha"] != "d" * 40 for s in state["statuses"])
+    summary = summarize(results)
+    assert summary == {"kind_counts": {"compliant": 1, "noncompliant": 1, "evaluator-error": 0,
+                                       "deferred": 0, "closed": 1, "publication-failed": 0},
+                       "results": 3, "failed": 1, "rerun": False}
+    assert exit_code(results) == EXIT_NONCOMPLIANT
+    assert exit_code([r for r in results if r["kind"] == "compliant"]) == EXIT_COMPLIANT
