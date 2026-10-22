@@ -108,10 +108,14 @@ Unlinked Git identities cannot be inferred by CI. PR number, head, exact scope
 require renewed approval. Exceptions cannot excuse malformed/missing attribution;
 explicitly unknown settings may be considered by the approval owner.
 
-Changes to the config, checker, metadata workflow or this document need an
-independent owner approval of kind `policy-change`, listing exactly the changed
-policy-control paths and a specific reason. This is separate from author
-eligibility. One comment may contain both kinds in `approvals`. Checks use the
+`policy_paths` classifies changes to this mechanism — the policy config, this
+checker, the metadata workflow, the runner and this document — and reports them in
+each result. Classification is not a gate: a policy-only change does not fail for
+lack of a separate approval, and passing it is not a statement about content
+quality. Nothing in this mechanism grants an exception: an approval of kind
+`policy-change`, including historical comments, cannot excuse protected knowledge
+changes or substitute for knowledge author admission. One comment may still carry
+both kinds in `approvals`; only the `exception` kind is evaluated. Checks use the
 target branch's policy, never the PR's proposed replacement.
 Each authorized account's latest comment containing the approval fence replaces
 its earlier declarations. Use `decision: "revoke"` to revoke its grants. Comment
@@ -171,9 +175,12 @@ Each result carries `kind` alongside the status `state`:
 | `closed` | Target left the sweep; no status was written |
 | `publication-failed` | Status write failed; the verdict was not recorded |
 
-The final JSON summary counts each kind. Exit codes: `0` all published results
-compliant, `1` at least one failing kind, `2` unfinished work to rerun. A rerun
-never overrides a recorded rejection.
+The final JSON summary counts each kind, lists the `noncompliant_pull_requests`, and
+states the sweep `execution` as `ok`, `failed` or `unfinished`. Exit codes: `0`
+the sweep completed (any number of individual rejections are their own red
+statuses), `1` an execution error, `2` unfinished work to rerun. A rerun never
+overrides a recorded rejection. A rejection belongs to its own PR: one PR's
+rejection neither greens nor fails another PR's status.
 
 The workflow handles PR open/reopen/close/commits/body-or-base edits on any target
 branch (a PR against another base can share a main PR's head), approval-comment

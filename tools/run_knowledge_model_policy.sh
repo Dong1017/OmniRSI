@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Run the knowledge admission checker against the current trusted main.
-# Exit 2 means the trusted base advanced during evaluation: refetch main and evaluate again.
+# Exit 2 means the work could not be completed (stale base, unreadable evidence); this runner
+# is the single retry owner, so it refetches main and runs the checker again.
 set -uo pipefail
 
 attempts=3
@@ -12,7 +13,7 @@ for attempt in $(seq 1 "$attempts"); do
   if [ "$status" -ne 2 ]; then
     exit "$status"
   fi
-  echo "Trusted base advanced during evaluation; retrying against current main (${attempt}/${attempts})" >&2
+  echo "Admission work incomplete; retrying against current main (${attempt}/${attempts})" >&2
 done
-echo "Trusted base kept advancing; ending this run as failed" >&2
+echo "Admission work still incomplete after ${attempts} attempts" >&2
 exit 1
