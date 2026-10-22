@@ -18,6 +18,7 @@
     ".github/knowledge-model-policy.json",
     ".github/workflows/knowledge-model-policy.yml",
     "tools/check_knowledge_model_policy.py",
+    "tools/run_knowledge_model_policy.sh",
     "docs/knowledge-model-policy.md"
   ],
   "models": {

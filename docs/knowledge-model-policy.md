@@ -129,26 +129,35 @@ branches and API pages, and requires a unique head both before evaluation and
 before publishing its result. Close the extra PR or use a distinct commit before
 retrying. An exception cannot bypass head uniqueness. A closed peer no longer
 shares the head: the remaining open PR is evaluated on its own metadata and
-receives its own verdict. Each evaluation round reads the full open-PR collection
-once before evaluation and once before publication, with API pagination in both
-scans. Results are published only from that fresh scan, and only for a target that
-is still open against the policy branch with unchanged head, base and body;
-applicable approvals are reread before publication. The collection request count
-scales with its page count, not page count times PRs.
+receives its own verdict. The checker reads the full open-PR collection once
+before evaluation and once before publication, with API pagination in both scans.
+Results are published only from that fresh scan, and only for a target that is
+still open against the policy branch with an unchanged head; applicable approvals
+are reread before publication. The collection request count scales with its page
+count, not page count times PRs.
 
 ## Lifecycle and reruns
 
 A merged or closed PR that is no longer part of the sweep receives no new status;
 its earlier verdict stays historical. Publication never targets a captured head
-for work whose base advanced, whose PR changed, or whose approvals were edited
-during evaluation. When the trusted base advances mid-sweep, the checker
-re-evaluates open targets against the current base for a bounded number of rounds
-inside the same run. If work is still moving, the run publishes no verdict for it,
-reports the target as `deferred`, and exits `2`; trusted
-`tools/run_knowledge_model_policy.sh` then refetches `main` and runs the checker
-again from the current checkout. After its own attempt budget, the workflow run
-fails. Open PRs remain fail-closed in every case: stale work is never published as
-compliant, and an old green is never retained in place of a valid evaluation.
+for work whose base advanced or whose head changed. One evaluation pass is
+followed by a publication pass that re-reads the target. If the head, base, body
+or approvals moved, or if head ownership changed because a peer closed, the checker
+reassesses once against the current metadata and the current open-PR collection
+before writing. A green is published only from a verified premise; when the
+open-PR collection cannot be read, an otherwise compliant target is recorded as
+`unverified` with a failed status instead of keeping its old success. If the target
+itself cannot be re-read, no status is written to the captured head because it may
+already be merged; the run reports that the old status could not be invalidated,
+which is a real limitation, not a fail-closed result.
+
+When the trusted base advances mid-sweep, the checker returns a retryable result
+promptly instead of re-evaluating against its own stale checkout. It exits `2`,
+and trusted `tools/run_knowledge_model_policy.sh` refetches `main` and runs the
+checker again from the current code and policy. The runner is the single retry
+owner with a bounded budget; after exhaustion the workflow run fails. Open PRs
+remain fail-closed in every case: stale work is never published as compliant, and
+an old green is never retained in place of a valid evaluation.
 
 Each result carries `kind` alongside the status `state`:
 
@@ -156,13 +165,14 @@ Each result carries `kind` alongside the status `state`:
 | --- | --- |
 | `compliant` | Declaration and approvals satisfy the trusted policy |
 | `noncompliant` | Genuine rejection: declaration, approval or head eligibility (including a shared head) |
-| `evaluator-error` | GitHub API, incomplete evidence or unsupported lifecycle input; never a rejection |
+| `evaluator-error` | GitHub API or incomplete evidence; never a rejection |
+| `unverified` | Compliance could not be published without unverified lifecycle or ownership metadata |
 | `deferred` | Work could not be completed in this run; rerun required |
 | `closed` | Target left the sweep; no status was written |
 | `publication-failed` | Status write failed; the verdict was not recorded |
 
 The final JSON summary counts each kind. Exit codes: `0` all published results
-compliant, `1` at least one failing kind, `2` unfinished work (rerun). A rerun
+compliant, `1` at least one failing kind, `2` unfinished work to rerun. A rerun
 never overrides a recorded rejection.
 
 The workflow handles PR open/reopen/close/commits/body-or-base edits on any target

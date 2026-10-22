@@ -14,17 +14,18 @@ DECLARATION = "knowledge-model-policy"
 APPROVAL = "knowledge-policy-approval"
 SHA = re.compile(r"[0-9a-f]{40}")
 ROOT = Path(__file__).resolve().parents[1]
-# Exit codes: published results are final, a rejection is final, but stale work must be rerun.
+# Exit codes: 0 all published verdicts comply, 1 a recorded failure, 2 unfinished work to rerun.
 EXIT_COMPLIANT = 0
 EXIT_NONCOMPLIANT = 1
 EXIT_RERUN = 2
-# Bounded in-run re-evaluation before the run reports the work as unfinished.
-ATTEMPTS = 3
 API_ERRORS = (ValueError, KeyError, TypeError, OSError)
 # Outcome kinds, reported separately so evaluator noise is never read as a rejection.
-KINDS = ("compliant", "noncompliant", "evaluator-error", "deferred", "closed",
-         "publication-failed")
-FAILING_KINDS = {"noncompliant", "evaluator-error", "deferred", "publication-failed"}
+KINDS = ("compliant", "noncompliant", "evaluator-error", "unverified", "deferred", "closed",
+         "publication-failed", "invalidation-failed")
+FAILING_KINDS = {"noncompliant", "evaluator-error", "unverified", "deferred",
+                 "publication-failed", "invalidation-failed"}
+# Only the outer runner retries; these kinds ask it for a fresh trusted checkout.
+RERUN_KINDS = {"unverified", "deferred", "publication-failed", "invalidation-failed"}
 
 
 def summarize(results):
@@ -35,7 +36,7 @@ def summarize(results):
 
 
 def exit_code(results):
-    # Unfinished (rerun) work keeps open PRs fail-closed; a real rejection alone exits 1.
+    # Unfinished work keeps open PRs fail-closed and asks for the single retry owner.
     if any(result["rerun"] for result in results):
         return EXIT_RERUN
     return EXIT_NONCOMPLIANT if any(result["kind"] in FAILING_KINDS for result in results) \
@@ -173,7 +174,7 @@ def approved(comments, policy, contributors, number, head, kind, paths, reason=N
         if login in owners and re.search(rf"^```{APPROVAL}[ \t]*\r?$",
                                          comment.get("body") or "", re.M):
             latest[login] = comment
-    # 只信任维护者账号的最新批准声明；提交者自己的文字不能提供授权。
+    # Trust only the owner account's latest declaration; the submitter's own text grants nothing.
     for login, comment in latest.items():
         if login in {name.casefold() for name in contributors}:
             continue
@@ -204,7 +205,7 @@ def approved(comments, policy, contributors, number, head, kind, paths, reason=N
             if matches:
                 return True
         except (ValueError, TypeError):
-            # 无效批准不能回退到同一账号的历史批准。
+            # An invalid approval cannot fall back to that account's earlier approvals.
             continue
     return False
 
@@ -297,18 +298,10 @@ def snapshot(pr):
             pr.get("body"), pr["changed_files"], pr["state"])
 
 
-def require_unique_head(prs, number, head):
-    # Commit status 由 SHA/context 共享；其他 base 的 open PR 也不能复用它。
-    peers = {pr["number"] for pr in prs
-             if pr["head"]["sha"] == head}
-    if peers != {number}:
-        raise ValueError("Head must belong to exactly one open PR; shared heads are ineligible")
-
-
 def deferred(reason):
     # Not a verdict: the target must be re-evaluated before anything is published.
     return {"state": "failure", "kind": "deferred", "description": "Evaluation deferred",
-            "errors": [reason], "retry": True}
+            "errors": [reason]}
 
 
 def evaluation_failure(error):
@@ -317,13 +310,30 @@ def evaluation_failure(error):
                else str(error) if isinstance(error, ValueError)
                else "Invalid GitHub API response")
     return {"state": "failure", "kind": "evaluator-error",
-            "description": "Policy evaluation failed", "errors": [message], "retry": True}
+            "description": "Policy evaluation failed", "errors": [message]}
+
+
+def head_owner(prs, number, head):
+    # Commit status is per SHA/context, so ownership must be unique across all open PRs.
+    peers = {pr["number"] for pr in prs if pr["head"]["sha"] == head}
+    return None if peers == {number} else \
+        "Head must belong to exactly one open PR; shared heads are ineligible"
+
+
+def require_unique_head(prs, number, head):
+    reason = head_owner(prs, number, head)
+    if reason is not None:
+        raise ValueError(reason)
+
+
+def closed_result(description):
+    return {"state": "success", "kind": "closed", "description": description, "errors": []}
 
 
 def refused(reason):
     # Deterministic refusal by admission metadata, not an evaluator failure; still fail-closed.
     return {"state": "failure", "kind": "noncompliant",
-            "description": "Eligibility refused", "errors": [reason], "retry": False}
+            "description": "Eligibility refused", "errors": [reason]}
 
 
 def read_pr_result(api, pr, policy, policy_sha, open_prs):
@@ -380,7 +390,8 @@ def read_pr_result(api, pr, policy, policy_sha, open_prs):
 
 
 def admission_snapshot(pr):
-    # list PR API 不含 changed_files；head/base/body/state 相同才可复用已验证的文件列表。
+    # The list PR API omits changed_files; reuse the verified file list only for identical
+    # head, base, body and state.
     return (pr["head"]["sha"], pr["base"]["ref"], pr["base"]["sha"],
             pr.get("body"), pr["state"])
 
@@ -389,78 +400,111 @@ def addressable(pr, policy):
     return pr["state"] == "open" and pr["base"]["ref"] == policy["base_branch"]
 
 
+def lifecycle_result(result, scan_error):
+    # Invalidate an old success when the current declaration was not validly assessed. The
+    # check still publishes a verdict; only an unknowable lifecycle is reported without a write.
+    if result["state"] != "success":
+        return {**result, "rerun": result["kind"] in RERUN_KINDS}
+    if scan_error is not None:
+        return {"state": "failure", "kind": "unverified", "rerun": True,
+                "description": "Lifecycle metadata unavailable",
+                "errors": [evaluation_failure(scan_error)["errors"][0]]}
+    return {**result, "rerun": False}
+
+
 def check_prs(api, policy, policy_sha, dry_run, numbers=None):
-    open_prs = api.pages("pulls?state=open")
-    if numbers is None:
-        numbers = [pr["number"] for pr in open_prs if addressable(pr, policy)]
-    published = {}
-    retry = list(numbers)
-    # Results are published only from a fresh scan, and only for a target that still matches
-    # the evaluated metadata. Stale or moved work is re-evaluated instead of being written to
-    # a captured head; a closed target receives no publication at all.
-    for attempt in range(ATTEMPTS):
-        staged, retry_next = [], []
-        for number in retry:
-            pr = api.get(f"pulls/{number}")
-            head = pr["head"]["sha"]
-            if not SHA.fullmatch(head):
-                raise ValueError("Invalid PR head")
-            if not addressable(pr, policy):
-                published[number] = {"head": head, "state": "success", "kind": "closed",
-                                     "description": "Not open against the policy branch",
-                                     "errors": [], "retry": False}
-                continue
-            # No pending write: a run that stops early must not leave a stale pending status
-            # on a head that merges or otherwise leaves the sweep.
-            result, comments = read_pr_result(api, pr, policy, policy_sha, open_prs)
-            if result.pop("retry", False) and attempt + 1 < ATTEMPTS:
-                retry_next.append(number)
-            else:
-                staged.append((pr, result, comments))
+    scan_error = None
+    try:
         open_prs = api.pages("pulls?state=open")
-        current = {pr["number"]: pr for pr in open_prs}
-        for pr, result, comments in staged:
-            number, head = pr["number"], pr["head"]["sha"]
-            live = current.get(number)
-            if live is None or not addressable(live, policy):
-                published[number] = {"head": head, "state": "success", "kind": "closed",
-                                     "description": "Closed before publication", "errors": [],
-                                     "retry": False}
-                continue
-            if admission_snapshot(live) != admission_snapshot(pr):
-                retry_next.append(number)
-                continue
-            if comments and comments != api.pages(f"issues/{number}/comments"):
-                # Approvals read for this verdict must still be current at publication.
-                retry_next.append(number)
-                continue
+    except API_ERRORS as error:
+        open_prs, scan_error = [], error
+    if numbers is None:
+        if scan_error is not None:
+            # Without a listing there is no target set; the runner retries with a fresh base.
+            return [{"pull_request": 0, "head_sha": "", "policy_sha": policy_sha,
+                     "dry_run": dry_run, "rerun": True, "state": "failure",
+                     "kind": "unverified", "description": "Lifecycle metadata unavailable",
+                     "errors": [evaluation_failure(scan_error)["errors"][0]]}]
+        numbers = [pr["number"] for pr in open_prs if addressable(pr, policy)]
+    # One evaluation pass. Stale work is returned as deferred so the outer runner, which can
+    # refetch trusted main, owns retries; this checker never repairs its own loaded policy.
+    records = {}
+    for number in numbers:
+        pr = api.get(f"pulls/{number}")
+        head = pr["head"]["sha"]
+        if not SHA.fullmatch(head):
+            raise ValueError("Invalid PR head")
+        if not addressable(pr, policy):
+            records[number] = {"head": head, "snapshot": None, "comments": [],
+                               "result": closed_result("Not open against the policy branch")}
+            continue
+        result, comments = read_pr_result(api, pr, policy, policy_sha, open_prs)
+        records[number] = {"head": head, "snapshot": admission_snapshot(pr),
+                           "comments": comments, "result": result,
+                           "ownership": head_owner(open_prs, number, head)
+                           if scan_error is None else None}
+    # One publication pass. Ownership and metadata are read fresh here; a target that left the
+    # sweep is dropped, and a changed premise is reassessed once before any write.
+    scan_error = None
+    try:
+        open_prs = api.pages("pulls?state=open")
+    except API_ERRORS as error:
+        open_prs, scan_error = [], error
+    published = {}
+    for number, record in records.items():
+        head = record["head"]
+        try:
+            live = api.get(f"pulls/{number}")
+        except API_ERRORS as error:
+            # The target may be closed, so no failure is written to `head`; the report says the
+            # old status could not be invalidated, which is not the same as fail-closed.
+            published[number] = {"state": "failure", "kind": "unverified", "rerun": True,
+                                 "head": head, "description": "Lifecycle check failed",
+                                 "errors": [evaluation_failure(error)["errors"][0]]}
+            continue
+        if not addressable(live, policy):
+            published[number] = {**closed_result("Closed before publication"), "head": head,
+                                 "rerun": False}
+            continue
+        if live["head"]["sha"] != head:
+            # The old head carries no current claim; the new head has no status yet.
+            published[number] = {"state": "failure", "kind": "deferred", "rerun": True,
+                                 "head": head, "description": "Head advanced before publication",
+                                 "errors": ["Head advanced before publication; rerun required"]}
+            continue
+        result = record["result"]
+        premise = admission_snapshot(live) != record["snapshot"]
+        if record["comments"] and record["comments"] != api.pages(f"issues/{number}/comments"):
+            premise = True
+        ownership = None if scan_error is not None else head_owner(open_prs, number, head)
+        if premise or ownership != record["ownership"]:
+            # Reassess against current metadata and the current open-PR collection: a closed
+            # peer can end head sharing, and a moved body or approval changes the verdict.
+            result, _ = read_pr_result(api, live, policy, policy_sha,
+                                       open_prs if open_prs else [live])
+            ownership = (None if scan_error is not None
+                         else head_owner(open_prs, number, head))
+        if result["state"] == "success" and ownership is not None:
+            result = {"state": "failure", "kind": "unverified",
+                      "description": "Head ownership unverified", "errors": [ownership]}
+        else:
+            result = lifecycle_result(result, scan_error)
+        result["rerun"] = result["kind"] in RERUN_KINDS
+        if not dry_run:
             try:
-                require_unique_head(open_prs, number, head)
-            except ValueError as error:
-                result = refused(str(error))
-            # Only a fresh, fully revalidated verdict reaches a head; a shared head is refused
-            # above, so each head is written at most once per round.
-            if not dry_run:
-                try:
-                    api.status(head, result["state"], result["description"])
-                except API_ERRORS as error:
-                    result = {**result, "kind": "publication-failed",
-                              "errors": [*result["errors"],
-                                         evaluation_failure(error)["errors"][0]]}
-            published[number] = {"head": head, **result}
-        retry = sorted(set(retry_next) - set(published))
-        if not retry:
-            break
-    # After the attempt budget, an unfinished target stays failed and asks for a fresh run.
-    for number in retry:
-        published.setdefault(number, {"head": "", "state": "failure", "kind": "deferred",
-                                      "description": "Evaluation incomplete", "errors": []})
+                api.status(head, result["state"], result["description"])
+            except API_ERRORS as error:
+                result = {**result, "kind": "publication-failed", "state": "failure",
+                          "errors": [*result["errors"],
+                                     evaluation_failure(error)["errors"][0]]}
+        published[number] = {**result, "head": head,
+                             "rerun": result["kind"] in RERUN_KINDS}
     results = []
     for number in sorted(published):
         item = published[number]
         results.append({"pull_request": number, "head_sha": item["head"],
                         "policy_sha": policy_sha, "dry_run": dry_run,
-                        "rerun": item["kind"] == "deferred", "state": item["state"],
+                        "rerun": item["rerun"], "state": item["state"],
                         "kind": item["kind"], "description": item["description"],
                         "errors": item["errors"]})
     return results
@@ -502,7 +546,7 @@ def main(argv=None):
         numbers = [args.pull_request]
     else:
         event = json.loads(Path(args.event_path).read_text(encoding="utf-8"))
-        # 所有触发共用一个 writer；待运行事件被合并时仍覆盖全部 open PR。
+        # Every trigger shares one writer, so a superseded queued event still covers all open PRs.
         numbers = None if refresh_event(event, os.environ["GITHUB_EVENT_NAME"]) else []
     results = check_prs(api, policy, args.policy_sha, args.dry_run, numbers)
     for result in results:
