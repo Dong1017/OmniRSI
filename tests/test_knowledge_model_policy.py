@@ -35,6 +35,7 @@ from tools.check_knowledge_model_policy import (
     json_block,
     matching,
     model_errors,
+    plan_file,
     refresh_event,
     snapshot,
     summarize,
@@ -339,9 +340,9 @@ def test_workflow_never_executes_pr_code_and_refreshes_metadata_and_base():
     # The runner refetches trusted main and reruns only for the stale-base exit code.
     assert "git fetch --quiet origin main" in runner
     assert "--policy-sha" in runner and 'status" -ne 2' in runner
-    # Each attempt is told its position, so a retry advances along the target list instead of
-    # replaying the prefix the previous attempt already published.
-    assert '--attempt "$attempt" --attempts "$attempts"' in runner
+    # Each attempt shares one plan file, so a retry inherits the targets an earlier attempt
+    # settled instead of re-publishing them and starving the tail.
+    assert '--plan "$plan"' in runner
     # Three attempts, each bounded by the sweep plus one target's ceiling, still fit the job.
     assert 3 * (SWEEP_SECONDS + TARGET_SECONDS) < 10 * 60
     assert "pull_request.head" not in json.dumps(value)
@@ -1342,33 +1343,87 @@ def test_api_every_target_is_evaluated_past_the_former_shared_window(api_fixture
                     if s["sha"] == f"{number:040x}")["state"] == "success"
 
 
-def test_api_retry_starts_further_along_the_target_list(api_fixture, policy):
+def test_api_retries_keep_completed_targets_instead_of_rewriting_them(api_fixture, policy,
+                                                                     monkeypatch):
     api, state = api_fixture
-    numbers = list(range(200, 212))
+    numbers = list(range(200, 218))
     for number in numbers:
         head = f"{number:040x}"
         state["prs"][number] = {**pr({**declared(), "head_sha": head}), "number": number,
                                 "head": {"sha": head}}
+    clock = {"now": 1000.0}
+    monkeypatch.setattr("tools.check_knowledge_model_policy.time",
+                        SimpleNamespace(monotonic=lambda: clock["now"]))
 
-    def order(attempt):
+    def ordinary(route):
+        # Eight seconds of ordinary metadata work per target: one sweep can reach about 14 of the
+        # 18 targets before its effective window closes, so the tail needs another attempt.
+        if route.endswith("/files"):
+            clock["now"] += 8
+
+    state["before_request"] = ordinary
+    plan = {"policy_sha": BASE, "completed": {}}
+    attempts, posts = [], []
+    for _ in range(3):
         state["requests"].clear()
-        results = check_prs(api, policy, BASE, False, numbers, attempt, 3)
-        assert len(results) == len(numbers)
-        evaluated = []
-        for method, route in state["requests"]:
-            parts = route.split("/")
-            # Evaluation and publication both read the target; the first read is the order.
-            if (method == "GET" and len(parts) == 2 and parts[0] == "pulls"
-                    and int(parts[1]) not in evaluated):
-                evaluated.append(int(parts[1]))
-        return evaluated
+        results = check_prs(api, policy, BASE, False, numbers, plan)
+        attempts.append(results)
+        posts.append([route for method, route in state["requests"] if method == "POST"])
+        if exit_code(results) != EXIT_RERUN:
+            break
+        # The local runner loop restarts the clock for each attempt.
+        clock["now"] = 1000.0
 
-    first, second, third = order(1), order(2), order(3)
-    # The prefixes differ, so three bounded attempts cover the list instead of replaying the
-    # targets the first one already reached.
-    assert first[0] == 200 and second[0] == 204 and third[0] == 208
-    # Rotation changes only the starting point: every target is still evaluated in each attempt.
-    assert sorted(first) == sorted(second) == sorted(third) == numbers
+    # The first sweep starves its own tail; the second finishes exactly the work the first left.
+    assert len(attempts) == 2
+    assert [r["kind"] for r in attempts[0]].count("history-unavailable") > 0
+    # A later attempt spends its budget on the unfinished targets only; the earlier verdicts are
+    # reported from the plan and are never re-invalidated or rewritten.
+    assert not any(kind == "history-unavailable" for kind in
+                   [r["kind"] for r in attempts[1]])
+    for number in numbers:
+        assert next(s for s in reversed(state["statuses"])
+                    if s["sha"] == f"{number:040x}")["state"] == "success"
+    completed_first = [r["pull_request"] for r in attempts[0] if r["kind"] == "compliant"]
+    assert completed_first
+    # Those targets are neither re-invalidated nor rewritten by the second attempt.
+    assert not any(route.endswith(f"{number:040x}")
+                   for number in completed_first for route in posts[1])
+    # Every target is still reported once per attempt, including the carried ones.
+    assert [r["pull_request"] for r in attempts[1]] == numbers
+
+
+def test_api_a_carried_target_with_changed_premises_is_evaluated_again(api_fixture, policy):
+    api, state = api_fixture
+    first = check_pr(api, 123, policy, BASE, False)
+    assert first["kind"] == "compliant"
+    plan = {"policy_sha": BASE, "completed": {}}
+    results = check_prs(api, policy, BASE, False, [123], plan)
+    assert [r["kind"] for r in results] == ["compliant"]
+    # An edited declaration keeps the same head but invalidates the carried verdict.
+    state["prs"][123]["body"] = block(declared([attribution("unknown", "unknown")]))
+    results = check_prs(api, policy, BASE, False, [123], plan)
+    assert [r["kind"] for r in results] == ["noncompliant"]
+    assert latest_status(state)["state"] == "failure"
+
+
+def test_plan_is_discarded_when_the_trusted_base_changes(tmp_path):
+    path = tmp_path / "plan.json"
+    path.write_text(json.dumps({"policy_sha": "a" * 40,
+                                "completed": {"123": {"head": "b" * 40}}}), encoding="utf-8")
+    # A different trusted base means different loaded code and policy, so no verdict carries over.
+    assert plan_file(path, "c" * 40) == {"policy_sha": "c" * 40, "completed": {}}
+    assert plan_file(path, "a" * 40)["completed"] == {"123": {"head": "b" * 40}}
+    # A corrupt or unreadable plan is treated the same way, never as completed work.
+    path.write_text("not json", encoding="utf-8")
+    assert plan_file(path, "a" * 40) == {"policy_sha": "a" * 40, "completed": {}}
+
+
+def test_runner_keeps_one_plan_across_attempts():
+    runner = (ROOT / "tools/run_knowledge_model_policy.sh").read_text(encoding="utf-8")
+    # The runner owns the retry loop and passes one plan file to every attempt.
+    assert '--plan "$plan"' in runner
+    assert "rm -f \"$plan\"" in runner
 
 
 def test_api_other_contexts_do_not_consume_the_budget(api_fixture, policy):

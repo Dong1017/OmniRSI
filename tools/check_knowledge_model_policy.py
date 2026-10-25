@@ -56,6 +56,9 @@ RERUN_KINDS = {"evaluator-error", "unverified", "deferred", "advanced", "publica
                "invalidation-failed", "history-unavailable"}
 # A lifecycle kind forbids publication: the captured head is no longer the current target.
 NO_PUBLISH = {"closed", "advanced"}
+# Kinds that settle a target for this attempt. A later attempt trusts one only after re-checking
+# that the target is still open against the policy branch at the same head.
+COMPLETED_KINDS = {"compliant", "noncompliant", "closed", "budget-exhausted", "budget-saturated"}
 
 
 def summarize(results):
@@ -589,7 +592,44 @@ def lifecycle_result(result, scan_error):
     return {**result, "rerun": False}
 
 
-def check_prs(api, policy, policy_sha, dry_run, numbers=None, attempt=1, attempts=1):
+def plan_file(path, policy_sha):
+    # The plan is scoped to one trusted base and one runner invocation. A different base means the
+    # loaded policy and checker are different code, so earlier verdicts may not describe it.
+    if path is None or not path.exists():
+        return {"policy_sha": policy_sha, "completed": {}}
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_object)
+    except (OSError, ValueError, TypeError):
+        return {"policy_sha": policy_sha, "completed": {}}
+    if not isinstance(value, dict) or value.get("policy_sha") != policy_sha:
+        return {"policy_sha": policy_sha, "completed": {}}
+    if not isinstance(value.get("completed"), dict):
+        return {"policy_sha": policy_sha, "completed": {}}
+    return value
+
+
+def write_plan(path, plan):
+    if path is None:
+        return
+    path.write_text(json.dumps(plan, ensure_ascii=True, sort_keys=True), encoding="utf-8")
+
+
+def still_current(api, number, entry, policy):
+    # Cheap premise revalidation for work another attempt already published. One PR read covers
+    # head, base, state and body; a closed target, a moved base, an edited declaration or a new
+    # head all invalidate the carried verdict, and the target is then evaluated from the start.
+    try:
+        live = api.get(f"pulls/{number}")
+    except API_ERRORS:
+        return False
+    try:
+        snapshot = admission_snapshot(live)
+    except (KeyError, TypeError):
+        return False
+    return snapshot == tuple(entry.get("snapshot") or ()) and addressable(live, policy)
+
+
+def check_prs(api, policy, policy_sha, dry_run, numbers=None, plan=None):
     # The sweep deadline bounds the whole evaluation pass and keeps publication time free; each
     # target's read is bounded separately by its share of what remains.
     deadline = time.monotonic() + SWEEP_SECONDS
@@ -606,11 +646,23 @@ def check_prs(api, policy, policy_sha, dry_run, numbers=None, attempt=1, attempt
                      "kind": "unverified", "description": "Lifecycle metadata unavailable",
                      "errors": [evaluation_failure(scan_error)["errors"][0]]}]
         numbers = [pr["number"] for pr in open_prs if addressable(pr, policy)]
-    # Targets are independent, so a retry starts further along the list instead of replaying the
-    # prefix whose work another attempt already published. Every target is still fully
-    # invalidated and evaluated in this run; rotation only changes where the clock starts.
-    offset = (attempt - 1) * len(numbers) // max(attempts, 1)
-    numbers = numbers[offset:] + numbers[:offset]
+    # Work another attempt already settled is not repeated: re-running it would spend the same
+    # bounded time and, in a later attempt's exhausted tail, replace a published verdict with a
+    # failure. A carried target is trusted only after its own premise is re-confirmed here.
+    completed = {} if plan is None else plan["completed"]
+    carried = {}
+    pending = list(numbers)
+    for number in list(numbers):
+        entry = completed.get(str(number))
+        if not isinstance(entry, dict):
+            continue
+        head = entry.get("head")
+        if isinstance(head, str) and SHA.fullmatch(head):
+            if not still_current(api, number, entry, policy):
+                continue
+            carried[number] = entry
+            pending.remove(number)
+    numbers = pending
     # One evaluation pass. Stale work is returned as deferred so the outer runner, which can
     # refetch trusted main, owns retries; this checker never repairs its own loaded policy.
     records = {}
@@ -745,6 +797,27 @@ def check_prs(api, policy, policy_sha, dry_run, numbers=None, attempt=1, attempt
                                      evaluation_failure(error)["errors"][0]]}
         published[number] = {**result, "head": head,
                              "rerun": result["kind"] in RERUN_KINDS}
+    # Carried verdicts are reported as they were published by the earlier attempt. Nothing is
+    # rewritten for them here: their head was re-confirmed as current at the start of this run.
+    for number, entry in carried.items():
+        if number not in published:
+            published[number] = {**entry["result"], "head": entry["head"], "rerun": False}
+    if plan is not None:
+        # The next attempt inherits only what this one settled, together with the premise the
+        # verdict was assessed against: the head alone would let an edited declaration or a moved
+        # base be carried as if it had been evaluated.
+        plan["completed"] = {str(number): entry for number, entry in carried.items()}
+        for number, item in published.items():
+            settled = plan["completed"].get(str(number), {})
+            head_value = (records[number]["head"] if number in records
+                          else settled.get("head"))
+            snapshot_value = (records[number]["snapshot"] if number in records
+                              else settled.get("snapshot"))
+            if item["kind"] in COMPLETED_KINDS and snapshot_value is not None:
+                plan["completed"][str(number)] = {
+                    "head": head_value, "snapshot": snapshot_value,
+                    "result": {key: item[key] for key in
+                               ("state", "kind", "description", "errors")}}
     results = []
     for number in sorted(published):
         item = published[number]
@@ -776,13 +849,10 @@ def main(argv=None):
     parser.add_argument("--policy-sha", required=True)
     parser.add_argument("--pull-request", type=int)
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--attempt", type=int, default=1)
-    parser.add_argument("--attempts", type=int, default=1)
+    parser.add_argument("--plan", type=Path)
     args = parser.parse_args(argv)
     if not SHA.fullmatch(args.policy_sha):
         raise ValueError("Expected the trusted policy checkout SHA")
-    if not 1 <= args.attempt <= args.attempts:
-        raise ValueError("Expected attempt within the runner's attempt count")
     token = os.environ.get("GITHUB_TOKEN")
     if not args.dry_run and not token:
         raise ValueError("GITHUB_TOKEN is required to publish policy statuses")
@@ -798,8 +868,9 @@ def main(argv=None):
         event = json.loads(Path(args.event_path).read_text(encoding="utf-8"))
         # Every trigger shares one writer, so a superseded queued event still covers all open PRs.
         numbers = None if refresh_event(event, os.environ["GITHUB_EVENT_NAME"]) else []
-    results = check_prs(api, policy, args.policy_sha, args.dry_run, numbers,
-                        args.attempt, args.attempts)
+    plan = plan_file(args.plan, args.policy_sha)
+    results = check_prs(api, policy, args.policy_sha, args.dry_run, numbers, plan)
+    write_plan(args.plan, plan)
     for result in results:
         print(json.dumps(result, ensure_ascii=True))
     print(json.dumps(summarize(results), ensure_ascii=True))

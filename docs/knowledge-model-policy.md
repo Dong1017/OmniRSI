@@ -201,10 +201,21 @@ remaining targets continue.
 
 The former design gave every target one absolute 60-second deadline: targets are
 processed serially, so the first ones spent it and each later target then failed
-closed, and a whole-sweep retry replayed the same prefix. Retries now start
-further along the target list, so repeated attempts cover the list instead of
-consuming the same opening targets. Rotation changes only the starting point;
-every target is still invalidated and evaluated in each attempt.
+closed, and a whole-sweep retry replayed the same prefix.
+
+Retries now carry progress. Each attempt writes the targets it settled to a plan
+file, and the next attempt inherits them instead of re-invalidating and
+re-publishing the same verdicts, so an exhausted tail cannot replace a verdict an
+earlier attempt already published. A carried target is trusted only after one
+cheap re-read shows it is still open against the policy branch at the same head,
+base, state and declaration. Any change to those falls back to full evaluation,
+and the plan is discarded outright when the trusted base differs, because a
+different base means different loaded code and policy.
+
+Carrying is limited to settled verdicts: `compliant`, `noncompliant` and the two
+capacity states. Work reported as rerunnable - unreadable evidence, a failed
+write, an advanced or entered target - is never inherited, so a genuine failure
+is retried and stays visible rather than being optimistically cached.
 
 At or above the cap nothing can be written at all. The run reports
 `budget-saturated` without attempting a write. An earlier `success` may still be
@@ -251,8 +262,8 @@ flowchart LR
     subgraph after["After"]
         B1["120 s sweep bound"] --> B2["Share = remaining / targets left, max 30 s"]
         B2 --> B3["Early target returns its unused share"]
-        B3 --> B4["Every target gets a bounded attempt"]
-        B4 --> B5["Retry starts further along the list"]
+        B3 --> B4["Settled targets written to the plan"]
+        B4 --> B5["Retry re-checks the premise, then evaluates only what is left"]
     end
 ```
 
