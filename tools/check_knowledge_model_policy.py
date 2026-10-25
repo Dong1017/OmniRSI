@@ -31,11 +31,13 @@ STATUS_RESERVE = 8
 # recorded by this text and leaves it in place instead of spending another reserved slot.
 BUDGET_DESCRIPTION = "Status history is nearly full; push a new head"
 # A head can carry statuses from other contexts, so the page count alone does not bound the scan.
-# The deadline is set once per sweep, not per head: targets are processed serially under one
-# workflow timeout, so a fresh budget for each read would let a long sweep die before a later
-# target's failure is published. The reserve keeps time free for that publication.
+# Each target gets its own share of the time still left in the sweep, capped by a per-target
+# ceiling: one absolute deadline shared by every target let the earlier targets consume the whole
+# window, after which each later target failed closed on every retry. The sweep deadline remains
+# as the outer bound, and the reserve keeps time free for publication after the last read.
 HISTORY_PAGES = 50
-HISTORY_SECONDS = 60
+TARGET_SECONDS = 30
+SWEEP_SECONDS = 120
 HISTORY_RESERVE = 15
 # Outcome kinds, reported separately so evaluator noise is never read as a rejection.
 KINDS = ("compliant", "noncompliant", "evaluator-error", "unverified", "deferred", "closed",
@@ -330,12 +332,15 @@ class GitHub:
         # GitHub treats the context name case-insensitively, so counting only the exact spelling
         # would miss equivalent entries and could spend the last free slots on a pending and a
         # success. The list is newest first, which makes entry 0 the head's effective status.
+        #
+        # The deadline is already one target's share of the sweep, so this method only stops when
+        # that share is spent; the publication reserve is withheld by the caller.
         key = CONTEXT.casefold()
         found = []
         page = 1
         while True:
             remaining = deadline - time.monotonic()
-            if page > HISTORY_PAGES or remaining <= HISTORY_RESERVE:
+            if page > HISTORY_PAGES or remaining <= 0:
                 raise ValueError("Status history scan exceeded its budget")
             query = urlencode({"per_page": 100, "page": page})
             items, links = self.request(f"commits/{head}/statuses?{query}",
@@ -561,6 +566,17 @@ def invalidated(api, head, dry_run, deadline):
     return None, True
 
 
+def target_deadline(deadline, remaining_targets):
+    # One absolute budget for the whole sweep starved every target after the earlier ones had
+    # spent it, and a retry replayed the same prefix. Each target instead gets an equal share of
+    # the time left, capped so one slow head cannot hold the sweep: a target that finishes early
+    # returns its unused time to the later ones. Inside the publication reserve the share is
+    # negative, which makes the read fail closed immediately.
+    now = time.monotonic()
+    share = (deadline - HISTORY_RESERVE - now) / max(remaining_targets, 1)
+    return now + min(TARGET_SECONDS, share)
+
+
 def lifecycle_result(result, scan_error):
     # Invalidate an old success when the current declaration was not validly assessed. The
     # check still publishes a verdict; only an unknowable lifecycle is reported without a write.
@@ -573,10 +589,10 @@ def lifecycle_result(result, scan_error):
     return {**result, "rerun": False}
 
 
-def check_prs(api, policy, policy_sha, dry_run, numbers=None):
-    # One deadline for the whole sweep: history reads share it, so a long scan on an early target
-    # cannot leave a later target without time to publish its own failure.
-    deadline = time.monotonic() + HISTORY_SECONDS
+def check_prs(api, policy, policy_sha, dry_run, numbers=None, attempt=1, attempts=1):
+    # The sweep deadline bounds the whole evaluation pass and keeps publication time free; each
+    # target's read is bounded separately by its share of what remains.
+    deadline = time.monotonic() + SWEEP_SECONDS
     scan_error = None
     try:
         open_prs = api.pages("pulls?state=open")
@@ -590,10 +606,15 @@ def check_prs(api, policy, policy_sha, dry_run, numbers=None):
                      "kind": "unverified", "description": "Lifecycle metadata unavailable",
                      "errors": [evaluation_failure(scan_error)["errors"][0]]}]
         numbers = [pr["number"] for pr in open_prs if addressable(pr, policy)]
+    # Targets are independent, so a retry starts further along the list instead of replaying the
+    # prefix whose work another attempt already published. Every target is still fully
+    # invalidated and evaluated in this run; rotation only changes where the clock starts.
+    offset = (attempt - 1) * len(numbers) // max(attempts, 1)
+    numbers = numbers[offset:] + numbers[:offset]
     # One evaluation pass. Stale work is returned as deferred so the outer runner, which can
     # refetch trusted main, owns retries; this checker never repairs its own loaded policy.
     records = {}
-    for number in numbers:
+    for index, number in enumerate(numbers):
         try:
             pr = api.get(f"pulls/{number}")
         except API_ERRORS as error:
@@ -610,7 +631,8 @@ def check_prs(api, policy, policy_sha, dry_run, numbers=None):
                                "ownership": None, "publish": False,
                                "result": closed_result("Not open against the policy branch")}
             continue
-        failure, publish = invalidated(api, head, dry_run, deadline)
+        failure, publish = invalidated(api, head, dry_run,
+                                      target_deadline(deadline, len(numbers) - index))
         if failure is not None:
             # Without a published invalidation an old success would still be the head's effective
             # state, so this target gets no verdict and asks the runner for a fresh attempt.
@@ -754,9 +776,13 @@ def main(argv=None):
     parser.add_argument("--policy-sha", required=True)
     parser.add_argument("--pull-request", type=int)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--attempt", type=int, default=1)
+    parser.add_argument("--attempts", type=int, default=1)
     args = parser.parse_args(argv)
     if not SHA.fullmatch(args.policy_sha):
         raise ValueError("Expected the trusted policy checkout SHA")
+    if not 1 <= args.attempt <= args.attempts:
+        raise ValueError("Expected attempt within the runner's attempt count")
     token = os.environ.get("GITHUB_TOKEN")
     if not args.dry_run and not token:
         raise ValueError("GITHUB_TOKEN is required to publish policy statuses")
@@ -772,7 +798,8 @@ def main(argv=None):
         event = json.loads(Path(args.event_path).read_text(encoding="utf-8"))
         # Every trigger shares one writer, so a superseded queued event still covers all open PRs.
         numbers = None if refresh_event(event, os.environ["GITHUB_EVENT_NAME"]) else []
-    results = check_prs(api, policy, args.policy_sha, args.dry_run, numbers)
+    results = check_prs(api, policy, args.policy_sha, args.dry_run, numbers,
+                        args.attempt, args.attempts)
     for result in results:
         print(json.dumps(result, ensure_ascii=True))
     print(json.dumps(summarize(results), ensure_ascii=True))

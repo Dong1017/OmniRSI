@@ -17,8 +17,11 @@ from tools.check_knowledge_model_policy import (
     EXIT_NONCOMPLIANT,
     EXIT_RERUN,
     HISTORY_PAGES,
+    HISTORY_RESERVE,
     STATUS_LIMIT,
     STATUS_RESERVE,
+    SWEEP_SECONDS,
+    TARGET_SECONDS,
     GitHub,
     approved,
     assemble_file_pages,
@@ -35,6 +38,7 @@ from tools.check_knowledge_model_policy import (
     refresh_event,
     snapshot,
     summarize,
+    target_deadline,
     within_budget,
 )
 
@@ -335,6 +339,11 @@ def test_workflow_never_executes_pr_code_and_refreshes_metadata_and_base():
     # The runner refetches trusted main and reruns only for the stale-base exit code.
     assert "git fetch --quiet origin main" in runner
     assert "--policy-sha" in runner and 'status" -ne 2' in runner
+    # Each attempt is told its position, so a retry advances along the target list instead of
+    # replaying the prefix the previous attempt already published.
+    assert '--attempt "$attempt" --attempts "$attempts"' in runner
+    # Three attempts, each bounded by the sweep plus one target's ceiling, still fit the job.
+    assert 3 * (SWEEP_SECONDS + TARGET_SECONDS) < 10 * 60
     assert "pull_request.head" not in json.dumps(value)
     assert "knowledge-model-policy" not in (
         ROOT / ".github/workflows/ci-ready.yml"
@@ -1251,34 +1260,115 @@ def test_api_slow_history_scan_stops_before_the_workflow_deadline(api_fixture, p
     seed_history(state, 400, context="other-ci")
     # A page cap does not bound elapsed time, so slow successful responses must trip the time
     # budget on their own.
-    monkeypatch.setattr("tools.check_knowledge_model_policy.HISTORY_SECONDS", 0)
+    monkeypatch.setattr("tools.check_knowledge_model_policy.TARGET_SECONDS", 0)
     result = check_pr(api, 123, policy, BASE, False)
     assert result["kind"] == "history-unavailable"
     assert latest_status(state)["state"] == "failure"
 
 
-def test_api_history_deadline_is_shared_across_the_sweep(api_fixture, policy, monkeypatch):
+def test_target_deadline_gives_each_target_an_equal_share(monkeypatch):
+    clock = {"now": 1000.0}
+    monkeypatch.setattr("tools.check_knowledge_model_policy.time",
+                        SimpleNamespace(monotonic=lambda: clock["now"]))
+    deadline = clock["now"] + SWEEP_SECONDS
+    # The reserve is withheld once for publication, and the rest is split between the targets
+    # still to be evaluated rather than being available to whichever target runs first.
+    share = (SWEEP_SECONDS - HISTORY_RESERVE) / 4
+    assert share < TARGET_SECONDS
+    assert target_deadline(deadline, 4) == clock["now"] + share
+    # Fewer remaining targets get a larger share, but never more than the per-target ceiling.
+    assert target_deadline(deadline, 2) == clock["now"] + TARGET_SECONDS
+    assert target_deadline(deadline, 1) == clock["now"] + TARGET_SECONDS
+    # A spent sweep leaves no share, so the read fails closed rather than extending the run.
+    clock["now"] = deadline - HISTORY_RESERVE
+    assert target_deadline(deadline, 1) <= clock["now"]
+
+
+def test_api_a_slow_target_cannot_starve_the_next(api_fixture, policy, monkeypatch):
     api, state = api_fixture
     other = "c" * 40
-    state["prs"][124] = {**pr(), "number": 124, "head": {"sha": other}}
+    state["prs"][124] = {**pr({**declared(), "head_sha": other}), "number": 124,
+                         "head": {"sha": other}}
+    # A multi-page read is needed for the target to outlive its own share: the check happens
+    # before each page, not after the whole scan.
+    seed_history(state, 400, context="other-ci")
     clock = {"now": 1000.0}
-    # A slow but successful read on the first target consumes nearly the whole budget; the second
-    # target then has no time left, so it must report the failure instead of starting a new scan.
     monkeypatch.setattr("tools.check_knowledge_model_policy.time",
                         SimpleNamespace(monotonic=lambda: clock["now"]))
 
     def slow(route):
-        if route.endswith("/statuses") or "/statuses?" in route:
-            clock["now"] += 55
+        # The read never completes within this target's own share, but the sweep itself still has
+        # time left, so the next target must be evaluated instead of inheriting a dead deadline.
+        if route.endswith("/statuses"):
+            clock["now"] += 20
 
     state["before_request"] = slow
     results = check_prs(api, policy, BASE, False, [123, 124])
-    assert [r["kind"] for r in results] == ["compliant", "history-unavailable"]
-    assert results[1]["rerun"] is True
-    assert [r["state"] for r in results] == ["success", "failure"]
-    # The second target's failure is published, so its earlier state cannot survive the sweep.
+    assert [r["kind"] for r in results] == ["history-unavailable", "compliant"]
+    assert results[0]["rerun"] is True
+    assert [r["state"] for r in results] == ["failure", "success"]
+    # The slow target still fails closed: its earlier state cannot survive the sweep.
     assert next(s for s in reversed(state["statuses"])
-                if s["sha"] == other)["state"] == "failure"
+                if s["sha"] == HEAD)["state"] == "failure"
+    assert next(s for s in reversed(state["statuses"])
+                if s["sha"] == other)["state"] == "success"
+
+
+def test_api_every_target_is_evaluated_past_the_former_shared_window(api_fixture, policy,
+                                                                   monkeypatch):
+    api, state = api_fixture
+    numbers = list(range(200, 218))
+    for number in numbers:
+        head = f"{number:040x}"
+        state["prs"][number] = {**pr({**declared(), "head_sha": head}), "number": number,
+                                "head": {"sha": head}}
+    clock = {"now": 1000.0}
+    monkeypatch.setattr("tools.check_knowledge_model_policy.time",
+                        SimpleNamespace(monotonic=lambda: clock["now"]))
+
+    def ordinary(route):
+        # Four seconds of ordinary metadata work per target: well over the 45 seconds the former
+        # single deadline left for the whole sweep once its 15-second reserve was removed.
+        if route.endswith("/files"):
+            clock["now"] += 4
+
+    state["before_request"] = ordinary
+    results = check_prs(api, policy, BASE, False, numbers)
+    assert len(results) == len(numbers)
+    assert [r["kind"] for r in results] == ["compliant"] * len(numbers)
+    assert clock["now"] - 1000.0 > SWEEP_SECONDS / 2
+    for number in numbers:
+        assert next(s for s in reversed(state["statuses"])
+                    if s["sha"] == f"{number:040x}")["state"] == "success"
+
+
+def test_api_retry_starts_further_along_the_target_list(api_fixture, policy):
+    api, state = api_fixture
+    numbers = list(range(200, 212))
+    for number in numbers:
+        head = f"{number:040x}"
+        state["prs"][number] = {**pr({**declared(), "head_sha": head}), "number": number,
+                                "head": {"sha": head}}
+
+    def order(attempt):
+        state["requests"].clear()
+        results = check_prs(api, policy, BASE, False, numbers, attempt, 3)
+        assert len(results) == len(numbers)
+        evaluated = []
+        for method, route in state["requests"]:
+            parts = route.split("/")
+            # Evaluation and publication both read the target; the first read is the order.
+            if (method == "GET" and len(parts) == 2 and parts[0] == "pulls"
+                    and int(parts[1]) not in evaluated):
+                evaluated.append(int(parts[1]))
+        return evaluated
+
+    first, second, third = order(1), order(2), order(3)
+    # The prefixes differ, so three bounded attempts cover the list instead of replaying the
+    # targets the first one already reached.
+    assert first[0] == 200 and second[0] == 204 and third[0] == 208
+    # Rotation changes only the starting point: every target is still evaluated in each attempt.
+    assert sorted(first) == sorted(second) == sorted(third) == numbers
 
 
 def test_api_other_contexts_do_not_consume_the_budget(api_fixture, policy):
