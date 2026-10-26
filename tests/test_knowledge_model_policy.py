@@ -1407,6 +1407,39 @@ def test_api_a_carried_target_with_changed_premises_is_evaluated_again(api_fixtu
     assert latest_status(state)["state"] == "failure"
 
 
+def test_api_a_revoked_approval_is_not_carried_as_a_settled_success(api_fixture, policy):
+    api, state = api_fixture
+    value = declared([attribution("unknown", "unknown")])
+    value["exception"] = {"paths": [KNOWLEDGE], "reason": "Bounded exception"}
+    state["prs"][123] = pr(value)
+    state["comments"][123] = [approval({KNOWLEDGE})]
+    plan = {"policy_sha": BASE, "completed": {}}
+    assert check_prs(api, policy, BASE, False, [123], plan)[0]["kind"] == "compliant"
+    # Unchanged premises are carried rather than re-evaluated.
+    assert check_prs(api, policy, BASE, False, [123], plan)[0]["kind"] == "compliant"
+    # The PR snapshot is untouched, but the approval that produced the verdict is revoked.
+    state["comments"][123] = [approval({KNOWLEDGE}, decision="revoke")]
+    results = check_prs(api, policy, BASE, False, [123], plan)
+    assert [r["kind"] for r in results] == ["noncompliant"]
+    assert results[0]["rerun"] is False
+    assert latest_status(state)["state"] == "failure"
+
+
+def test_api_a_new_shared_head_peer_invalidates_a_carried_success(api_fixture, policy):
+    api, state = api_fixture
+    plan = {"policy_sha": BASE, "completed": {}}
+    assert check_prs(api, policy, BASE, False, [123], plan)[0]["kind"] == "compliant"
+    assert check_prs(api, policy, BASE, False, [123], plan)[0]["kind"] == "compliant"
+    # A peer on another base can share this head without ever entering the target list, so
+    # ownership has to be re-derived from the open-PR collection rather than from the target.
+    state["prs"][900] = {**pr(), "number": 900, "head": {"sha": HEAD},
+                         "base": {"sha": BASE, "ref": "release"}}
+    results = check_prs(api, policy, BASE, False, [123], plan)
+    assert [r["kind"] for r in results] == ["noncompliant"]
+    assert "shared heads are ineligible" in results[0]["errors"][0]
+    assert latest_status(state)["state"] == "failure"
+
+
 def test_plan_is_discarded_when_the_trusted_base_changes(tmp_path):
     path = tmp_path / "plan.json"
     path.write_text(json.dumps({"policy_sha": "a" * 40,

@@ -614,19 +614,31 @@ def write_plan(path, plan):
     path.write_text(json.dumps(plan, ensure_ascii=True, sort_keys=True), encoding="utf-8")
 
 
-def still_current(api, number, entry, policy):
-    # Cheap premise revalidation for work another attempt already published. One PR read covers
-    # head, base, state and body; a closed target, a moved base, an edited declaration or a new
-    # head all invalidate the carried verdict, and the target is then evaluated from the start.
+def still_current(api, number, entry, policy, open_prs):
+    # Premise revalidation for work another attempt already published. The verdict depended on
+    # evidence outside the PR snapshot, so a carried entry must prove all of it still holds: the
+    # metadata snapshot, the approvals that were read, and head ownership across the open PRs. A
+    # stored premise that is missing cannot be revalidated, so it falls back to full evaluation.
+    if "comments" not in entry or "ownership" not in entry:
+        return False
     try:
         live = api.get(f"pulls/{number}")
-    except API_ERRORS:
-        return False
-    try:
         snapshot = admission_snapshot(live)
-    except (KeyError, TypeError):
+    except (API_ERRORS, KeyError, TypeError):
         return False
-    return snapshot == tuple(entry.get("snapshot") or ()) and addressable(live, policy)
+    if snapshot != tuple(entry.get("snapshot") or ()) or not addressable(live, policy):
+        return False
+    if head_owner(open_prs or [live], number, live["head"]["sha"]) != entry["ownership"]:
+        # A peer appearing or leaving changes eligibility without changing this PR.
+        return False
+    if entry["comments"]:
+        try:
+            if api.pages(f"issues/{number}/comments") != entry["comments"]:
+                # An approval added, edited or revoked changes the verdict it produced.
+                return False
+        except API_ERRORS:
+            return False
+    return True
 
 
 def check_prs(api, policy, policy_sha, dry_run, numbers=None, plan=None):
@@ -658,7 +670,7 @@ def check_prs(api, policy, policy_sha, dry_run, numbers=None, plan=None):
             continue
         head = entry.get("head")
         if isinstance(head, str) and SHA.fullmatch(head):
-            if not still_current(api, number, entry, policy):
+            if not still_current(api, number, entry, policy, open_prs):
                 continue
             carried[number] = entry
             pending.remove(number)
@@ -809,13 +821,16 @@ def check_prs(api, policy, policy_sha, dry_run, numbers=None, plan=None):
         plan["completed"] = {str(number): entry for number, entry in carried.items()}
         for number, item in published.items():
             settled = plan["completed"].get(str(number), {})
-            head_value = (records[number]["head"] if number in records
-                          else settled.get("head"))
-            snapshot_value = (records[number]["snapshot"] if number in records
-                              else settled.get("snapshot"))
-            if item["kind"] in COMPLETED_KINDS and snapshot_value is not None:
+            record = records.get(number)
+            head_value = record["head"] if record else settled.get("head")
+            snapshot_value = record["snapshot"] if record else settled.get("snapshot")
+            comments_value = record["comments"] if record else settled.get("comments")
+            ownership_value = record["ownership"] if record else settled.get("ownership")
+            if (item["kind"] in COMPLETED_KINDS and snapshot_value is not None
+                    and comments_value is not None):
                 plan["completed"][str(number)] = {
                     "head": head_value, "snapshot": snapshot_value,
+                    "comments": comments_value, "ownership": ownership_value,
                     "result": {key: item[key] for key in
                                ("state", "kind", "description", "errors")}}
     results = []
