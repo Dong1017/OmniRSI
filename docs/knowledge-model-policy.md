@@ -217,6 +217,14 @@ capacity states. Work reported as rerunnable - unreadable evidence, a failed
 write, an advanced or entered target - is never inherited, so a genuine failure
 is retried and stays visible rather than being optimistically cached.
 
+The premise stored with a verdict must be the one that produced it. A target
+reassessed during the publication pass is therefore stored with the snapshot,
+approval comments and ownership that reassessment used, not with the earlier
+evaluation's evidence; otherwise a changed-then-reverted approval would make the
+stored premise match again and the stale success would be reused. If the open-PR
+collection cannot be read, no target is carried, because a target read alone
+cannot prove it does not share its head.
+
 At or above the cap nothing can be written at all. The run reports
 `budget-saturated` without attempting a write. An earlier `success` may still be
 the head's newest entry and can therefore still satisfy the required context:

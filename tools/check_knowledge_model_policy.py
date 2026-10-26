@@ -614,17 +614,21 @@ def write_plan(path, plan):
     path.write_text(json.dumps(plan, ensure_ascii=True, sort_keys=True), encoding="utf-8")
 
 
-def still_current(api, number, entry, policy, open_prs):
+def still_current(api, number, entry, policy, open_prs, scan_error):
     # Premise revalidation for work another attempt already published. The verdict depended on
     # evidence outside the PR snapshot, so a carried entry must prove all of it still holds: the
     # metadata snapshot, the approvals that were read, and head ownership across the open PRs. A
     # stored premise that is missing cannot be revalidated, so it falls back to full evaluation.
     if "comments" not in entry or "ownership" not in entry:
         return False
+    if scan_error is not None:
+        # Without the open-PR collection the target alone looks like a unique owner, which is the
+        # same assumption `lifecycle_result` refuses for a fresh verdict.
+        return False
     try:
         live = api.get(f"pulls/{number}")
         snapshot = admission_snapshot(live)
-    except (API_ERRORS, KeyError, TypeError):
+    except API_ERRORS:
         return False
     if snapshot != tuple(entry.get("snapshot") or ()) or not addressable(live, policy):
         return False
@@ -670,7 +674,7 @@ def check_prs(api, policy, policy_sha, dry_run, numbers=None, plan=None):
             continue
         head = entry.get("head")
         if isinstance(head, str) and SHA.fullmatch(head):
-            if not still_current(api, number, entry, policy, open_prs):
+            if not still_current(api, number, entry, policy, open_prs, scan_error):
                 continue
             carried[number] = entry
             pending.remove(number)
@@ -781,11 +785,16 @@ def check_prs(api, policy, policy_sha, dry_run, numbers=None, plan=None):
         ownership = None if scan_error is not None else head_owner(open_prs, number, head)
         if premise or ownership != record["ownership"]:
             # Reassess against current metadata and the current open-PR collection: a closed
-            # peer can end head sharing, and a moved body or approval changes the verdict.
-            result, _ = read_pr_result(api, live, policy, policy_sha,
-                                       open_prs if open_prs else [live])
+            # peer can end head sharing, and a moved body or approval changes the verdict. The
+            # premises recorded afterwards must be the ones this reassessment used, or the plan
+            # would pair a new verdict with evidence that no longer produced it.
+            result, comments = read_pr_result(api, live, policy, policy_sha,
+                                              open_prs if open_prs else [live])
+            record["comments"] = comments
+            record["snapshot"] = admission_snapshot(live)
             ownership = (None if scan_error is not None
                          else head_owner(open_prs, number, head))
+            record["ownership"] = ownership
         if result["kind"] in NO_PUBLISH:
             # The reassessment observed that this head is no longer the target.
             published[number] = {**result, "head": head,

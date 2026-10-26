@@ -1440,6 +1440,76 @@ def test_api_a_new_shared_head_peer_invalidates_a_carried_success(api_fixture, p
     assert latest_status(state)["state"] == "failure"
 
 
+def test_api_a_reassessed_verdict_carries_the_premises_it_actually_used(api_fixture, policy):
+    api, state = api_fixture
+    value = declared([attribution("unknown", "unknown")])
+    value["exception"] = {"paths": [KNOWLEDGE], "reason": "Bounded exception"}
+    state["prs"][123] = pr(value)
+    plan = {"policy_sha": BASE, "completed": {}}
+    # Ordinary discussion but no valid approval at evaluation time, so evaluation refuses. The
+    # approval then appears before the publication pass, which revalidates the comments it read,
+    # reassesses once, and publishes success from the new approval.
+    discussion = {"id": 1, "user": {"login": "commenter"}, "body": "Discussing the change"}
+    state["comments"][123] = [discussion]
+    reads = {"comments": 0}
+    original = api.pages
+
+    def pending_approval(route):
+        if route == "issues/123/comments":
+            reads["comments"] += 1
+            if reads["comments"] > 1:
+                return [discussion, approval({KNOWLEDGE})]
+        return original(route)
+
+    api.pages = pending_approval
+    results = check_prs(api, policy, BASE, False, [123], plan)
+    api.pages = original
+    assert [r["kind"] for r in results] == ["compliant"]
+    # The stored premise is the approval the reassessment actually used, not the empty list the
+    # earlier evaluation read.
+    assert plan["completed"]["123"]["comments"] == [discussion, approval({KNOWLEDGE})]
+    # The approval is removed again. The stored premise must be the one the reassessment used,
+    # so reverting to "no approval" is a change and the settled success cannot be carried.
+    state["comments"][123] = []
+    results = check_prs(api, policy, BASE, False, [123], plan)
+    assert [r["kind"] for r in results] == ["noncompliant"]
+    assert latest_status(state)["state"] == "failure"
+
+
+def test_api_an_unreadable_collection_never_carries_a_settled_success(api_fixture, policy):
+    api, state = api_fixture
+    plan = {"policy_sha": BASE, "completed": {}}
+    assert check_prs(api, policy, BASE, False, [123], plan)[0]["kind"] == "compliant"
+    # The open-PR listing is unreadable, so the target alone cannot prove unique ownership: the
+    # carry must be refused rather than treated as an unshared head.
+    state["fail"] = lambda route: route == "pulls"
+    results = check_prs(api, policy, BASE, False, [123], plan)
+    assert results[0]["kind"] == "unverified"
+    assert results[0]["rerun"] is True
+    assert exit_code(results) == EXIT_RERUN
+
+
+def test_api_carry_revalidation_tolerates_an_unreadable_target(api_fixture, policy):
+    api, state = api_fixture
+    state["prs"][124] = {**pr({**declared(), "head_sha": "c" * 40}), "number": 124,
+                         "head": {"sha": "c" * 40}}
+    plan = {"policy_sha": BASE, "completed": {}}
+    assert len(check_prs(api, policy, BASE, False, None, plan)) == 2
+    # One carried target cannot be read during revalidation. That is a fallback, not an
+    # invocation-level error, and the other targets must still be evaluated.
+    original = api.get
+
+    def unreadable(route):
+        if route == "pulls/123":
+            raise HTTPError(route, 503, "Unavailable", {}, None)
+        return original(route)
+
+    api.get = unreadable
+    results = check_prs(api, policy, BASE, False, None, plan)
+    assert len(results) == 2
+    assert {r["pull_request"] for r in results} == {123, 124}
+
+
 def test_plan_is_discarded_when_the_trusted_base_changes(tmp_path):
     path = tmp_path / "plan.json"
     path.write_text(json.dumps({"policy_sha": "a" * 40,
