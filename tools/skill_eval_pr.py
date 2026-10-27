@@ -72,6 +72,10 @@ def prepare(repo, mapping_path, identity, output):
     for item in mapping["skills"]:
         if item["skill"] not in selected:
             continue
+        # The mapping is trusted repository data, but a path is a path: apply the
+        # safe-ID rule here, before building any output path from it.
+        if not re.fullmatch(r"[a-z0-9][a-z0-9._-]*", item["skill"]):
+            raise ValueError("Unsafe skill ID in the PR case mapping")
         entrypoint = mapping["skill_root"] + "/" + item["entrypoint"]
         if not blob_exists(repo, identity["head"], entrypoint):
             for entry in coverage:

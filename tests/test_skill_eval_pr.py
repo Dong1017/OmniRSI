@@ -110,6 +110,21 @@ def test_deleted_and_unmapped_skill_changes_are_visible_not_passed(tmp_path):
         approval(plan)
 
 
+@pytest.mark.parametrize("skill", ["../../escape", "selected/child", "Selected", "", "."])
+def test_mapping_skill_ids_are_validated_before_building_output_paths(tmp_path, skill):
+    repo, mapping, identity = setup(tmp_path)
+    raw = compare.read_json(mapping)
+    raw["skills"][0]["skill"] = skill
+    write_json(mapping, raw)
+    output = tmp_path / "plan"
+    with pytest.raises(ValueError):
+        integration.prepare(repo, mapping, identity, output)
+    # Nothing may be written outside --output, and the config file is not created.
+    assert not (tmp_path / "escape.json").exists()
+    assert not (tmp_path / "escape").exists()
+    assert not (output / "pr-plan.json").exists()
+
+
 def test_unsupported_file_mode_does_not_disappear_or_become_a_pass(tmp_path):
     repo, mapping, identity = setup(tmp_path)
     git(repo, "update-index", "--chmod=+x", "library/selected/resource.txt")

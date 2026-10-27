@@ -694,6 +694,93 @@ def test_required_execution_case_fields_are_validated_before_freeze(tmp_path):
         assert not output.exists()
 
 
+def test_edited_freeze_semantics_cannot_pass_with_a_recomputed_hash(tmp_path):
+    # The authorization hash is taken over freeze.json, so anyone who edits it can
+    # recompute that hash. The fields it states must agree with the frozen inputs.
+    config, repo = configuration(tmp_path, ids=("one", "two"), repeats=1)
+    output = tmp_path / "run"
+    authorization = compare.prepare(config, repo, output)
+    plan = compare.load_plan(output)
+    assert len(plan["schedule"]) == 4
+    freeze = output / "plan/freeze.json"
+    original = freeze.read_bytes()
+    for field, mutate in (
+        ("schedule", lambda value: value.__setitem__("schedule", value["schedule"][:2])),
+        ("limits", lambda value: value["limits"].__setitem__("repeats", 2)),
+        ("same_bundle", lambda value: value.__setitem__(
+            "same_bundle", not value["same_bundle"])),
+        ("exam", lambda value: value["exam"].__setitem__("grader", "0" * 64)),
+    ):
+        with pytest.raises(ValueError, match="Frozen"):
+            value = json.loads(original)
+            mutate(value)
+            write_json(freeze, value)
+            forged = sha256(freeze)
+            assert forged != authorization
+            compare.execute(output, forged, client=FixedOutputClient(tmp_path))
+        assert not (output / "results/start.json").exists()
+        with pytest.raises(ValueError, match="Frozen"):
+            compare.report(output)
+        freeze.write_bytes(original)
+        assert compare.load_plan(output) == plan
+
+
+def test_rewritten_result_and_receipt_is_regraded_by_the_trusted_verifier(tmp_path):
+    config, repo = configuration(tmp_path, ids=("one",))
+    output = tmp_path / "run"
+    authorization = compare.prepare(config, repo, output)
+    client = FixedOutputClient(tmp_path, {("one", role): "incorrect" for role in compare.ROLES})
+    original = compare.execute(output, authorization, client=client)
+    assert original["counts"]["unchanged_incorrect"] == 1
+    directory = output / "results" / "one-baseline-1"
+    saved = (directory / "result.json").read_bytes()
+    record = json.loads(saved)
+    record.update(verdict="PASS", checks={"passed": True, "assertions": {"fabricated": True}})
+    write_json(directory / "result.json", record)
+    # A rewritten tree can also carry a consistent receipt; that alone proves nothing.
+    write_json(directory / "receipt.json", {"result_sha256": sha256(directory / "result.json")})
+    entry = {"task_id": "one", "condition": "baseline", "repeat": 1, "split": "holdout"}
+    assert compare.retained_trial(output, entry)["verdict"] == "PASS"
+    with pytest.raises(ValueError, match="trusted grader"):
+        compare.report(output)
+    # Restoring the record does not restore the grade: the receipt is proof of bytes only.
+    (directory / "result.json").write_bytes(saved)
+    downgraded = compare.report(output)
+    trial = downgraded["pairs"][0]["baseline"]
+    assert trial["verdict"] == "INCONCLUSIVE"
+    assert trial["evaluation_error"] == "retained_trial_record_hash_mismatch"
+    assert downgraded["counts"]["unchanged_incorrect"] == 0
+    write_json(directory / "receipt.json", {"result_sha256": sha256(directory / "result.json")})
+    assert compare.report(output) == original
+
+
+def test_partial_usage_stops_the_schedule_when_the_next_trial_would_be_unauthorized(tmp_path):
+    # token_stop_new_trials bounds a budget that is unknown, so no further trial
+    # may start once a call reports usage the controller cannot account for.
+    config, repo = configuration(tmp_path, ids=("one", "two"), repeats=1)
+    output = tmp_path / "run"
+    authorization = compare.prepare(config, repo, output)
+    client = FixedOutputClient(tmp_path, {("one", "baseline"): "unknown_usage"})
+    result = compare.execute(output, authorization, client=client)
+    assert len(client.calls) == 1
+    assert result["status"]["stop_reason"] == "unknown_usage"
+    assert result["status"]["execution_state"] == "stopped"
+    assert result["status"]["recorded_trials"] == 1
+    assert result["status"]["observed_tokens"] == 0
+    assert result["counts"]["missing_pair"] == 2
+
+
+def test_full_known_usage_schedule_still_runs_to_completion(tmp_path):
+    config, repo = configuration(tmp_path, ids=("one",), repeats=2)
+    output = tmp_path / "run"
+    authorization = compare.prepare(config, repo, output)
+    client = FixedOutputClient(tmp_path)
+    result = compare.execute(output, authorization, client=client)
+    assert len(client.calls) == 4
+    assert result["status"]["stop_reason"] is None
+    assert result["status"]["execution_state"] == "completed"
+
+
 def test_modified_trial_verdicts_and_checks_cannot_override_retained_grades(tmp_path):
     config, repo = configuration(tmp_path, ids=("one",))
     output = tmp_path / "run"
