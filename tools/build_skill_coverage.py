@@ -186,12 +186,16 @@ def layer_refs(found):
 def input_digest(root, paths):
     """Content digest of every source file this view reads.
 
-    Paths are hashed repository-relative, so two checkouts of identical sources
-    at different locations produce the same digest.
+    Paths are hashed repository-relative and ordered by that relative string.
+    Sorting ``Path`` objects directly would depend on the host: POSIX compares
+    case-sensitively, so ``SKILL.md`` precedes ``metadata.json``, while Windows
+    compares case-folded and reverses that pair. Two checkouts of identical
+    sources must produce one digest on every platform.
     """
     digest = hashlib.sha256()
-    for path in sorted(paths):
-        digest.update(path.relative_to(root).as_posix().encode("utf-8"))
+    relative = {path: path.relative_to(root).as_posix() for path in paths}
+    for path in sorted(relative, key=lambda item: relative[item]):
+        digest.update(relative[path].encode("utf-8"))
         digest.update(b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).digest())
     return digest.hexdigest()

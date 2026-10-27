@@ -90,6 +90,22 @@ def test_input_digest_is_checkout_location_independent(tmp_path):
     assert left == right
 
 
+def test_input_digest_orders_by_relative_path_not_by_path_object(tmp_path):
+    """Path objects sort case-folded on Windows and case-sensitively on POSIX."""
+    root = tmp_path / "repo"
+    skill = root / "x" / "SKILL.md"
+    sidecar = root / "x" / "metadata.json"
+    skill.parent.mkdir(parents=True)
+    skill.write_text("{}\n", encoding="utf-8")
+    sidecar.write_text("{}\n", encoding="utf-8")
+    forward = coverage.input_digest(root, [skill, sidecar])
+    reverse = coverage.input_digest(root, [sidecar, skill])
+    assert forward == reverse
+    # The order the digest uses is the relative POSIX string, where
+    # "SKILL.md" precedes "metadata.json" on every platform.
+    assert "SKILL.md" < "metadata.json"
+
+
 def test_regeneration_is_byte_identical():
     first = coverage.collect(PROJECT)
     second = coverage.collect(PROJECT)
