@@ -25,25 +25,28 @@ def validate_context(context):
 
 
 class Budget:
-    def __init__(self, client, issue, pr):
+    def __init__(self, client, issue, pr, *, pr_only=False):
         if type(issue) is not int or type(pr) is not int or min(issue, pr) < 1 or issue == pr:
             raise ValueError("Expected distinct positive diagnostic targets")
         self.client, self.issue, self.pr = client, issue, pr
+        self.targets = (("pr", pr),) if pr_only else (("issue", issue), ("pr", pr))
+        self.read_limit, self.write_limit = (4, 2) if pr_only else (8, 4)
         self.reads = self.writes = 0
         self.owned = set()
 
     def request(self, method, route, data=None):
-        collections = {f"/issues/{n}/comments" for n in (self.issue, self.pr)}
+        collections = {f"/issues/{n}/comments" for _, n in self.targets}
         comment_paths = {f"/issues/comments/{n}" for n in self.owned}
-        reads = {f"/issues/{self.issue}", f"/pulls/{self.pr}"} | comment_paths
+        reads = {f"/issues/{n}" if kind == "issue" else f"/pulls/{n}"
+                 for kind, n in self.targets} | comment_paths
         reads |= {path + "?per_page=100" for path in collections}
         if method == "GET" and route in reads and data is None:
-            if self.reads >= 8:
+            if self.reads >= self.read_limit:
                 raise ValueError("Read budget exhausted")
             self.reads += 1
         elif ((method == "POST" and route in collections)
               or (method == "PATCH" and route in comment_paths)):
-            if (self.writes >= 4 or type(data) is not dict or set(data) != {"body"}
+            if (self.writes >= self.write_limit or type(data) is not dict or set(data) != {"body"}
                     or type(data["body"]) is not str or not data["body"].startswith(MARKER)):
                 raise ValueError("Outside the diagnostic write budget or body contract")
             self.writes += 1
@@ -85,11 +88,12 @@ def compare(api, run_url, revision, report=None):
     if report is None:
         report = {}
     report.update(repository=REPOSITORY, event="push", revision=revision,
-                  run_url=run_url, request_budget={"reads": 8, "writes": 4},
+                  run_url=run_url,
+                  request_budget={"reads": api.read_limit, "writes": api.write_limit},
                   results=[], state="incomplete")
     # Check both targets and prior receipts before any write. Do not guess through
     # a full first page or resume a previous partial run.
-    for kind, number in (("issue", api.issue), ("pr", api.pr)):
+    for kind, number in api.targets:
         info = api.request("GET", f"/issues/{number}" if kind == "issue" else f"/pulls/{number}")
         if (info.get("number") != number or info.get("state") != "open"
                 or info.get("locked") is not False
@@ -104,7 +108,7 @@ def compare(api, run_url, revision, report=None):
                 or any(not isinstance(c, dict) or not isinstance(c.get("body"), str)
                        or c["body"].startswith(MARKER) for c in comments)):
             raise ValueError("Prior diagnostic or ambiguous comment history; refusing replay")
-    for kind, number in (("issue", api.issue), ("pr", api.pr)):
+    for kind, number in api.targets:
         row = {"target_kind": kind, "target_number": number, "post": {}, "patch": {}}
         report["results"].append(row)
         body = (f"{MARKER}\nDiagnostic only: {kind} comment POST/PATCH "
@@ -153,10 +157,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--issue", required=True, type=int)
     parser.add_argument("--pr", required=True, type=int)
+    parser.add_argument("--pr-only", action="store_true")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     validate_context(os.environ)
-    client = Budget(GitHub(REPOSITORY, os.environ["GITHUB_TOKEN"]), args.issue, args.pr)
+    client = Budget(GitHub(REPOSITORY, os.environ["GITHUB_TOKEN"]), args.issue, args.pr,
+                    pr_only=args.pr_only)
     run_url = f"https://github.com/{REPOSITORY}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
     report = {"state": "stopped-preflight-or-read-failure", "run_url": run_url}
     try:
@@ -173,7 +179,8 @@ def main():
     text = json.dumps(report, sort_keys=True, indent=2)
     args.output.write_text(text + "\n", encoding="utf-8")
     print(text)
-    verified = (report["state"] == "observations-complete" and len(report["results"]) == 2
+    verified = (report["state"] == "observations-complete"
+                and len(report["results"]) == len(client.targets)
                 and all(row["post"].get("readback_verified")
                         and row["patch"].get("readback_verified") for row in report["results"]))
     raise SystemExit(0 if verified else 1)

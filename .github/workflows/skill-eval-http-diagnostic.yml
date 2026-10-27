@@ -14,13 +14,13 @@ jobs:
   compare:
     if: >-
       github.repository == 'Dong1017/OmniRSI' && github.run_attempt == 1 &&
-      contains(github.event.head_commit.message, '[run-http-diagnostic-once]')
+      contains(github.event.head_commit.message, '[run-http-pr-write-once]')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
       actions: read
-      pull-requests: read
+      pull-requests: write
       issues: write
     env:
       PYTHONPATH: src
@@ -36,7 +36,9 @@ jobs:
       - name: Single bounded diagnostic comparison
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python -m tools.skill_eval_http_probe --issue 3 --pr 4 --output diagnostic-receipt.json
+        run: >-
+          python -m tools.skill_eval_http_probe --issue 3 --pr 4 --pr-only
+          --output diagnostic-receipt.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

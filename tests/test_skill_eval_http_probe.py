@@ -1,10 +1,13 @@
 import copy
 import io
 import json
+import re
 import sys
+from pathlib import Path
 from urllib.error import HTTPError
 
 import pytest
+import yaml
 
 from tools import skill_eval_http_probe as probe
 from tools.skill_eval_pr import publication_http_error
@@ -28,7 +31,8 @@ class Fake:
                     if c["issue_url"].endswith(f"/{number}")]
         if method == "POST":
             number = int(route.split("/")[2])
-            if self.failure == "403" and number == 3:
+            if ((self.failure == "403" and number == 3)
+                    or (self.failure == "pr-403" and number == 4)):
                 raise publication_http_error(HTTPError(
                     "https://example.invalid", 403, "private", {},
                     io.BytesIO(b'{"message":"Resource not accessible by integration"}')),
@@ -157,3 +161,71 @@ def test_probe_main_preserves_partial_receipts_when_readback_fails(
     assert report["requests"]["writes"] == 1
     assert report["results"][0]["post"]["state"] == "response-returned"
     assert "FAKE_SECRET" not in output.read_text(encoding="utf-8") + capsys.readouterr().out
+
+
+def test_pr_only_probe_ignores_previous_issue_receipt_and_uses_two_writes_four_reads():
+    client = Fake()
+    client.request("POST", "/issues/3/comments", {"body": probe.MARKER + " old issue receipt"})
+    client.calls.clear()
+    api = probe.Budget(client, 3, 4, pr_only=True)
+    report = probe.compare(api, "https://example.invalid/pr-only", "b" * 40)
+    assert report["state"] == "observations-complete"
+    assert report["request_budget"] == {"reads": 4, "writes": 2}
+    assert len(report["results"]) == 1
+    assert report["results"][0]["target_kind"] == "pr"
+    assert report["results"][0]["patch"]["readback_verified"]
+    assert (api.reads, api.writes) == (4, 2)
+    assert all("/issues/3" not in route for _, route, _ in client.calls)
+    with pytest.raises(ValueError, match="budget"):
+        api.request("POST", "/issues/4/comments", {"body": probe.MARKER})
+    assert len(client.calls) == 6
+
+
+def test_pr_only_post_rejection_stops_without_patch_or_retry():
+    client = Fake("pr-403")
+    api = probe.Budget(client, 3, 4, pr_only=True)
+    report = probe.compare(api, "https://example.invalid/pr-only", "b" * 40)
+    row, = report["results"]
+    assert row["post"]["http_status"] == 403
+    assert row["patch"]["state"] == "skipped-post-rejected"
+    assert (api.reads, api.writes) == (2, 1)
+    assert sum(method == "POST" for method, _, _ in client.calls) == 1
+    assert not any(method == "PATCH" for method, _, _ in client.calls)
+
+
+@pytest.mark.parametrize("failure,writes", [("uncertain-post", 1), ("uncertain-patch", 2)])
+def test_pr_only_uncertain_write_readback_never_resumes_writes(failure, writes):
+    api = probe.Budget(Fake(failure), 3, 4, pr_only=True)
+    report = probe.compare(api, "https://example.invalid/pr-only", "b" * 40)
+    assert report["state"] == "stopped-uncertain-write"
+    assert api.writes == writes
+    assert api.reads <= 4
+    assert "FAKE_SECRET" not in json.dumps(report)
+
+
+@pytest.mark.parametrize("method,route,data", [
+    ("GET", "/issues/3", None), ("GET", "/issues/3/comments?per_page=100", None),
+    ("POST", "/issues/3/comments", {"body": probe.MARKER})])
+def test_pr_only_probe_cannot_access_or_write_issue_target(method, route, data):
+    client = Fake()
+    with pytest.raises(ValueError, match="allowlist"):
+        probe.Budget(client, 3, 4, pr_only=True).request(method, route, data)
+    assert client.calls == []
+
+
+@pytest.mark.parametrize("grant", ["read", "write"])
+def test_pr_only_workflow_preserves_other_grants_and_requires_distinct_run_marker(grant):
+    path = Path(__file__).resolve().parents[1] / ".github/workflows/skill-eval-http-diagnostic.yml"
+    text = path.read_text(encoding="utf-8")
+    assert len(re.findall(r"pull-requests: (?:read|write)", text)) == 1
+    text = re.sub(r"pull-requests: (?:read|write)", "pull-requests: " + grant, text)
+    workflow = yaml.load(text, Loader=yaml.BaseLoader)
+    assert set(workflow["on"]) == {"push"}
+    assert workflow["permissions"] == {}
+    job = workflow["jobs"]["compare"]
+    assert job["permissions"] == {"contents": "read", "actions": "read",
+                                  "pull-requests": grant, "issues": "write"}
+    assert "[run-http-pr-write-once]" in job["if"]
+    assert "github.run_attempt == 1" in job["if"]
+    assert any("--pr-only" in step.get("run", "") for step in job["steps"])
+    assert "[run-http-pr-write-once]" not in "test: restore diagnostic pull request read permission"
