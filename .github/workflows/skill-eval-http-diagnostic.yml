@@ -20,7 +20,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-      pull-requests: write
+      pull-requests: read
       issues: write
     env:
       PYTHONPATH: src
