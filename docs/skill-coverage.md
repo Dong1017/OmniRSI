@@ -4,7 +4,7 @@ Generated from the registry, the skill sidecars and the two maintained
 matrices. **Do not edit by hand**; regenerate after any registry, skill,
 matrix or frozen-plan change.
 
-- Input digest: `sha256:7d7277e88bb1ee2614866ae8adb44c9b77e1f7a07b5a020947f19e06f7d98957`
+- Input digest: `sha256:f947003034b77e47ccee7256370ae8e1021ca95d46848aa65abd5a1536a70db9`
 - Regenerate: `python tools/build_skill_coverage.py`
 - Verify without writing: `python tools/build_skill_coverage.py --check`
 
@@ -31,16 +31,16 @@ matrix: every field is copied from an owner that already maintains it.
 
 | Measure | Value |
 |---|---|
-| Registered skill ids | 63 |
-| By category | frameworks 3, hardware 21, methods 18, repositories 15, workflows 6 |
-| By backend | ascend 13, common 46, cuda 4 |
+| Registered skill ids | 64 |
+| By category | frameworks 3, hardware 21, methods 18, repositories 16, workflows 6 |
+| By backend | ascend 13, common 47, cuda 4 |
 | Recorded on a numbered SearchSpace resource layer | 47 |
 | Recorded only in a supplementary guidance table (†) | 6 |
 | Recorded on two or more resource layers | 24 |
-| Recorded in the Reference Matrix | 58 |
-| With a `metadata.json` sidecar | 58 |
+| Recorded in the Reference Matrix | 59 |
+| With a `metadata.json` sidecar | 59 |
 | Selected by a frozen evaluation plan | 2 |
-| `SKILL.md` documents in the library | 93 |
+| `SKILL.md` documents in the library | 94 |
 | Unregistered documents (excluded from every count above) | 30 |
 
 A complete inventory is not a coverage claim. Every registered row below
@@ -81,7 +81,7 @@ optimization is fully covered or that any procedure has measured benefit.
 | [diffusers-invocation-state](../src/inferrsi/data/skill_library/frameworks/diffusers/diffusers-invocation-state/SKILL.md) | common | Trace Diffusers pipeline-wrapper and scheduler invocation state when repeated calls, from_pipe reuse or interruption ... | 2 RAM/Host † guidance: Diffusers invocation guidance (source-derived) | Diffusers invocation source extraction (huggingface/diffusers @ `aea7b70be0f594bcdc15a6f2677ee2ca85e49e8e` ...) | candidate · not_run · 1 readset(s) | no-eval |
 | [lazy-evaluation-stream-lifetimes](../src/inferrsi/data/skill_library/frameworks/mlx/lazy-evaluation-stream-lifetimes/SKILL.md) | common | Diagnose MLX lazy evaluation, cross-stream ordering and array-buffer lifetimes when timing, memory use or asynchronous ... | 1 Accelerator † guidance: MLX framework guidance (source-derived) | MLX framework source extraction (ml-explore/mlx @ `bff10220c742907f0c68e55ff174aaea56f74e3d` (MIT)) | candidate · not_run · 1 readset(s) | no-eval |
 
-## Registered: Repositories (15)
+## Registered: Repositories (16)
 
 | Skill | Backend | Declared task | SearchSpace layer / stage | Reference Matrix | State | Gaps |
 |---|---|---|---|---|---|---|
@@ -97,6 +97,7 @@ optimization is fully covered or that any procedure has measured benefit.
 | [diagnose-vllm-admission-pressure](../src/inferrsi/data/skill_library/repositories/vllm/diagnose-vllm-admission-pressure/SKILL.md) | common | Diagnose vLLM V1 admission stalls and KV-pressure preemption by separating token, input, active-request ... | 1 Accelerator · Observe / Diagnose / Configure / Optimize / Verify | 1 · Systems sources (vllm-project/vllm @ `7f730b4cea9a66520a9200265928ebe016b48a39` ...) | candidate · not_run · 14 readset(s) | no-eval |
 | [dwarfstar](../src/inferrsi/data/skill_library/repositories/dwarfstar/SKILL.md) | common | Investigate DwarfStar model fit, expert SSD streaming, session and vision cache correctness, speculative sampling and ... | — | DwarfStar portable AREX extraction (antirez/ds4 @ `ee7e8405232c8971000cc7ba2b945b00bf6d20d3`; AREX-Skill ...) | candidate · partial_cpu_only · 2 readset(s) | no-SearchSpace-layer, no-eval |
 | [generation-cache-lifecycle](../src/inferrsi/data/skill_library/repositories/mlx-lm/generation-cache-lifecycle/SKILL.md) | common | Trace MLX-LM prefill, generation batching, prompt-cache reuse and cooperative stopping when request state, cache rows ... | 2 RAM/Host † guidance: MLX-LM application guidance (source-derived) | MLX-LM application source extraction (ml-explore/mlx-lm @ `ab7f7048dc341ced2d84b1887eeb17d60b0d1b02` (MIT)) | candidate · not_run · 1 readset(s) | no-eval |
+| [husky](../src/inferrsi/data/skill_library/repositories/husky/SKILL.md) | common | Review Husky's official-document claims as research hypotheses, separating author reports, implementation evidence ... | — | Husky document-only research adaptation (Official https://husky.underdog.ai/; displayed2026-09-20 ...) | candidate · not_run · 2 readset(s) | no-SearchSpace-layer, no-eval |
 | [kv-tier-management](../src/inferrsi/data/skill_library/repositories/lmcache/kv-tier-management/SKILL.md) | common | Manage runtime KV cache tiers (GPU → CPU RAM → local disk) for LLM serving: decide when KV is stored, retained ... | 2 RAM/Host · Configure / Optimize<br>3 SSD · Optimize | 1 · Systems sources (LMCache/LMCache @ c3b875a) | candidate · not_run · 0 readset(s) | no-eval |
 | [lily](../src/inferrsi/data/skill_library/repositories/lily/SKILL.md) | common | Investigate Lily's exact Qwen3.6-35B-A3B MLX-affine-Q4 contract, Metal state and kernels, strict greedy text API ... | — | Lily portable AREX extraction (perplexityai/pplx-garden `lily/` @ `1ed972ed3f0bd5616c997c9507c25616c6 ...) | candidate · not_run · 2 readset(s) | no-SearchSpace-layer, no-eval |
 | [splash](../src/inferrsi/data/skill_library/repositories/splash/SKILL.md) | common | Investigate Splash model-format compatibility, automatic memory planning, Metal and ANE execution, DFlash2 ... | — | Splash portable AREX extraction (incoai/splash @ `39a97385f8560cf8a93972cec9b0a963c9195250`; AREX ...) | candidate · partial_cpu_only · 2 readset(s) | no-SearchSpace-layer, no-eval |
@@ -177,7 +178,7 @@ an entrypoint routes to procedures below it rather than adding one.
 
 ## Integrity checks
 
-- Registered ids resolve to an existing `SKILL.md`: 63 of 63.
+- Registered ids resolve to an existing `SKILL.md`: 64 of 64.
 - Duplicate ids or paths: none; `skill_catalog` rejects them before this view is built.
 - Skill links in the two matrices that do not resolve: 0.
 - Registered skills without a `metadata.json` sidecar: 5.
@@ -186,10 +187,10 @@ an entrypoint routes to procedures below it rather than adding one.
 
 | Gap | Skills |
 |---|---|
-| `no-SearchSpace-layer` | 10: cite-check-downstream-pr, competitor-scan, draft-acceptance-issue, dwarfstar, inference-benchmark-design, lily, npu-skill-factory, repository-evolution-analysis, skill-evolution-playbook, splash |
+| `no-SearchSpace-layer` | 11: cite-check-downstream-pr, competitor-scan, draft-acceptance-issue, dwarfstar, husky, inference-benchmark-design, lily, npu-skill-factory, repository-evolution-analysis, skill-evolution-playbook, splash |
 | `no-Reference-Matrix-row` | 5: cite-check-downstream-pr, claim-contract, competitor-scan, draft-acceptance-issue, rsi-evidence |
 | `no-sidecar` | 5: cite-check-downstream-pr, claim-contract, competitor-scan, draft-acceptance-issue, rsi-evidence |
-| `no-eval` | 61: as listed in the Gaps column above |
+| `no-eval` | 62: as listed in the Gaps column above |
 
 These are inventory gaps, not defects. A workflow skill may legitimately
 have no hardware resource layer; a candidate may legitimately be untested.
