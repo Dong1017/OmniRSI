@@ -5,6 +5,7 @@ import math
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -18,6 +19,8 @@ from inferrsi.harness.skill_evaluation import (
 )
 from inferrsi.infra.artifacts import atomic_write_json, sha256, write_json
 from inferrsi.knowledge_operations import KnowledgeReader, safe_path
+from inferrsi.model.anthropic_agent import SOURCE as AGENT_SOURCE
+from inferrsi.model.anthropic_agent import AnthropicAgentClient, validate_schema, validate_spec
 from tools.skill_eval_pilot import PROMPT, SCHEMA, observed_tokens
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -165,7 +168,7 @@ def validate_default_audit(task: dict) -> None:
 
 def validate(config: dict, tasks: list[dict], *, default_grader: bool = True) -> None:
     if set(config) - {"mode", "skill", "skill_root", "cases", "schema", "grader",
-                      "snapshots", "model", "limits"}:
+                      "snapshots", "model", "limits", "client", "pricing", "spend_limit"}:
         raise ValueError("Unknown configuration field")
     if config["mode"] not in ("addition", "update"):
         raise ValueError("mode must be addition or update")
@@ -185,6 +188,10 @@ def validate(config: dict, tasks: list[dict], *, default_grader: bool = True) ->
         raise ValueError("model supports name and effort only")
     if not all(isinstance(v, str) and v for v in config["model"].values()):
         raise ValueError("model name and effort are required")
+    if "client" in config:
+        validate_spec(config["model"], config["client"])
+    elif "pricing" in config or "spend_limit" in config:
+        raise ValueError("Provider pricing requires an explicit client")
     limits = config["limits"]
     if set(limits) != {"repeats", "max_task_calls", "timeout_seconds", "campaign_seconds",
                        "token_stop_new_trials"}:
@@ -286,6 +293,8 @@ def prepare(config_path: Path, repo: Path, output: Path) -> str:
         grader.read_bytes() == (ROOT / "tools/skill_eval_verifier.py").read_bytes()))
     require_git_version(subprocess.check_output(("git", "--version"), cwd=repo, text=True))
     schema = read_json(config_path.parent / config["schema"]) if "schema" in config else SCHEMA
+    if "client" in config:
+        validate_schema(schema)
     output.mkdir(parents=True, exist_ok=False)
     for name in ("plan", "validator", "results"):
         (output / name).mkdir()
@@ -334,6 +343,18 @@ def prepare(config_path: Path, repo: Path, output: Path) -> str:
         "CodexClient disables global skills, plugins, apps, memories and web. "
         "Controlled exposure is not OS read confinement.",
     }
+    if "client" in config:
+        client = AnthropicAgentClient(config["model"]["name"], config["client"],
+                                      config["limits"]["timeout_seconds"],
+                                      config.get("pricing"), config.get("spend_limit"))
+        plan["client"] = client.frozen_identity()
+        plan["controllers"][AGENT_SOURCE] = sha256(ROOT / AGENT_SOURCE)
+        plan["max_api_requests"] = len(plan["schedule"]) * config["client"]["max_requests"]
+        if "pricing" in config or "spend_limit" in config:
+            plan["reservation"] = client.require_live_readiness(len(plan["schedule"]), now=0)
+        plan["isolation"] = ("Fresh workspaces; read/submit tools expose selected files only. "
+                             "No shell, network tool, external agent CLI or global config. "
+                             "Provider worker and verifier use separate filtered environments.")
     write_json(output / "plan/freeze.json", plan)
     return sha256(output / "plan/freeze.json")
 
@@ -361,6 +382,12 @@ def trial_directory(output: Path, entry: dict) -> Path:
 def resolve_client(client):
     runtime = {"implementation": type(client).__module__ + "." + type(client).__qualname__,
                "executable": None, "executable_sha256": None, "version": None}
+    if isinstance(client, AnthropicAgentClient):
+        client.require_live_readiness()
+        runtime.update(version=sys.version.split()[0], client_kind=client.spec["kind"],
+                       executable=Path(sys.executable).name,
+                       executable_sha256=sha256(Path(sys.executable)),
+                       source_sha256=sha256(ROOT / AGENT_SOURCE))
     if isinstance(client, CodexClient):
         executable = shutil.which(client.executable)
         if executable is None:
@@ -390,6 +417,16 @@ def receipt_error(raw_record: bytes, receipt_path: Path, label: str) -> str | No
     return None
 
 
+def provider_client(plan):
+    identity = plan["client"]
+    client = AnthropicAgentClient(plan["model"]["name"], identity["settings"],
+                                  plan["limits"]["timeout_seconds"], identity.get("pricing"),
+                                  identity.get("spend_limit"))
+    if identity != client.frozen_identity():
+        raise ValueError("Frozen provider identity no longer matches runtime")
+    return client
+
+
 def execute(output: Path, authorization: str, *, client=None,
             campaign_deadline: float | None = None,
             stop_on_unknown_usage: bool = False) -> dict:
@@ -398,6 +435,14 @@ def execute(output: Path, authorization: str, *, client=None,
     plan = load_plan(output)
     if any((output / "results").iterdir()):
         raise ValueError("Execution requires fresh results; prepare a new output directory")
+    if "client" in plan:
+        configured = provider_client(plan)
+        configured.require_live_readiness(len(plan["schedule"]))
+        if client is not None:
+            raise ValueError("A paid provider plan cannot substitute an injected client")
+        configured.environment()  # Missing keys fail before start/trial evidence.
+        client = configured
+        stop_on_unknown_usage = True
     if client is None:
         client = CodexClient(plan["model"]["name"], plan["model"]["effort"],
                              plan["limits"]["timeout_seconds"])
@@ -495,6 +540,10 @@ def retained_trial(output: Path, entry: dict) -> dict:
         if isinstance(record["observations"].get("commands"), list) else None,
     }
     error = record.get("evaluation_error")
+    if record["observations"].get("client_kind"):
+        selected["observations"].update({
+            key: record["observations"].get(key) for key in
+            ("client_kind", "provider_model", "api_requests", "usage_complete", "observed_usage")})
     if data is None:
         error = error or "missing_retained_output"
     elif actual_hash != record["output_sha256"]:
@@ -589,6 +638,10 @@ def read_report(output: Path) -> dict:
         "claim": "Pipeline results only; fixed-output offline clients do not establish "
         "skill efficacy. Discovery is separate. Unknown usage and cost remain unknown.",
     }
+    if "client" in plan:
+        result["client"] = plan["client"]
+        result["max_api_requests"] = plan["max_api_requests"]
+        result["reservation"] = plan.get("reservation")
     return result
 
 
@@ -608,6 +661,11 @@ def markdown(result: dict) -> str:
         bundle = arm["bundle"]
         lines.append(f"| {role} | `{arm['git_revision']}` | "
                      + (f"`{bundle['revision']}`" if bundle else "absent") + " |")
+    if "client" in result:
+        lines += ["", "Client/provider identity: `"
+                  + json.dumps(result["client"], sort_keys=True) + "`",
+                  "Maximum API requests across both arms: "
+                  + str(result["max_api_requests"]) + "."]
     lines += ["", "Shared model/settings: `" + json.dumps(result["model"], sort_keys=True) + "`",
               "", "Execution limits: `" + json.dumps(result["limits"], sort_keys=True) + "`",
               "", "Execution status/client runtime: `"
