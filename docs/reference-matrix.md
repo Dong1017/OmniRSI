@@ -418,3 +418,8 @@ source maps, notices and imported/candidate states stay with their owners.
 | Source / revision | Inspected scope | Reuse, extraction and limits |
 | --- | --- | --- |
 | perplexityai/pplx-garden `lily/` @ `1ed972ed3f0bd5616c997c9507c25616c63394fc`; AREX method @ `ac3fe1afa80fb9a09775ecfb2b6cc3ba850a2db6` | Selected exact architecture/affine packing, Metal ownership, strict API/session prefixes, native-test gating and versioned benchmark methods | [Lily graph](../src/inferrsi/data/skill_library/repositories/lily/SKILL.md), bounded hashes, safe offline helpers and Apache-2.0/NOTICE retention. Actual portable native-Rust/Metal adaptation, not a DisCo CLI/model run. Cargo/native/model/quality/performance evidence unavailable; later long-context prefill negatives and runner/report version mismatch are retained. `NO_LICENSE` is the unauthenticated resolver fallback, not a legal finding. |
+## Husky document-only research adaptation
+
+| Source / version | Inspected scope | Reuse and limits |
+| --- | --- | --- |
+| Official https://husky.underdog.ai/; displayed2026-09-20, read2026-10-27; unversioned | Public-page report only; no canonical source repository, implementation revision or retained receipts identified | [Document-research candidate](../src/inferrsi/data/skill_library/repositories/husky/SKILL.md), bounded attribution and original verification questions. User-approved AREX-informed document adaptation, not complete repo-to-skill/native verification. Source license UNKNOWN; NO_LICENSE resolver unavailable. No new measured coverage. |

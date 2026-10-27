@@ -1,6 +1,6 @@
 # InferRSI skill library
 
-The English-only library contains **93 skill documents**: 63 registered roots,
+The English-only library contains **94 skill documents**: 64 registered roots,
 21 separately indexed engine/router documents and 9 AREX graph sub-skills.
 Complete procedures, metadata, references, cases and source notices ship with the package.
 
@@ -20,7 +20,7 @@ existing resource directory.
 
 ## Read registered skills
 
-[`skill-index.json`](skill-index.json) maps 63 stable skill IDs to their canonical
+[`skill-index.json`](skill-index.json) maps 64 stable skill IDs to their canonical
 paths and backend scopes. Install the optional `skills` extra for these commands:
 
 ```bash
@@ -118,7 +118,7 @@ guidance; it establishes no cross-pin implementation compatibility.
 
 Five repository entry skills, 15 focused sub-skills and one research router
 provide source-grounded procedures. These 21 documents are available through
-the links and catalog records below, separately from the 63-ID registry.
+the links and catalog records below, separately from the 64-ID registry.
 The registered ComfyUI and stable-diffusion.cpp audits are listed alongside
 these imports and use generated abstracts rather than runtime repository packs.
 
@@ -249,3 +249,10 @@ checks do not clear required native backend blocks. Catalog ID:
 strict text API/token-prefix state and native/benchmark qualification guidance.
 Its compiler/Metal/model gaps remain blocked; offline Python helpers are not
 Rust execution. Catalog ID: `inferrsi.common.skills.lily`.
+## Husky document-only research candidate
+
+[Husky](repositories/husky/SKILL.md) separates an attributed official-page report
+from implementation, reproduction and original research proposals. Repository,
+revision, source license and raw receipts remain unknown; its offline helper
+screens supplied metadata only. This is not complete repo-to-skill or native
+verification. Catalog ID: `inferrsi.common.skills.husky`.

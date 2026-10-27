@@ -17,7 +17,7 @@ assert Path(inferrsi.__file__).resolve().parent.parent.name != "src", (
     "This check requires an installed package"
 )
 records = knowledge_records()
-assert len(records) == 111, "Knowledge is missing from the installation"
+assert len(records) == 112, "Knowledge is missing from the installation"
 assert (
     files("inferrsi")
     .joinpath("data", "repo_packs", "vllm_omni", "knowledge", "README.md")
@@ -43,7 +43,7 @@ for record in mlx_records:
     ) == files("inferrsi").joinpath(*mlx_document.split("/")).read_bytes()
 assert files("inferrsi").joinpath("data/platform_packs/mlx/pack.json").is_file()
 skill_index = search_knowledge(repo="inferrsi", limit=100)
-assert len(skill_index) == 63, "Missing installed skill abstracts"
+assert len(skill_index) == 64, "Missing installed skill abstracts"
 assert all(record["index_type"] == "packaged-skill" for record in skill_index)
 indexed = KnowledgeReader().read("inferrsi.ascend.skills.ascend_operator_profiling")
 assert "data/skill_library/hardware/ascend/ascend-operator-profiling/SKILL.md" in indexed.content
@@ -143,7 +143,7 @@ for record in skill_index:
         data = resource.read_bytes().replace(b"\r\n", b"\n")
         assert hashlib.sha256(data).hexdigest() == expected_hash, relative
 registry = json.loads(library.joinpath("skill-index.json").read_text(encoding="utf-8"))["skills"]
-assert len(registry) == 63
+assert len(registry) == 64
 for entry in registry.values():
     assert library.joinpath(*entry["path"].split("/"), "SKILL.md").is_file()
 router = library.joinpath("workflows", "inference-engine-research")
@@ -259,3 +259,9 @@ splash_notices = files("inferrsi").joinpath(
 )
 assert splash_notices.is_file(), "Splash third-party notices are missing from the wheel"
 assert "The ggml authors" in splash_notices.read_text(encoding="utf-8")
+
+# Document-only candidate remains available without implying native verification.
+husky = library.joinpath("repositories", "husky")
+assert husky.joinpath("references", "source-availability.json").is_file()
+assert husky.joinpath("scripts", "audit_evidence_card.py").is_file()
+assert json.loads(husky.joinpath("metadata.json").read_text())["status"] == "candidate"

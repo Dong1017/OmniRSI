@@ -458,3 +458,8 @@ and tile scheduling add no RAM/Host, SSD, Network or OS-control coverage.
 | --- | --- | --- | --- |
 | Accelerator / RAM | Diagnose / Configure / Verify: exact affine-Q4 plus role-Q8, shared buffer views, state/scratch/sequence capacity and completion ownership | [model-runtime](../src/inferrsi/data/skill_library/repositories/lily/sub-skills/model-runtime/SKILL.md) | Source/Python selected-rule checks, not Rust loading, actual memory fit, Metal synchronization or model quality. |
 | Host / Accelerator / service boundary | Diagnose / Verify: strict API, extra lookahead token, strict token prefix before key preference, actually-fed state retention and version/metric qualification | [serving-cache](../src/inferrsi/data/skill_library/repositories/lily/sub-skills/serving-cache/SKILL.md) and [qualification](../src/inferrsi/data/skill_library/repositories/lily/sub-skills/qualification/SKILL.md) | Compiler/native/model stages not run; CPU references and ignored/cfg-omitted tests are not GPU evidence. No measured service or Network coverage is added. |
+## Husky research questions, not measured coverage
+
+| Resource | Stage | Owner | Evidence boundary |
+| --- | --- | --- | --- |
+| Unqualified / conditional host-device questions | Diagnose / propose a falsifiable comparison and required artifacts | [Husky document research](../src/inferrsi/data/skill_library/repositories/husky/SKILL.md) | Author-reported unversioned page and original audit questions only. No inspected implementation, backend validation, measured service improvement or expanded resource coverage. |
