@@ -187,8 +187,18 @@ run_dir = run_experiment(
 The standard executor retains timeout, cancellation, logs, result paths and child
 cleanup. A custom `execute(command, cwd, trial_dir, deadline, metric_key)` must
 preserve that trial record contract. Prefer composing `execute_trial` over
-reimplementing process lifetime. Metric readers must preserve the finite,
-positive metric contract before returning a float.
+reimplementing process lifetime. Metric readers convert a result document into a
+float; `execute_trial` then applies the one finite, positive metric contract
+(`model.protocols.metrics.validate_metric`) to whatever the reader returns, so a
+reader that yields `0.0`, a `bool` or a non-finite value records a metric error
+rather than entering the evaluation.
+
+Run state is written by the termination path, never assumed. `status.json`
+reports `completed` only after the final artifacts were written;
+a run stopped by a command state keeps `timeout`, `failed` or `cancelled`; an
+exception outside the adapter error contract writes `crashed` and re-raises; and a
+failure while writing the terminal artifacts writes `termination_failed` with the
+original measurement error beside it.
 
 A new source adapter implements `snapshot(repo, excluded_run_dir)` and returns
 `available` plus a stable `snapshot_hash` and explanatory metadata. It must
