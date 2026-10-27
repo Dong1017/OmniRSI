@@ -261,11 +261,14 @@ Package data is the canonical source for noneditable installations:
 inferrsi/data/repo_packs/REPO/knowledge/
   README.md                       Organization and navigation only
   BACKEND/COMPONENT/ENTRY.json     One canonical reusable experience
+inferrsi/data/repo_packs/inferrsi/knowledge/
+                                  Generated from data/skill_library/, never hand-edited
 inferrsi/data/knowledge_packs/
   README.md                       Three-tier source navigation
   dependency/REPO/BACKEND/COMPONENT/ENTRY.json
   peer/REPO/BACKEND/COMPONENT/ENTRY.json
 inferrsi/data/platform_packs/BACKEND/pack.json
+                                  Backend descriptor; tests assert it exists
 ```
 
 JSON owns applicability, claims, recommendations, validation and limitations;
