@@ -1,0 +1,47 @@
+name: Diagnostic only - publisher comment HTTP
+
+on:
+  push:
+    branches: [codex/issue101-omni-http]
+    paths:
+      - .github/workflows/skill-eval-http-diagnostic.yml
+      - tools/skill_eval_http_probe.py
+      - tests/test_skill_eval_http_probe.py
+
+permissions: {}
+
+jobs:
+  compare:
+    if: >-
+      github.repository == 'Dong1017/OmniRSI' && github.run_attempt == 1 &&
+      contains(github.event.head_commit.message, '[run-http-pr-write-once]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      issues: write
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install '.[skills]'
+      - name: Single bounded diagnostic comparison
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python -m tools.skill_eval_http_probe --issue 3 --pr 4 --pr-only
+          --output diagnostic-receipt.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: publisher-http-diagnostic
+          path: diagnostic-receipt.json
+          retention-days: 30
