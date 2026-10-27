@@ -7,10 +7,15 @@ from tools import build_skill_coverage as coverage
 
 PROJECT = Path(__file__).resolve().parents[1]
 OUTPUT = PROJECT / coverage.OUTPUT
+LIBRARY = PROJECT / coverage.LIBRARY
+
+
+def _registry():
+    return json.loads((PROJECT / coverage.INDEX).read_text(encoding="utf-8"))["skills"]
 
 
 def test_view_lists_every_registered_skill_exactly_once():
-    registry = json.loads((PROJECT / coverage.INDEX).read_text(encoding="utf-8"))["skills"]
+    registry = _registry()
     rows, unregistered, documents, dead, _ = coverage.collect(PROJECT)
     assert [row["id"] for row in rows] == sorted(registry)
     assert len({row["id"] for row in rows}) == len(rows)
@@ -21,23 +26,68 @@ def test_view_lists_every_registered_skill_exactly_once():
 
 
 def test_view_rows_copy_owner_state_without_promotion():
+    registry = _registry()
     rows, _, _, _, _ = coverage.collect(PROJECT)
     for row in rows:
         assert row["task"]
-        assert isinstance(row["layers"], dict)
-        assert isinstance(row["rm"], list)
         if not row["sidecar"]:
+            # No sidecar means no owner state to copy; it must stay unknown.
             assert row["status"] == "unknown"
+            assert row["validation"] == "unknown"
             continue
-        assert row["status"] == "candidate"
-        assert row["validation"] == "not_run"
+        sidecar = json.loads(
+            (LIBRARY / registry[row["id"]]["path"] / "metadata.json").read_text(encoding="utf-8")
+        )
+        # The projection equals its owner, including a state other than not_run.
+        assert row["status"] == sidecar.get("status", "unknown")
+        assert row["validation"] == sidecar.get("empirical_validation", "unknown")
+
+
+def test_non_default_owner_state_is_projected_not_downgraded():
+    """A sidecar may record a validation state other than not_run."""
+    registry = _registry()
+    rows, _, _, _, _ = coverage.collect(PROJECT)
+    by_id = {row["id"]: row for row in rows}
+    non_default = {}
+    for name, entry in registry.items():
+        sidecar = LIBRARY / entry["path"] / "metadata.json"
+        if not sidecar.is_file():
+            continue
+        validation = json.loads(sidecar.read_text(encoding="utf-8")).get("empirical_validation")
+        if validation not in (None, "not_run"):
+            non_default[name] = validation
+    assert non_default, "expected at least one non-not_run sidecar at this revision"
+    for name, validation in non_default.items():
+        assert by_id[name]["validation"] == validation
 
 
 def test_layer_stages_are_unioned_not_repeated():
     rows, _, _, _, _ = coverage.collect(PROJECT)
     for row in rows:
-        for stages in row["layers"].values():
+        for stages, _ in row["layers"].values():
             assert len(stages) == len(set(stages))
+
+
+def test_supplementary_resource_tables_count_as_recorded_guidance():
+    rows, _, _, _, _ = coverage.collect(PROJECT)
+    by_id = {row["id"]: row for row in rows}
+    # These are mapped by a supplementary Resource table, not a numbered layer.
+    for name in ("reason-hopper-kernels", "generation-cache-lifecycle"):
+        assert name in by_id, f"{name} is not registered at this revision"
+        assert by_id[name]["layers"], f"{name} lost its supplementary mapping"
+        assert coverage.guidance_only(by_id[name])
+        assert "no-SearchSpace-layer" not in coverage.gaps(by_id[name])
+
+
+def test_input_digest_is_checkout_location_independent(tmp_path):
+    source = tmp_path / "a"
+    copy = tmp_path / "b"
+    for root in (source, copy):
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "x.md").write_text("same bytes\n", encoding="utf-8")
+    left = coverage.input_digest(source, [source / "docs" / "x.md"])
+    right = coverage.input_digest(copy, [copy / "docs" / "x.md"])
+    assert left == right
 
 
 def test_regeneration_is_byte_identical():
@@ -52,10 +102,3 @@ def test_committed_view_matches_its_sources():
     assert OUTPUT.read_text(encoding="utf-8") == rendered, (
         "docs/skill-coverage.md is stale; rerun tools/build_skill_coverage.py"
     )
-
-
-def test_input_digest_tracks_sources_not_git_state():
-    rows, unregistered, documents, dead, digest = coverage.collect(PROJECT)
-    rendered = coverage.render(rows, unregistered, documents, dead, digest)
-    assert digest in rendered
-    assert coverage.render(rows, unregistered, documents, dead, "0" * 64) != rendered

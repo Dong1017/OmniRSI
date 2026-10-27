@@ -53,9 +53,25 @@ def tables(root, path):
 
 
 def references(root, path, registered):
-    """Skill ids a document mentions, plus links whose target does not exist."""
+    """Skill ids a document mentions, plus links whose target does not exist.
+
+    Each mention keeps the heading, the first cell and, when the heading is a
+    supplementary ``| Resource | Stage |`` table, the resource cell as well.
+    """
     found, dead = {}, []
-    for heading, parts in tables(root, path):
+    headers, heading = {}, None
+    for line in (root / path).read_text(encoding="utf-8").splitlines():
+        if line.startswith("## "):
+            heading = line.rstrip()
+            continue
+        if not heading or not line.lstrip().startswith("|"):
+            continue
+        parts = cells(line)
+        if all(set(part) <= set("-: ") for part in parts):
+            continue
+        if parts[0] in ("Resource", "Lifecycle step"):
+            headers[heading] = parts[0] == "Resource"
+            continue
         joined = " | ".join(parts)
         mentions = {name for name in registered if f"`{name}`" in joined}
         for target in LINK.findall(joined):
@@ -64,8 +80,9 @@ def references(root, path, registered):
                 dead.append((str(path), target))
                 continue
             mentions.add(resolved.parent.name)
+        resource = parts[0] if headers.get(heading) else None
         for name in mentions:
-            found.setdefault(name, []).append((heading, parts[0]))
+            found.setdefault(name, []).append((heading, parts[0], resource))
     return found, dead
 
 
@@ -96,29 +113,85 @@ def cell_text(text):
     return text.replace("|", "\\|")
 
 
-def layer_refs(found):
-    """Resource layer -> lifecycle stages, unioned in document order."""
-    layers = {}
-    for heading, stage in found:
-        match = HEADING.match(heading)
-        if not match:
+def _strip_bold(text):
+    return BOLD.sub(r"\1", text)
+
+
+def _split(text):
+    return [token.strip() for token in _strip_bold(text).split(" / ") if token.strip()]
+
+
+# Layer labels as the matrices spell them. Compounding a label such as
+# "Accelerator / RAM / Host" must be matched by whole names, longest first:
+# "RAM / Host" itself contains the separator, and bare "RAM"/"SSD" occur in
+# compound cells such as "RAM / Accelerator / SSD".
+LAYER_LABELS = {
+    "Graphics Card / Accelerator": "1",
+    "Communication Card / Network": "4",
+    "RAM / Host Memory": "2",
+    "Accelerator": "1",
+    "RAM / Host": "2",
+    "SSD / Storage": "3",
+    "Communication / Network": "4",
+    "OS / System": "5",
+    "Host": "2",
+    "RAM": "2",
+    "SSD": "3",
+}
+
+
+def _layer_numbers(text):
+    """Resource layers named by a cell, longest label first."""
+    remaining = _strip_bold(text)
+    found = []
+    for label in sorted(LAYER_LABELS, key=len, reverse=True):
+        pattern = re.compile(rf"(?<![A-Za-z]){re.escape(label)}(?![A-Za-z])")
+        if not pattern.search(remaining):
             continue
-        number, name = match.groups()
-        if name != LAYERS[number]:
-            raise ValueError(f"SearchSpace layer {number} renamed: {name}")
-        stages = layers.setdefault(number, [])
-        for token in BOLD.sub(r"\1", stage).split(" / "):
-            token = token.strip()
-            if token and token not in stages:
-                stages.append(token)
-    return layers
+        number = LAYER_LABELS[label]
+        if number not in found:
+            found.append(number)
+        remaining = pattern.sub(" ", remaining)
+    return found
 
 
-def input_digest(paths):
-    """Content digest of every source file this view reads."""
+def layer_refs(found):
+    """Resource layer -> (stages, supplementary headings), in document order.
+
+    A numbered layer section states coverage. A supplementary ``Resource``
+    table states source-derived guidance for one skill; it is kept distinct so
+    the view never reports a guidance mapping as a missing layer or vice versa.
+    """
+    layers = {}
+    for heading, stage, resource in found:
+        match = HEADING.match(heading)
+        if match:
+            number, name = match.groups()
+            if name != LAYERS[number]:
+                raise ValueError(f"SearchSpace layer {number} renamed: {name}")
+            stages = layers.setdefault(number, ([], []))[0]
+            for token in _split(stage):
+                if token not in stages:
+                    stages.append(token)
+            continue
+        if resource is None:
+            continue
+        for number in _layer_numbers(resource):
+            _, sections = layers.setdefault(number, ([], []))
+            if heading[3:] not in sections:
+                sections.append(heading[3:])
+    return {number: (stages, sections) for number, (stages, sections) in layers.items()}
+
+
+def input_digest(root, paths):
+    """Content digest of every source file this view reads.
+
+    Paths are hashed repository-relative, so two checkouts of identical sources
+    at different locations produce the same digest.
+    """
     digest = hashlib.sha256()
     for path in sorted(paths):
-        digest.update(path.as_posix().encode("utf-8"))
+        digest.update(path.relative_to(root).as_posix().encode("utf-8"))
         digest.update(b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).digest())
     return digest.hexdigest()
@@ -166,17 +239,18 @@ def collect(root):
             "sidecar": has_sidecar,
             "layers": layer_refs(ss.get(name, [])),
             "other_ss": sorted({
-                heading[3:] for heading, _ in ss.get(name, []) if not HEADING.match(heading)
+                heading[3:] for heading, _, _ in ss.get(name, [])
+                if not HEADING.match(heading)
             }),
             "rm": sorted(
-                (heading[3:], BOLD.sub(r"\1", short(parts, 70)))
-                for heading, parts in rm.get(name, [])
+                (heading[3:], BOLD.sub(r"\1", short(cell, 70)))
+                for heading, cell, _ in rm.get(name, [])
             ),
             "eval": plans.get(name, []),
         })
 
     dead = sorted({item for item in ss_dead + rm_dead})
-    return rows, unregistered, len(documents), dead, input_digest(inputs)
+    return rows, unregistered, len(documents), dead, input_digest(root, inputs)
 
 
 def gaps(row):
@@ -192,12 +266,22 @@ def gaps(row):
     return found
 
 
+def guidance_only(row):
+    """True when every recorded layer comes from a supplementary table."""
+    return bool(row["layers"]) and all(
+        not stages and sections for stages, sections in row["layers"].values()
+    )
+
+
 def render(rows, unregistered, documents, dead, digest):
     counts, backends = {}, {}
     for row in rows:
         counts[row["category"]] = counts.get(row["category"], 0) + 1
         backends[row["backend"]] = backends.get(row["backend"], 0) + 1
-    layered = [row for row in rows if row["layers"]]
+    layered = [row for row in rows if any(
+        stages for stages, _ in row["layers"].values()
+    )]
+    guidance = [row for row in rows if guidance_only(row)]
     multi = [row for row in layered if len(row["layers"]) > 1]
     sourced = [row for row in rows if row["rm"]]
     sided = [row for row in rows if row["sidecar"]]
@@ -248,7 +332,8 @@ def render(rows, unregistered, documents, dead, digest):
         "| By backend | "
         + ", ".join(f"{name} {value}" for name, value in sorted(backends.items()))
         + " |",
-        f"| Recorded on a SearchSpace resource layer | {len(layered)} |",
+        f"| Recorded on a numbered SearchSpace resource layer | {len(layered)} |",
+        f"| Recorded only in a supplementary guidance table (†) | {len(guidance)} |",
         f"| Recorded on two or more resource layers | {len(multi)} |",
         f"| Recorded in the Reference Matrix | {len(sourced)} |",
         f"| With a `metadata.json` sidecar | {len(sided)} |",
@@ -279,10 +364,15 @@ def render(rows, unregistered, documents, dead, digest):
         out.append("|---|---|---|---|---|---|---|")
         for row in group:
             link = f"[{row['id']}](../{LIBRARY.as_posix()}/{row['path']}/SKILL.md)"
-            layers = "<br>".join(
-                f"{number} {SHORT[number]} · {' / '.join(stages)}"
-                for number, stages in sorted(row["layers"].items())
-            ) or "—"
+            layered = []
+            for number, (stages, sections) in sorted(row["layers"].items()):
+                entry = f"{number} {SHORT[number]}"
+                if stages:
+                    entry += " · " + " / ".join(stages)
+                if sections:
+                    entry += " † guidance: " + "; ".join(sections)
+                layered.append(entry)
+            layers = "<br>".join(layered) or "—"
             matrix = "<br>".join(
                 f"{heading} ({source})" for heading, source in row["rm"]
             ) or "—"
