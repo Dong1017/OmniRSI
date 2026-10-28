@@ -124,6 +124,20 @@ def run_experiment(
                 "complete", state=state, verdict=result["verdict"], error=error
             )
             write_report(run_dir)
+        except KeyboardInterrupt as exc:
+            # Interruption during termination is outside the caller's own
+            # KeyboardInterrupt handler, so the state must be persisted here:
+            # otherwise it stays `running` (interrupted during the final snapshot)
+            # or a premature `completed` (interrupted while writing the report).
+            record_status(
+                "termination",
+                state="termination_failed",
+                verdict=None,
+                error=error,
+                requested_state=state,
+                termination_error=f"KeyboardInterrupt: {exc or 'interrupted during termination'}",
+            )
+            raise
         except Exception as exc:
             # The run did not reach a finished state. Every termination failure is
             # recorded, not only I/O-shaped ones: the hook and report paths are

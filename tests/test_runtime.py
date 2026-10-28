@@ -515,3 +515,36 @@ class TerminationTests(unittest.TestCase):
         self.assertEqual(status["phase"], "termination")
         self.assertEqual(status["requested_state"], "completed")
         self.assertIn("report backend crashed", status["termination_error"])
+
+    def test_interruption_while_writing_the_report_is_recorded_as_termination(self):
+        # Ctrl-C inside terminate() is outside the caller's own KeyboardInterrupt
+        # handler. `completed` was already written, so the interruption must be
+        # persisted as a termination failure rather than left looking finished.
+        with patch("inferrsi.harness.runner.write_report", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                run_with_adapters(self.spec, {"backend": "cpu", "test": True})
+        run = sorted((self.root / "runs").iterdir())[-1]
+        status = json.loads((run / "status.json").read_text(encoding="utf-8"))
+        self.assertEqual(status["state"], "termination_failed")
+        self.assertEqual(status["phase"], "termination")
+        self.assertEqual(status["requested_state"], "completed")
+        self.assertIn("KeyboardInterrupt", status["termination_error"])
+
+    def test_interruption_during_final_snapshot_is_recorded_as_termination(self):
+        # The final snapshot runs inside terminate(). Interrupting it must not
+        # leave `running` as the last persisted state.
+        calls = []
+
+        def snapshot(path, exclude=None):
+            calls.append(path)
+            if len(calls) > 3:
+                raise KeyboardInterrupt
+            return {"available": True, "snapshot_hash": "fixture", "path": str(path)}
+
+        with self.assertRaises(KeyboardInterrupt):
+            run_with_adapters(self.spec, {"backend": "cpu", "test": True}, snapshot=snapshot)
+        run = sorted((self.root / "runs").iterdir())[-1]
+        status = json.loads((run / "status.json").read_text(encoding="utf-8"))
+        self.assertEqual(status["state"], "termination_failed")
+        self.assertEqual(status["phase"], "termination")
+        self.assertFalse((run / "evaluation.json").exists())
