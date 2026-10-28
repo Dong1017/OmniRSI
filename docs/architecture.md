@@ -154,7 +154,7 @@ tests/fixtures/legacy/      Frozen historical validation dependencies for regres
 | --- | --- | --- |
 | Model or scenario | `model/protocols`, `model/validators`, `harness/scenarios` | Frozen request and metric contract; model-specific quality coverage |
 | Repository | `infra/targets`, a composed scenario, `data/repo_packs` | Stable source identity; command/result contract; environment isolation |
-| Hardware | `infra/platforms` | Device selection, process exclusivity and independent backend/model evidence; the backend's probe command is defined in `infra/platforms/__init__.py`, not in package data |
+| Hardware | `infra/platforms` | Device selection, process exclusivity and independent backend/model evidence; a backend is registered in `infra/platforms/__init__.py` and its probe command is defined in the implementing module under `infra/platforms/`, not in package data |
 
 The acceptance rule is: **a new model or hardware adapter must reuse the common
 AB/BA loop, process cleanup and performance adjudication.** The extension
