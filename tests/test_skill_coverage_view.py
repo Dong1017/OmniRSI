@@ -1,5 +1,6 @@
 """The reverse coverage view stays reconciled with the registry it indexes."""
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -91,19 +92,32 @@ def test_input_digest_is_checkout_location_independent(tmp_path):
 
 
 def test_input_digest_orders_by_relative_path_not_by_path_object(tmp_path):
-    """Path objects sort case-folded on Windows and case-sensitively on POSIX."""
+    """Path objects sort case-folded on Windows and case-sensitively on POSIX.
+
+    The expected digest is built here from the documented contract — relative
+    POSIX path, a NUL separator, then the SHA-256 of the bytes, in sorted path
+    order — rather than by calling the function twice. Comparing two calls
+    would pass on either host even with the old `sorted(paths)`, because the
+    two inputs collapse to whichever order that host happens to produce.
+    """
     root = tmp_path / "repo"
     skill = root / "x" / "SKILL.md"
     sidecar = root / "x" / "metadata.json"
     skill.parent.mkdir(parents=True)
-    skill.write_text("{}\n", encoding="utf-8")
-    sidecar.write_text("{}\n", encoding="utf-8")
-    forward = coverage.input_digest(root, [skill, sidecar])
-    reverse = coverage.input_digest(root, [sidecar, skill])
-    assert forward == reverse
-    # The order the digest uses is the relative POSIX string, where
-    # "SKILL.md" precedes "metadata.json" on every platform.
-    assert "SKILL.md" < "metadata.json"
+    # newline="" keeps the bytes identical on a CRLF-translating platform.
+    skill.write_text("{}\n", encoding="utf-8", newline="")
+    sidecar.write_text("{}\n", encoding="utf-8", newline="")
+
+    body = hashlib.sha256(b"{}\n").digest()
+    expected = hashlib.sha256()
+    for relative in ("x/SKILL.md", "x/metadata.json"):
+        expected.update(relative.encode("utf-8"))
+        expected.update(b"\0")
+        expected.update(body)
+
+    assert "SKILL.md" < "metadata.json"  # relativePOSIX order, both platforms
+    assert coverage.input_digest(root, [skill, sidecar]) == expected.hexdigest()
+    assert coverage.input_digest(root, [sidecar, skill]) == expected.hexdigest()
 
 
 def test_regeneration_is_byte_identical():
