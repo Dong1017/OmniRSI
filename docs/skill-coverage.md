@@ -4,7 +4,7 @@ Generated from the registry, the skill sidecars and the two maintained
 matrices. **Do not edit by hand**; regenerate after any registry, skill,
 matrix or frozen-plan change.
 
-- Input digest: `sha256:0dceca0ccf403f83b3c02e96c4cb2d8f04c3e0f61db1f620cedef213cffac9c1`
+- Input digest: `sha256:55b3fc513a6d0ea96c98182b3d35885cb0a4029ce86a65cb28edb43b503fe1ad`
 - Regenerate: `python tools/build_skill_coverage.py`
 - Verify without writing: `python tools/build_skill_coverage.py --check`
 
@@ -31,23 +31,23 @@ matrix: every field is copied from an owner that already maintains it.
 
 | Measure | Value |
 |---|---|
-| Registered skill ids | 64 |
-| By category | frameworks 3, hardware 21, methods 18, repositories 16, workflows 6 |
-| By backend | ascend 13, common 47, cuda 4 |
+| Registered skill ids | 65 |
+| By category | frameworks 3, hardware 22, methods 18, repositories 16, workflows 6 |
+| By backend | ascend 14, common 47, cuda 4 |
 | Recorded on a numbered SearchSpace resource layer | 47 |
 | Recorded only in a supplementary guidance table (†) | 6 |
 | Recorded on two or more resource layers | 24 |
 | Recorded in the Reference Matrix | 59 |
-| With a `metadata.json` sidecar | 59 |
+| With a `metadata.json` sidecar | 60 |
 | Selected by a frozen evaluation plan | 2 |
-| `SKILL.md` documents in the library | 94 |
+| `SKILL.md` documents in the library | 95 |
 | Unregistered documents (excluded from every count above) | 30 |
 
 A complete inventory is not a coverage claim. Every registered row below
 has an entry; that says the listing is exhaustive, not that inference
 optimization is fully covered or that any procedure has measured benefit.
 
-## Registered: Hardware and platform (21)
+## Registered: Hardware and platform (22)
 
 | Skill | Backend | Declared task | SearchSpace layer / stage | Reference Matrix | State | Gaps |
 |---|---|---|---|---|---|---|
@@ -60,6 +60,7 @@ optimization is fully covered or that any procedure has measured benefit.
 | [ascend-operator-tuning](../src/inferrsi/data/skill_library/hardware/ascend/ascend-operator-tuning/SKILL.md) | ascend | Run a staged, accuracy-gated tuning campaign on a single Ascend NPU operator: set a numeric target up front, block ... | 1 Accelerator · Optimize | 1 · Systems sources (ascend-ai-coding/awesome-ascend-skills @ 75ec89c) | candidate · not_run · 0 readset(s) | no-eval |
 | [ascend-optimization-casebook](../src/inferrsi/data/skill_library/hardware/ascend/ascend-optimization-casebook/SKILL.md) | ascend | Casebook of NPU optimization cases for Ascend inference systems: symptom → diagnosis → action → evidence records for ... | 1 Accelerator · Optimize / Verify | 1 · Systems sources (Ascend/MindIE-SD @ 8481d39) | candidate · not_run · 0 readset(s) | no-eval |
 | [ascend-performance-analysis](../src/inferrsi/data/skill_library/hardware/ascend/ascend-performance-analysis/SKILL.md) | ascend | Diagnose performance bottlenecks on Ascend NPU systems using CANN profiling data. Maps GPU profiling concepts (nsys ... | 1 Accelerator · Observe / Profile / Diagnose / Verify<br>4 Network · Observe / Profile / Diagnose / Verify<br>5 OS · Diagnose | 1 · Systems sources (Ascend/MindIE-SD @ 8481d39)<br>1 · Systems sources (cann/cannbot @ `c0e2ad23ee1a73e3c0f84c8df1cc459e2aae3110` (selected ...) | candidate · not_run · 1 readset(s) | no-eval |
+| [ascend-video-diffusion-optimization](../src/inferrsi/data/skill_library/hardware/ascend/ascend-video-diffusion-optimization/SKILL.md) | ascend | Run and verify goal-driven Ascend video diffusion optimization. Use when the user asks for latency, RTF, throughput, or ... | — | — | candidate · not_run · 1 readset(s) | no-SearchSpace-layer, no-Reference-Matrix-row, no-eval |
 | [ascendc-tiling-design](../src/inferrsi/data/skill_library/hardware/ascend/ascendc-tiling-design/SKILL.md) | ascend | Design tiling for a custom AscendC operator: normalize the shape first (axis-collapse or flatten), answer the ... | 1 Accelerator · Optimize | 1 · Systems sources (ascend-ai-coding/awesome-ascend-skills @ 75ec89c) | candidate · not_run · 0 readset(s) | no-eval |
 | [cann-attribution-overlap](../src/inferrsi/data/skill_library/hardware/ascend/cann-attribution-overlap/SKILL.md) | ascend | Attribute NPU trace kernels to model source and plan bounded multistream overlap: select a representative step, map ... | 1 Accelerator · Observe / Profile / Diagnose / Optimize / Verify<br>4 Network · Diagnose / Optimize / Verify | 1 · Systems sources (cann/oam-tools @ `8440935f` (!302 import; later master `f3cf4115` ...) | candidate · not_run · 0 readset(s) | no-eval |
 | [cgroup-resource-controls](../src/inferrsi/data/skill_library/hardware/host/cgroup-resource-controls/SKILL.md) | common | Diagnose and configure cgroup v2 resource controls for serving/training workloads: distinguish quota stalls from ... | 2 RAM/Host · Observe / Profile / Configure / Verify<br>5 OS · Observe / Profile / Diagnose / Configure / Optimize / Verify | 1 · Systems sources (Linux cgroup v2 docs — kernel.org live 2026-10-15 (revision ...) | candidate · not_run · 0 readset(s) | no-eval |
@@ -178,7 +179,7 @@ an entrypoint routes to procedures below it rather than adding one.
 
 ## Integrity checks
 
-- Registered ids resolve to an existing `SKILL.md`: 64 of 64.
+- Registered ids resolve to an existing `SKILL.md`: 65 of 65.
 - Duplicate ids or paths: none; `skill_catalog` rejects them before this view is built.
 - Skill links in the two matrices that do not resolve: 0.
 - Registered skills without a `metadata.json` sidecar: 5.
@@ -187,10 +188,10 @@ an entrypoint routes to procedures below it rather than adding one.
 
 | Gap | Skills |
 |---|---|
-| `no-SearchSpace-layer` | 11: cite-check-downstream-pr, competitor-scan, draft-acceptance-issue, dwarfstar, husky, inference-benchmark-design, lily, npu-skill-factory, repository-evolution-analysis, skill-evolution-playbook, splash |
-| `no-Reference-Matrix-row` | 5: cite-check-downstream-pr, claim-contract, competitor-scan, draft-acceptance-issue, rsi-evidence |
+| `no-SearchSpace-layer` | 12: ascend-video-diffusion-optimization, cite-check-downstream-pr, competitor-scan, draft-acceptance-issue, dwarfstar, husky, inference-benchmark-design, lily, npu-skill-factory, repository-evolution-analysis, skill-evolution-playbook, splash |
+| `no-Reference-Matrix-row` | 6: ascend-video-diffusion-optimization, cite-check-downstream-pr, claim-contract, competitor-scan, draft-acceptance-issue, rsi-evidence |
 | `no-sidecar` | 5: cite-check-downstream-pr, claim-contract, competitor-scan, draft-acceptance-issue, rsi-evidence |
-| `no-eval` | 62: as listed in the Gaps column above |
+| `no-eval` | 63: as listed in the Gaps column above |
 
 These are inventory gaps, not defects. A workflow skill may legitimately
 have no hardware resource layer; a candidate may legitimately be untested.
