@@ -43,21 +43,32 @@ def _json(value: object) -> bytes:
     return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
 
 
-def _normalized(value: object, field: str) -> object:
+def _normalized(value: object, field: str, ancestors: frozenset[int] = frozenset()) -> object:
     # Bundle identity is JSON, so YAML scalars without a JSON form are rejected
     # here instead of failing inside revision serialization.
     if value is None or isinstance(value, (str, bool, int, float)):
         return value
     if isinstance(value, (datetime, date)):
         return value.isoformat()
-    if isinstance(value, list):
-        return [_normalized(item, f"{field}[{index}]") for index, item in enumerate(value)]
-    if isinstance(value, dict):
+    if isinstance(value, (list, dict)):
+        # A YAML alias can make a container its own descendant. Only the active path
+        # is tracked, so the same object shared by sibling fields stays accepted.
+        identity = id(value)
+        if identity in ancestors:
+            raise ValueError(
+                f"Field {field} contains a reference cycle: {type(value).__name__}"
+            )
+        ancestors = ancestors | {identity}
+        if isinstance(value, list):
+            return [
+                _normalized(item, f"{field}[{index}]", ancestors)
+                for index, item in enumerate(value)
+            ]
         result = {}
         for key, item in value.items():
             if not isinstance(key, str):
                 raise ValueError(f"Field {field} has a non-string key: {key!r}")
-            result[key] = _normalized(item, f"{field}.{key}" if field else key)
+            result[key] = _normalized(item, f"{field}.{key}" if field else key, ancestors)
         return result
     raise ValueError(
         f"Field {field or '<metadata>'} cannot be represented in the bundle identity: "

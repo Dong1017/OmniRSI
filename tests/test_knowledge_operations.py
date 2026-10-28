@@ -361,6 +361,37 @@ def test_unrepresentable_metadata_names_the_offending_field():
         Bundle(metadata, {"x/SKILL.md": b"Body"}, {})
 
 
+def test_cyclic_alias_is_an_invalid_omission_not_a_crash(tmp_path):
+    # YAML aliases can make a container its own descendant; normalization must
+    # report that field instead of recursing until the interpreter gives up.
+    _skill(tmp_path, applicability="&loop [*loop]")
+    _skill(tmp_path, "ok")
+    reader = KnowledgeReader(skill_root=tmp_path)
+    result = reader.collect(ids=["sk", "ok"])
+    assert [item["ref"] for item in result["items"]] == ["checkout:ok"]
+    assert [(o["id"], o["reason"]) for o in result["omissions"]] == [("sk", "invalid")]
+    assert "metadata.applicability" in result["omissions"][0]["detail"]
+    assert "cycle" in result["omissions"][0]["detail"]
+
+
+def test_shared_acyclic_reference_is_still_normalized():
+    # The same object under two sibling fields is not a cycle.
+    shared = {"note": "x"}
+    metadata = {
+        "id": "x",
+        "kind": "skill",
+        "entrypoint": "x/SKILL.md",
+        "sources": [{"type": "unknown"}],
+        "applicability": {"left": shared, "right": shared},
+        "state": "candidate",
+        "limitations": [],
+        "attribution": [],
+    }
+    bundle = Bundle(metadata, {"x/SKILL.md": b"Body"}, {})
+    assert bundle.metadata["applicability"] == {"left": {"note": "x"}, "right": {"note": "x"}}
+    assert bundle.revision.startswith("sha256:")
+
+
 def test_malformed_case_identity_is_rejected_at_registration(tmp_path):
     _case(tmp_path, "Upper.Case")
     with pytest.raises(ValueError, match="Invalid case identity in note.json: 'Upper.Case'"):
