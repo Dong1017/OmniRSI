@@ -215,12 +215,14 @@ the default control package continues to require only the standard library.
 ### Add a platform or repository
 
 Register a device probe in `infra.platforms.PLATFORM_PROBES`; supply the selected
-IDs, device model and bounded command runner. New backend names also need a
-catalog/CLI descriptor and a platform pack. Adding a device SKU within a backend
-is a parameter/configuration change. CUDA qualification takes an explicit device
-count and model; it contains no B300 or four-device default. ROCm and Ascend
-currently expose raw tool facts and require independent qualification. Discovery
-is not compatibility or performance certification.
+IDs, device model and bounded command runner. A new backend name additionally
+needs an entry in `catalog.BACKENDS`, which supplies the CLI `--backend` choices
+and the accepted knowledge and skill backends; no package-data descriptor is
+required. Adding a device SKU within a backend is a parameter/configuration
+change. CUDA qualification takes an explicit device count and model; it contains
+no B300 or four-device default. ROCm and Ascend currently expose raw tool facts
+and require independent qualification. Discovery is not compatibility or
+performance certification.
 
 For a new repository, start with the Git target adapter if applicable, add the
 repository descriptor/knowledge pack and compose its benchmark scenario. Update
