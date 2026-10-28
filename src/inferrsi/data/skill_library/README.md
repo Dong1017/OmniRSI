@@ -1,6 +1,6 @@
 # InferRSI skill library
 
-The English-only library contains **94 skill documents**: 64 registered roots,
+The English-only library contains **95 skill documents**: 65 registered roots,
 21 separately indexed engine/router documents and 9 AREX graph sub-skills.
 Complete procedures, metadata, references, cases and source notices ship with the package.
 
@@ -8,7 +8,7 @@ Complete procedures, metadata, references, cases and source notices ship with th
 
 | Directory | Content |
 | --- | --- |
-| [Hardware](hardware/) | Ascend (13 registered skills), CUDA (3) and host resource guidance (5) |
+| [Hardware](hardware/) | Ascend (14 registered skills), CUDA (3) and host resource guidance (5) |
 | [Frameworks](frameworks/) | Framework-owned procedures, PyTorch distributed checkpointing and MLX evaluation/lifetimes |
 | [Repositories](repositories/) | Engine entry skills, focused procedures, references and cases |
 | [Methods](methods/) | Optimization, benchmarking, analysis, search and casebooks |
@@ -20,7 +20,7 @@ existing resource directory.
 
 ## Read registered skills
 
-[`skill-index.json`](skill-index.json) maps 64 stable skill IDs to their canonical
+[`skill-index.json`](skill-index.json) maps 65 stable skill IDs to their canonical
 paths and backend scopes. Install the optional `skills` extra for these commands:
 
 ```bash
@@ -125,7 +125,7 @@ guidance; it establishes no cross-pin implementation compatibility.
 
 Five repository entry skills, 15 focused sub-skills and one research router
 provide source-grounded procedures. These 21 documents are available through
-the links and catalog records below, separately from the 64-ID registry.
+the links and catalog records below, separately from the 65-ID registry.
 The registered ComfyUI and stable-diffusion.cpp audits are listed alongside
 these imports and use generated abstracts rather than runtime repository packs.
 
