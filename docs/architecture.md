@@ -140,7 +140,6 @@ src/inferrsi/
     repo_packs/             Contribution descriptors and versioned tuning knowledge
     knowledge_packs/        Dependency and peer knowledge, preserving existing tiers
     skill_library/          Complete categorized English skills and resources
-    platform_packs/         Backend metadata and qualification context
   execution.py              Compatibility entrypoint -> harness.runner
   evaluation.py             Compatibility exports -> harness.evaluation
   inspection.py             Compatibility entrypoint -> infra.inspection
@@ -155,7 +154,7 @@ tests/fixtures/legacy/      Frozen historical validation dependencies for regres
 | --- | --- | --- |
 | Model or scenario | `model/protocols`, `model/validators`, `harness/scenarios` | Frozen request and metric contract; model-specific quality coverage |
 | Repository | `infra/targets`, a composed scenario, `data/repo_packs` | Stable source identity; command/result contract; environment isolation |
-| Hardware | `infra/platforms`, `data/platform_packs` | Device selection, process exclusivity and independent backend/model evidence |
+| Hardware | `infra/platforms` | Device selection, process exclusivity and independent backend/model evidence; the backend's probe command is defined in `infra/platforms/__init__.py`, not in package data |
 
 The acceptance rule is: **a new model or hardware adapter must reuse the common
 AB/BA loop, process cleanup and performance adjudication.** The extension
@@ -267,8 +266,6 @@ inferrsi/data/knowledge_packs/
   README.md                       Three-tier source navigation
   dependency/REPO/BACKEND/COMPONENT/ENTRY.json
   peer/REPO/BACKEND/COMPONENT/ENTRY.json
-inferrsi/data/platform_packs/BACKEND/pack.json
-                                  Backend descriptor; tests assert it exists
 ```
 
 JSON owns applicability, claims, recommendations, validation and limitations;
