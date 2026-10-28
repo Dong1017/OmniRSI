@@ -101,6 +101,33 @@ def test_committed_source_hashes_preserve_binary_and_newline_bytes(tmp_path):
     }
 
 
+def test_replacement_refs_cannot_rewrite_indexed_source_bytes(tmp_path):
+    # refs/replace/* leaves rev-parse alone but changes what cat-file returns,
+    # so the pinned revision must be read with the hardened Git invocation.
+    def git(*args):
+        return subprocess.run(
+            ["git", "-C", str(tmp_path), *args], check=True, capture_output=True, text=True
+        ).stdout
+
+    git("init")
+    (tmp_path / "source.md").write_bytes(b"original bytes\n")
+    git("add", "source.md")
+    git(
+        "-c", "user.name=Index test fixture", "-c", "user.email=index@example.invalid",
+        "commit", "-s", "-m", "Original",
+    )
+    original = git("rev-parse", "HEAD").strip()
+    (tmp_path / "source.md").write_bytes(b"replacement bytes\n")
+    git("add", "source.md")
+    git(
+        "-c", "user.name=Index test fixture", "-c", "user.email=index@example.invalid",
+        "commit", "-s", "-m", "Replacement",
+    )
+    git("replace", original, git("rev-parse", "HEAD").strip())
+    hashes = index_builder._source_hashes(tmp_path, original, {"source.md"})
+    assert hashes == {"source.md": hashlib.sha256(b"original bytes\n").hexdigest()}
+
+
 def test_index_checks_drift_and_rejects_changed_or_added_source_inputs(tmp_path, monkeypatch):
     # A tiny committed source fixture proves a stale revision cannot attribute
     # uncommitted instructions or newly introduced metadata to old Git bytes.
