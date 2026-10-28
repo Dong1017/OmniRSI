@@ -470,3 +470,48 @@ class RuntimeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TerminationTests(unittest.TestCase):
+    """A failure in the termination path must still leave a truthful status."""
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.repo = self.root / "repo"
+        self.repo.mkdir()
+        (self.repo / "source.txt").write_text("initial source\n", encoding="utf-8")
+        for args in (
+            ("init", "--quiet"),
+            ("add", "source.txt"),
+            ("-c", "user.name=InferRSI test", "-c", "user.email=test@example.invalid",
+             "-c", "commit.gpgsign=false", "commit", "--quiet", "-s", "-m", "fixture"),
+        ):
+            subprocess.run(["git", "-C", str(self.repo), *args], check=True,
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.spec = RunSpec(
+            repo=str(self.repo),
+            baseline_command=benchmark(100),
+            candidate_command=benchmark(80),
+            repetitions=1,
+            validation_command=(sys.executable, "-c", "print('ok')"),
+            output_dir=str(self.root / "runs"),
+            max_minutes=1,
+        )
+
+    def test_unexpected_termination_error_is_recorded_not_escaped(self):
+        # Report generation fails with an error outside the documented
+        # OSError/ValueError contract, after `completed` was already written.
+        # That failure must be persisted as the terminal state instead of
+        # escaping while `completed` remains the last recorded status.
+        with patch("inferrsi.harness.runner.write_report",
+                   side_effect=RuntimeError("report backend crashed")):
+            with self.assertRaises(RuntimeError):
+                run_with_adapters(self.spec, {"backend": "cpu", "test": True})
+        run = sorted((self.root / "runs").iterdir())[-1]
+        status = json.loads((run / "status.json").read_text(encoding="utf-8"))
+        self.assertEqual(status["state"], "termination_failed")
+        self.assertEqual(status["phase"], "termination")
+        self.assertEqual(status["requested_state"], "completed")
+        self.assertIn("report backend crashed", status["termination_error"])

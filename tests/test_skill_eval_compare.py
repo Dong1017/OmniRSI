@@ -1044,3 +1044,52 @@ def test_answer_keys_are_rejected_by_supported_input_shape(tmp_path, extra):
     with pytest.raises(ValueError, match="input"):
         compare.prepare(config, repo, output)
     assert not output.exists()
+
+
+def test_unverifiable_custom_grader_cannot_produce_a_pair_outcome(tmp_path):
+    # A custom grader has no in-tree authority to re-derive from, and the retained
+    # record is writable by the graded agent. Its stated PASS/FAIL must not become
+    # a fix, regression or unchanged outcome.
+    config, repo = configuration(tmp_path, ids=("one",))
+    raw = json.loads(config.read_text())
+    # Same contract, different bytes: the in-tree verifier cannot be identified
+    # by hash, so this exam has no trusted re-derivation.
+    grader = tmp_path / "custom_verifier.py"
+    grader.write_text(
+        (ROOT / "tools/skill_eval_verifier.py").read_text(encoding="utf-8")
+        + "\n# custom exam marker\n",
+        encoding="utf-8",
+    )
+    raw["grader"] = grader.name
+    write_json(config, raw)
+    output = tmp_path / "run"
+    authorization = compare.prepare(config, repo, output)
+    result = compare.execute(output, authorization, client=FixedOutputClient(tmp_path))
+    trial = result["pairs"][0]["baseline"]
+    assert result["counts"]["inconclusive"] == 1
+    assert result["counts"]["unchanged_correct"] == 0
+    assert trial["verdict"] == "INCONCLUSIVE"
+    assert trial["stated_verdict"] in ("PASS", "FAIL")
+    assert trial["grader_trust"] == "unverified"
+    assert trial["evaluation_error"] == "unverified_custom_grader"
+
+
+def test_forged_identical_bundle_claim_is_rejected_against_exported_bytes(tmp_path):
+    # Both sides of the identical-bundle invariant come from mutable freeze
+    # metadata. Retargeting only the candidate revision must not make two
+    # different exported bundles read as the same skill content.
+    config, repo = configuration(tmp_path, mode="update", ids=("one",))
+    output = tmp_path / "run"
+    compare.prepare(config, repo, output)
+    plan = compare.load_plan(output)
+    assert plan["same_bundle"] is False
+    assert plan["arms"]["baseline"]["bundle"]["revision"] != (
+        plan["arms"]["candidate"]["bundle"]["revision"])
+    freeze = output / "plan/freeze.json"
+    forged = json.loads(freeze.read_text(encoding="utf-8"))
+    forged["arms"]["candidate"]["bundle"]["revision"] = (
+        forged["arms"]["baseline"]["bundle"]["revision"])
+    forged["same_bundle"] = True
+    write_json(freeze, forged)
+    with pytest.raises(ValueError, match="identical-bundle"):
+        compare.load_plan(output)

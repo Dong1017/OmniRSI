@@ -397,8 +397,23 @@ def load_plan(output: Path) -> dict:
         raise ValueError("Addition baseline must not carry a bundle revision")
     if after is None:
         raise ValueError("Candidate arm requires an exported bundle")
-    if plan["same_bundle"] != (before is not None and before["revision"] == after["revision"]):
+    # The arm's bundle metadata states a revision and its resources; the exported
+    # bytes are the in-tree authority for those resources. Compare them so an
+    # edited arm cannot claim identical skill content that the export contradicts.
+    for role in ROLES:
+        bundle = plan["arms"][role]["bundle"]
+        if bundle is None:
+            continue
+        export = output / "plan/bundles" / role
+        actual = {path.relative_to(export).as_posix(): sha256(path)
+                  for path in sorted(export.rglob("*")) if path.is_file()}
+        if actual != bundle["resources"]:
+            raise ValueError(f"Exported bundle bytes disagree with the frozen {role} arm")
+    same_bundle = before is not None and before["revision"] == after["revision"]
+    if plan["same_bundle"] != same_bundle:
         raise ValueError("Frozen identical-bundle flag disagrees with the frozen arms")
+    if same_bundle and before["resources"] != after["resources"]:
+        raise ValueError("Frozen identical-bundle claim disagrees with the exported bytes")
     frozen_exam = {"cases": "plan/tasks.json", "schema": "plan/schema.json",
                    "grader": "validator/verify.py"}
     for name, path in frozen_exam.items():
@@ -611,6 +626,12 @@ def condition_summary(trials: list[dict]) -> dict:
 def read_report(output: Path) -> dict:
     plan = load_plan(output)
     trials = [retained_trial(output, entry) for entry in plan["schedule"]]
+    # A receipt is an unkeyed hash: a rewritten tree can carry a consistent one.
+    # Re-grading retained answers with trusted code is what makes a PASS/FAIL
+    # verdict independent of the artifact copy the agent could reach. This runs
+    # before pairs are formed so an unverifiable grade cannot become an outcome.
+    verify_retained_grader(plan, [t for t in trials if not t["missing"]],
+                           {task["id"]: task for task in read_json(output / "plan/tasks.json")})
     index = {(t["task_id"], t["repeat"], t["condition"]): t for t in trials}
     pairs = []
     for entry in plan["schedule"]:
@@ -641,11 +662,6 @@ def read_report(output: Path) -> dict:
                   "observed_tokens": None, "stop_reason": None, "client_runtime": None}
         if error is None:
             status = json.loads(raw_status)
-    # A receipt is an unkeyed hash: a rewritten tree can carry a consistent one.
-    # Re-grading retained answers with trusted code is what makes a PASS/FAIL
-    # verdict independent of the artifact copy the agent could reach.
-    verify_retained_grader(plan, [t for t in trials if not t["missing"]],
-                           {task["id"]: task for task in read_json(output / "plan/tasks.json")})
     result = {
         "mode": plan["mode"], "skill": plan["skill"],
         "plan_sha256": sha256(output / "plan/freeze.json"),
@@ -680,7 +696,14 @@ def verify_retained_grader(plan: dict, trials: list[dict], tasks: dict) -> None:
     if plan["exam"]["grader"] != sha256(ROOT / "tools/skill_eval_verifier.py"):
         for trial in trials:
             if trial["verdict"] in ("PASS", "FAIL"):
-                trial["grader_trust"] = "frozen_copy_only"
+                # No in-tree authority can re-derive this grade, and the retained
+                # record is writable by the graded agent, so the stated outcome is
+                # not evidence. Keep the raw verdict visible under its own field,
+                # but do not let it count as a fix, regression or unchanged pair.
+                trial["stated_verdict"] = trial["verdict"]
+                trial["verdict"] = "INCONCLUSIVE"
+                trial["grader_trust"] = "unverified"
+                trial["evaluation_error"] = "unverified_custom_grader"
         return
     for trial in trials:
         if trial["verdict"] not in ("PASS", "FAIL"):

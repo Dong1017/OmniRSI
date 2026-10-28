@@ -124,9 +124,11 @@ def run_experiment(
                 "complete", state=state, verdict=result["verdict"], error=error
             )
             write_report(run_dir)
-        except (OSError, ValueError, subprocess.SubprocessError) as exc:
-            # The run did not reach a finished state. Keep the measurement error
-            # visible beside the termination failure instead of replacing it.
+        except Exception as exc:
+            # The run did not reach a finished state. Every termination failure is
+            # recorded, not only I/O-shaped ones: the hook and report paths are
+            # caller-supplied, and an escaped RuntimeError would otherwise leave
+            # `running` (or a premature `completed`) as the last persisted state.
             record_status(
                 "termination",
                 state="termination_failed",
