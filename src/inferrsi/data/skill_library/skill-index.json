@@ -293,6 +293,10 @@
       "path": "methods/training-resource-budget",
       "backend": "common"
     },
+    "video-diffusion-optimization": {
+      "path": "methods/video-diffusion-optimization",
+      "backend": "common"
+    },
     "vllm-metal": {
       "path": "repositories/vllm-metal",
       "backend": "common"
