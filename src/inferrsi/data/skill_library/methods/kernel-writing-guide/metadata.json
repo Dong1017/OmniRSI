@@ -14,7 +14,10 @@
     "state-update",
     "vllm",
     "gdn",
-    "causal-convolution"
+    "causal-convolution",
+    "sglang",
+    "prefill",
+    "state-ownership"
   ],
   "status": "candidate",
   "profile": "local-skill-v1",
@@ -63,6 +66,43 @@
         "tests/kernels/mamba/test_causal_conv1d.py"
       ],
       "readset": "references/vllm-gdn-causal-conv-contract.md"
+    },
+    {
+      "type": "git",
+      "url": "https://github.com/sgl-project/sglang",
+      "commit": "16176278d0180f1a1a578e53e6eef432577876c2",
+      "paths": [
+        "LICENSE",
+        "python/sglang/kernels/ops/mamba/causal_conv1d.py",
+        "python/sglang/kernels/ops/mamba/causal_conv1d_triton.py",
+        "python/sglang/srt/arg_groups/fields/exec_.py",
+        "python/sglang/srt/configs/hybrid_arch.py",
+        "python/sglang/srt/configs/linear_attn_model_registry.py",
+        "python/sglang/srt/configs/mamba_utils.py",
+        "python/sglang/srt/configs/qwen3_5.py",
+        "python/sglang/srt/configs/qwen3_next.py",
+        "python/sglang/srt/layers/attention/attention_registry.py",
+        "python/sglang/srt/layers/attention/hybrid_linear_attn_backend.py",
+        "python/sglang/srt/layers/attention/linear/gdn_backend.py",
+        "python/sglang/srt/layers/attention/linear/kernels/gdn_cutedsl.py",
+        "python/sglang/srt/layers/attention/linear/kernels/gdn_flashinfer.py",
+        "python/sglang/srt/layers/attention/linear/kernels/gdn_triton.py",
+        "python/sglang/srt/layers/attention/linear/utils.py",
+        "python/sglang/srt/layers/attention/mamba/causal_conv1d.py",
+        "python/sglang/srt/layers/radix_linear_attention.py",
+        "python/sglang/srt/mem_cache/memory_pool.py",
+        "python/sglang/srt/models/qwen3_5.py",
+        "python/sglang/srt/models/qwen3_5_text.py",
+        "python/sglang/srt/models/qwen3_next.py",
+        "test/registered/layers/mamba/test_causal_conv1d.py",
+        "test/registered/unit/configs/test_linear_attn_model_registry.py",
+        "test/registered/unit/layers/attention/test_gdn_prefill_backend_policy.py",
+        "test/registered/unit/layers/attention/test_linear_attn_config.py",
+        "test/registered/unit/layers/test_gdn_mis_metadata.py"
+      ],
+      "readset": "references/sglang-gdn-causal-conv-contract.md",
+      "license": "Apache-2.0",
+      "scope": "Bounded Qwen3.5/Qwen3-Next caller, GDN phase/architecture policy, separate conv wrappers and state metadata; no native execution or external kernel equivalence."
     }
   ],
   "empirical_validation": "not_run",
@@ -70,12 +110,14 @@
     "Source-derived candidate; no local efficacy validation.",
     "Original typed source inventory is not normalized; retain source identities and limits in the procedure/readsets.",
     "The typed vLLM entry covers only the new GDN reference; older source inventories remain incomplete.",
-    "vLLM GDN source contract only; no concrete HF binding, native backend execution, hardware qualification, performance or agent-efficacy evaluation."
+    "vLLM GDN source contract only; no concrete HF binding, native backend execution, hardware qualification, performance or agent-efficacy evaluation.",
+    "SGLang source contract only; native/backend/sm89 qualification, HF classification binding, numerical/model quality, performance and agent efficacy are not evaluated."
   ],
   "provenance_readsets": [
     "references/akg-affine-tail-guards.md",
     "references/causal-conv1d-contract.md",
-    "references/vllm-gdn-causal-conv-contract.md"
+    "references/vllm-gdn-causal-conv-contract.md",
+    "references/sglang-gdn-causal-conv-contract.md"
   ],
   "consumption_mode": "packaged"
 }
