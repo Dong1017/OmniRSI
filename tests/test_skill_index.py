@@ -39,8 +39,7 @@ def test_complete_index_retains_metadata_states_and_unknown_license():
         }
         assert set(record["source_files"]) == set(record["sources"][0]["paths"])
         states.append(metadata.get("status"))
-    assert states.count("candidate") == 72
-    assert states.count(None) == 5
+    assert states.count("candidate") == 77
     profiling = next(r for r in records if r["title"] == "ascend-operator-profiling")
     assert profiling["skill_metadata"]["license"] == "UNKNOWN"
     assert profiling["skill_metadata"]["synced-commit"] == (
@@ -181,7 +180,9 @@ def test_package_index_and_checkout_skill_have_distinct_read_boundaries():
     assert "data/skill_library/workflows/claim-contract/SKILL.md" in bundle.content
     assert bundle.dependencies
     assert bundle.metadata["kind"] == "knowledge"
-    assert bundle.metadata["origin"] == ["unknown"]
+    # The sidecar now declares an origin, so the package record stops falling
+    # back to unknown; the checkout read still resolves the skill itself.
+    assert bundle.metadata["origin"] == ["first-party"]
     assert reader.resolve(identity) == f"package:{identity}"
     assert reader.resolve("claim-contract") == "checkout:claim-contract"
     assert reader.read("claim-contract").metadata["kind"] == "skill"

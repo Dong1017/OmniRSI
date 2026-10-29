@@ -15,7 +15,7 @@ These are knowledge abstracts (`--kind knowledge`), with namespaced package
 IDs distinct from explicitly selected `checkout_ref` skills. Ascend/CUDA
 procedures use their corresponding backend; shared methods use `common`.
 
-Source snapshot: [26743abcfae48cd6223bd757e74f193d97e3e5a7](https://github.com/InferMatrixLab/InferRSI/tree/26743abcfae48cd6223bd757e74f193d97e3e5a7/src/inferrsi/data/skill_library).
+Source snapshot: [e736be55bf2927f5cbd0408682baa65f4f6fb7e8](https://github.com/InferMatrixLab/InferRSI/tree/e736be55bf2927f5cbd0408682baa65f4f6fb7e8/src/inferrsi/data/skill_library).
 
 ```bash
 inferrsi knowledge search 'profiling' --repo-type inferrsi --limit 50
@@ -29,7 +29,7 @@ contain the current input paths and bytes (Git checkout filters are respected).
 
 ```bash
 python tools/build_skill_index.py --source-revision <committed-source-revision>
-python tools/build_skill_index.py --source-revision 26743abcfae48cd6223bd757e74f193d97e3e5a7 --check
+python tools/build_skill_index.py --source-revision e736be55bf2927f5cbd0408682baa65f4f6fb7e8 --check
 ```
 
 `--check` detects missing, stale and unexpected generated records without writing.
@@ -67,16 +67,16 @@ References and cases ship with their owning skill, not as duplicate knowledge ab
 | [cgroup-resource-controls](common/skills/cgroup-resource-controls.json) | common | candidate |
 | [checkpoint-recovery-consistency](common/skills/checkpoint-recovery-consistency.json) | common | candidate |
 | [choose-parallel-training-plan](common/skills/choose-parallel-training-plan.json) | common | candidate |
-| [cite-check-downstream-pr](common/skills/cite-check-downstream-pr.json) | common | unspecified |
-| [claim-contract](common/skills/claim-contract.json) | common | unspecified |
+| [cite-check-downstream-pr](common/skills/cite-check-downstream-pr.json) | common | candidate |
+| [claim-contract](common/skills/claim-contract.json) | common | candidate |
 | [comfy-ui](common/skills/comfy-ui.json) | common | candidate |
-| [competitor-scan](common/skills/competitor-scan.json) | common | unspecified |
+| [competitor-scan](common/skills/competitor-scan.json) | common | candidate |
 | [dcp-async-save-performance](common/skills/dcp-async-save-performance.json) | common | candidate |
 | [dense-performance-evidence](common/skills/dense-performance-evidence.json) | common | candidate |
 | [diagnose-attention-bottlenecks](cuda/skills/diagnose-attention-bottlenecks.json) | cuda | candidate |
 | [diagnose-vllm-admission-pressure](common/skills/diagnose-vllm-admission-pressure.json) | common | candidate |
 | [diffusers-invocation-state](common/skills/diffusers-invocation-state.json) | common | candidate |
-| [draft-acceptance-issue](common/skills/draft-acceptance-issue.json) | common | unspecified |
+| [draft-acceptance-issue](common/skills/draft-acceptance-issue.json) | common | candidate |
 | [dwarfstar](common/skills/dwarfstar.json) | common | candidate |
 | [evaluate-elastic-serving-placement](common/skills/evaluate-elastic-serving-placement.json) | common | candidate |
 | [generation-cache-lifecycle](common/skills/generation-cache-lifecycle.json) | common | candidate |
@@ -103,7 +103,7 @@ References and cases ship with their owning skill, not as duplicate knowledge ab
 | [project-maya](common/skills/project-maya.json) | common | candidate |
 | [reason-hopper-kernels](cuda/skills/reason-hopper-kernels.json) | cuda | candidate |
 | [repository-evolution-analysis](common/skills/repository-evolution-analysis.json) | common | candidate |
-| [rsi-evidence](common/skills/rsi-evidence.json) | common | unspecified |
+| [rsi-evidence](common/skills/rsi-evidence.json) | common | candidate |
 | [skill-evolution-playbook](common/skills/skill-evolution-playbook.json) | common | candidate |
 | [splash](common/skills/splash.json) | common | candidate |
 | [storage-io-measurement](common/skills/storage-io-measurement.json) | common | candidate |
