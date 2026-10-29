@@ -14,7 +14,11 @@
     "state-update",
     "vllm",
     "gdn",
-    "causal-convolution"
+    "causal-convolution",
+    "transformers",
+    "qwen3.5",
+    "binding",
+    "classification-prefill"
   ],
   "status": "candidate",
   "profile": "local-skill-v1",
@@ -63,6 +67,39 @@
         "tests/kernels/mamba/test_causal_conv1d.py"
       ],
       "readset": "references/vllm-gdn-causal-conv-contract.md"
+    },
+    {
+      "type": "git",
+      "url": "https://github.com/huggingface/transformers",
+      "commit": "0dad7b822255a0ae261ec45ae937371e859ffd1a",
+      "paths": [
+        "LICENSE",
+        "src/transformers/models/qwen3_5/modeling_qwen3_5.py",
+        "src/transformers/models/qwen3_5/configuration_qwen3_5.py",
+        "src/transformers/cache_utils.py",
+        "src/transformers/utils/import_utils.py"
+      ],
+      "readset": "references/hf-qwen35-gdn-source.json",
+      "license": "Apache-2.0",
+      "scope": "v5.10.2 Qwen3.5 conv/GDN binding, cache and local numerical contract; candidate, source-only"
+    },
+    {
+      "type": "git",
+      "url": "https://github.com/huggingface/transformers",
+      "commit": "856157a2f3e9594954310df18fdccc31ffddebe9",
+      "paths": [
+        "LICENSE",
+        "src/transformers/models/qwen3_5/modeling_qwen3_5.py",
+        "src/transformers/models/qwen3_5/configuration_qwen3_5.py",
+        "src/transformers/cache_utils.py",
+        "src/transformers/utils/import_utils.py",
+        "src/transformers/integrations/hub_kernels.py",
+        "src/transformers/integrations/__init__.py",
+        "src/transformers/masking_utils.py"
+      ],
+      "readset": "references/hf-qwen35-gdn-source.json",
+      "license": "Apache-2.0",
+      "scope": "v5.17.0 Qwen3.5 conv/GDN binding, cache and local numerical contract; candidate, source-only"
     }
   ],
   "empirical_validation": "not_run",
@@ -70,12 +107,14 @@
     "Source-derived candidate; no local efficacy validation.",
     "Original typed source inventory is not normalized; retain source identities and limits in the procedure/readsets.",
     "The typed vLLM entry covers only the new GDN reference; older source inventories remain incomplete.",
-    "vLLM GDN source contract only; no concrete HF binding, native backend execution, hardware qualification, performance or agent-efficacy evaluation."
+    "The vLLM and HF references identify separate source call contracts; no binary equivalence, executed backend, hardware qualification, numerical/model parity, performance or agent-efficacy evaluation."
   ],
   "provenance_readsets": [
     "references/akg-affine-tail-guards.md",
     "references/causal-conv1d-contract.md",
-    "references/vllm-gdn-causal-conv-contract.md"
+    "references/vllm-gdn-causal-conv-contract.md",
+    "references/hf-qwen35-gdn-binding.md",
+    "references/hf-qwen35-gdn-source.json"
   ],
   "consumption_mode": "packaged"
 }

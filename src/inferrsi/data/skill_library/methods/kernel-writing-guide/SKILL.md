@@ -50,6 +50,13 @@ The [five decision cases](cases/causal-conv1d-dispatch-state.md) cover invalid
 layouts, continuation state and unproved dispatch. Build targets and import
 success do not establish the executing operator, numerical parity or a gain.
 
+For a concrete Transformers Qwen3.5 caller, first use the
+[two-version HF binding contract](references/hf-qwen35-gdn-binding.md) and
+[source cases](cases/hf-qwen35-gdn-binding.md). Resolve module versus instance
+binding, active forward overrides and cache state before substituting conv or
+GDN. A cache-free classification adapter does not establish generation-state
+support; package presence and matching names do not prove executed dispatch.
+
 ## Framework routing
 
 | Pattern | CUDA / Ampere+ | Ascend NPU |
