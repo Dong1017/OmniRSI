@@ -264,9 +264,12 @@ class KnowledgeReader:
         for identity in self.records():
             result.setdefault(identity, []).append("package")
         if self.skill_root is not None:
-            from .skill_catalog import skill_records
+            # Enumeration reads registered names only. Validating sidecar content
+            # here would abort the whole collection over one malformed, possibly
+            # unrequested, skill; Collect reports that per item through _read.
+            from .skill_catalog import skill_directories
 
-            local = [record["name"] for record in skill_records(self.skill_root)]
+            local = list(skill_directories(self.skill_root))
             local.extend(self._cases())
             if len(set(local)) != len(local):
                 raise IdentityError("collision", "Duplicate identity inside the checkout")
