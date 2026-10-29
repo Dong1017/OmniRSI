@@ -39,8 +39,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/f86815e6a107b45ed212027f50ff3b519943189c/src/inferrsi/data/skill_library/methods/kernel-writing-guide/SKILL.md",
-      "commit": "f86815e6a107b45ed212027f50ff3b519943189c",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/2f72a0ccabd87eefdc76223c9b82f7091c379da1/src/inferrsi/data/skill_library/methods/kernel-writing-guide/SKILL.md",
+      "commit": "2f72a0ccabd87eefdc76223c9b82f7091c379da1",
       "paths": [
         "src/inferrsi/data/skill_library/methods/kernel-writing-guide/SKILL.md",
         "src/inferrsi/data/skill_library/methods/kernel-writing-guide/cases/causal-conv1d-dispatch-state.md",
@@ -55,7 +55,7 @@
         "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/causal-conv1d-contract.md",
         "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/hf-qwen35-gdn-binding.md",
         "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/hf-qwen35-gdn-source.json",
-        "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/licenses/sglang-LICENSE.txt",
+        "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/licenses/sglang-LICENSE.md",
         "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/pplx-gdn-caller-context.json",
         "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/sglang-gdn-causal-conv-contract.md",
         "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/sglang-gdn-source-files.json",
@@ -84,9 +84,9 @@
     "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/causal-conv1d-contract.md": "b3a6245cf5e9deeba0dffd4a15ddcf97da6a4315f4d3131921779438832663ad",
     "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/hf-qwen35-gdn-binding.md": "848d3c99b47ef711e8820bbc4f6bcbd1db7211197811c9d855201025448d806b",
     "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/hf-qwen35-gdn-source.json": "df3f4650b5cf92d4fd3d5a4cc8aefb91dd4b0c2affaa0c873138d5651c50e6bd",
-    "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/licenses/sglang-LICENSE.txt": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747",
+    "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/licenses/sglang-LICENSE.md": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747",
     "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/pplx-gdn-caller-context.json": "0219fc9ad785da4e638c1680bc9eaf28672aa32313824f52bdcaed61d29bca87",
-    "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/sglang-gdn-causal-conv-contract.md": "cf38e828842765171dca28a1e9a6c627d67235c8af4d082fc6c7dcdc3d2158d0",
+    "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/sglang-gdn-causal-conv-contract.md": "c9f27b0231ddec3d14d6fa0831d1494ffd8e11bd8ad704e04be3bc4a4ffc0e58",
     "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/sglang-gdn-source-files.json": "4c7ec2cfd2c29297e185ce09b4d9b2040fbe3635943c112f9ebb71dca8ab381b",
     "src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/vllm-gdn-causal-conv-contract.md": "eec09a6e95983c46b67d5f066d34419c17819899f5d8e3c65f2f163f2ada0fde",
     "src/inferrsi/data/skill_library/skill-index.json": "531190c468b6fb385b9b4aa71e666e8dd20d92aa5adc54bf4040f2096e3dd190"
