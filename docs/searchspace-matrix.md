@@ -548,6 +548,12 @@ behavior. The source-derived candidates remain empirical **not_run**; the
 |---|---|---|---|
 | Accelerator | Diagnose / Configure / Verify: concrete Qwen3-Next GDN caller, requested/effective prefill recurrence, separate in-tree conv fwd/update, mixed/speculative metadata, state-row and progress contract | [kernel-writing-guide reference](../src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/vllm-gdn-causal-conv-contract.md), [four source cases](../src/inferrsi/data/skill_library/methods/kernel-writing-guide/cases/vllm-gdn-source-contract.md); vLLM @ `537a79f0fc5ba564d2bef43d54915b2f80f9f77d` | Source-derived candidate; native not_run, agent efficacy not_evaluated. HF caller binding, external implementation equivalence, physical allocation/recycling, target hardware and performance remain unqualified. |
 
+## SGLang GDN operator qualification
+
+| Resource | Scoped stages and question | Canonical owner / fixed source | Evidence boundary |
+|---|---|---|---|
+| Accelerator | Diagnose / Configure / Verify: Qwen3.5/Qwen3-Next linear-layer caller, per-runner GDN prefill/decode and architecture predicates, separate conv stride/alias selection, packed metadata, state rows/write-back and conditional classification-prefill transfer | [kernel-writing-guide reference](../src/inferrsi/data/skill_library/methods/kernel-writing-guide/references/sglang-gdn-causal-conv-contract.md), [four source cases](../src/inferrsi/data/skill_library/methods/kernel-writing-guide/cases/sglang-gdn-source-contract.md); SGLang @ `16176278d0180f1a1a578e53e6eef432577876c2` | Source-derived candidate/not_run; agent efficacy not_evaluated. No HF binding, installed/native backend, sm89 compatibility, numerical/model-quality or performance claim. No new RAM, Storage, Network or OS coverage. |
+
 ## Local Dream Android diffusion source contracts
 
 | Resource | Stage / mechanism | Canonical owner | Evidence boundary |

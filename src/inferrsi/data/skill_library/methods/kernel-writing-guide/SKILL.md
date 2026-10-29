@@ -178,6 +178,18 @@ before choosing an operator. The in-tree vLLM wrappers do not establish a
 standalone-package or HF-worker binding. Source selection remains separate
 from executed correctness, hardware qualification and performance.
 
+For SGLang Qwen3.5 or Qwen3-Next, use the separate
+[caller/backend contract](references/sglang-gdn-causal-conv-contract.md) and
+[four source cases](cases/sglang-gdn-source-contract.md). Resolve the model's
+linear layers, per-runner prefill/decode choices, architecture predicates,
+conv aliases and state-row metadata before proposing reuse. A GDN prefill flag
+does not select the convolution implementation. Keep one-shot classification
+prefill distinct from decode, cached continuation and delimiter-based scoring;
+source-derived transfer conditions are not an HF binding or execution result.
+The [worker/engine cross-map](references/sglang-gdn-causal-conv-contract.md#map-the-inspected-hf-workers-to-vllm-and-sglang)
+connects the inspected Clef/PPLX bindings to both engine operator contracts;
+its PPLX context follows the default GVA forward and the state-free adapter.
+
 **Phase 1: Write the kernel with a reference function**
 
 Every kernel must ship with three exports (used by companion verification and
