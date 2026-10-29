@@ -151,6 +151,42 @@ installed resources and green repository CI establish none of those outcomes.
 The [four source cases](../cases/sglang-gdn-source-contract.md) are prompts and
 rubrics only; they were not executed as agent or model evaluations.
 
+## Map the inspected HF workers to vLLM and SGLang
+
+This five-row source map connects the [HF binding contract][HF],
+[vLLM Qwen3-Next contract][VL] and this [SGLang contract][SG]. Engine columns
+refer to their inspected CUDA-facing paths. The [bounded PPLX caller ledger][PC]
+adds the actual default-path body to the earlier HF caller-context scope;
+the earlier HF readset and its exclusions remain unchanged. State: candidate;
+native/model/quality/performance execution `not_run`; efficacy `not_evaluated`.
+
+| Boundary | HF workers: Clef / Transformers 5.10.2; PPLX / Transformers 5.17.0 | vLLM `537a79f0fc5ba564d2bef43d54915b2f80f9f77d` | SGLang `16176278d0180f1a1a578e53e6eef432577876c2` |
+|---|---|---|---|
+| Caller, version and binding | Clef `504b272c…` selects its chunk before loading; 5.10.2 instances save that callable. PPLX `509bdd21…` defaults unset mode to `flashinfer`; capability `(9,0)` plus a bound pinned import selects it. Before construction it sets `torch_chunk_gated_delta_rule`; after loading, all-sequence FlashInfer mode installs **GVA whole-forward** on linear layers. `short` does not install GVA. These are source conditions, not an observed launch. [HF, WC, PC] | Distinct **Qwen3-Next**, not HF Qwen3.5: its linear decoder creates an interleaved GDN layer; a registered core op resolves the layer from forward context. Full-attention layers are separate. [VL] | Qwen3.5 text delegates to its SGLang body; Qwen3.5 and Qwen3-Next have separate projection callers. `RadixLinearAttention` reaches the hybrid/GDN backend by layer and mode. Effective linear backends are stamped per runner. [SG] |
+| Whole-sequence conv, layout and aliasing | Stock HF and PPLX GVA present dense `[B,C,T]` and weights `[C,W]`. GVA calls `modeling.causal_conv1d_fn` with squeezed weights, bias, activation and kwargs; startup guards require the package binding. Its output is transposed and split into unrepeated `Hk` Q/K and `Hv` V, with group checks. Strides/aliasing and external Dao execution still need qualification. [HF, PC] | Packed conv forward takes `[C,total_tokens]`, offsets, row IDs and prior-state mask. The documented update alias applies to its dtype-converted input, not unconditionally the original input or forward call. Its engine arguments require an HF adapter. [VL] | Prefill passes a transposed packed view plus CPU lengths. Non-unit last stride with those lengths selects Triton; the CUDA branch returns a mutated/possibly copied input. Triton forward allocates output separately and writes indexed history. A recurrence flag does not choose conv. [SG] |
+| GDN prefill selection and adapter seam | Clef's optional FI adapter and PPLX's selected FI adapter accept one sequence and reject initial/requested final state. PPLX GVA calls the replaced `modeling.torch_chunk_gated_delta_rule` with Q/K normalization requested. That adapter packs Q/K before FLA L2 norm, squeezes batch, exponentiates log decay, converts gates to FP32 and cumulative lengths to int64, calls FI with `use_cp=False`, then returns batch-restored output and `None`. Missing/unbound FI or explicit `fla` keeps PPLX's guarded FLA path. [HF, WC, PC] | Requested/effective prefill selection has architecture/runtime/head-dimension predicates; unsupported requests can select Triton. Its FI adapter changes normalization, state/gate dtype, batch dimension and cumulative lengths. This is an adaptation reference, not a drop-in HF callable. [VL] | Explicit phase overrides precede a guarded automatic FI default: SM9/FP32 state or SM10/BF16 state with CUDA13 and their chunk/head/layout gates. CuTe prefill can select Triton. This does not replace decode conv or qualify sm89, installation or a worker binding. [SG] |
+| Conv and recurrent state orientation / initialization | Stock local HF history is `[B,C,W]`, recurrence `[B,Hv,Dk,Dv]`; absent state starts from zero, and cached calls reset/reorder both separately. Active PPLX GVA rejects **any supplied cache**, and calls chunk with `initial_state=None`, `output_final_state=False`. It does not implement a persistent recurrent-state adapter; external package workspace is outside this readset. [HF, PC] | Per-rank conv history has `W-1+num_spec` entries in SD/DS storage; the core presents channels before history. Recurrence `[Hv/P,Dv,Dk]` reverses local HF's matrix axes. Engine rows, conv initial mask, recurrent clearing and final-state writes need separate adaptation. [VL] | Ordinary per-row history is `[C/P,W-1]`, temporal state `[Hv/P,Dv,Dk]`, with row translation and independent dtypes. Conv uses a prefix mask; fresh recurrence is a separate lifecycle responsibility. Strided ordinary prefill gathers and scatters both states. Resolve actual shapes for non-divisible sharding. [SG] |
+| Phases and classification-transfer limits | First one-token stock HF without prior state is chunk prefill; cached one-token and longer continuation differ. Clef's FI adapter and PPLX's GVA/FI chain are state-free, single-sequence prefill contracts, not decode/continuation. PPLX preserves gates, gated norm and output projection around chunk. `use_cache=False` alone does not erase a supplied cache; active method/kwargs still matter. [HF, WC, PC] | Mixed non-speculative batches use varlen conv and split recurrence by phase; decode/speculation add separate progress metadata. A fresh classifier can reuse a qualified forward/chunk seam, not scheduler/cache contracts by name. [VL] | Ordinary extend/mixed, decode, target verify, ReplaySSM and delimiter-based MIS differ. Fresh classification can borrow prefill operators only with a proven caller/layout/state adapter; continuation, rollback and MIS do not transfer automatically. [SG] |
+
+The reusable seam is the actual worker's whole-sequence conv or chunk GDN call
+after binding and whole-forward replacement are resolved. Preserve signatures,
+grouped heads, gates/normalization, packed boundaries, state axes/rows/dtypes,
+initial/final-state guards and mutation behavior. The PPLX cumulative-length
+helper rotates per-device/length input-metadata buffers; it is not a recurrent
+state pool. Source guards and callable identity do not establish an executing
+CUDA kernel, binary compatibility, numerical parity, classifier quality or
+latency. External FI/FLA/Dao bodies, checkpoint-owned executable code and actual
+device execution remain outside this readset. Worker rights remain separately
+`UNKNOWN`; SGLang/HF licensing is not inherited, and no worker implementation is
+vendored here.
+
+[HF]: hf-qwen35-gdn-binding.md
+[VL]: vllm-gdn-causal-conv-contract.md
+[SG]: sglang-gdn-causal-conv-contract.md
+[PC]: pplx-gdn-caller-context.json
+[WC]: https://github.com/InferMatrixLab/system1-omni/blob/504b272c46dc1963f981c6bed9ef0c7ebdd40c69/src/models/clef/engine.py#L306-L395
+
+
 ## Source ledger and attribution
 
 All links below use the same full commit. The inventory gives exact file
