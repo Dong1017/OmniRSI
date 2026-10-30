@@ -23,8 +23,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/e736be55bf2927f5cbd0408682baa65f4f6fb7e8/src/inferrsi/data/skill_library/frameworks/pytorch/dcp-async-save-performance/SKILL.md",
-      "commit": "e736be55bf2927f5cbd0408682baa65f4f6fb7e8",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/058fc76b656ea5a29bb4646a5e556e32d35bdbc9/src/inferrsi/data/skill_library/frameworks/pytorch/dcp-async-save-performance/SKILL.md",
+      "commit": "058fc76b656ea5a29bb4646a5e556e32d35bdbc9",
       "paths": [
         "src/inferrsi/data/skill_library/frameworks/pytorch/dcp-async-save-performance/SKILL.md",
         "src/inferrsi/data/skill_library/frameworks/pytorch/dcp-async-save-performance/metadata.json",
