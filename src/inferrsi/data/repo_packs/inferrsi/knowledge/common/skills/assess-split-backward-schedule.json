@@ -16,8 +16,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/058fc76b656ea5a29bb4646a5e556e32d35bdbc9/src/inferrsi/data/skill_library/methods/assess-split-backward-schedule/SKILL.md",
-      "commit": "058fc76b656ea5a29bb4646a5e556e32d35bdbc9",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/66e6392e91b0b595d8ef34b767d6d0873d006586/src/inferrsi/data/skill_library/methods/assess-split-backward-schedule/SKILL.md",
+      "commit": "66e6392e91b0b595d8ef34b767d6d0873d006586",
       "paths": [
         "src/inferrsi/data/skill_library/methods/assess-split-backward-schedule/SKILL.md",
         "src/inferrsi/data/skill_library/methods/assess-split-backward-schedule/metadata.json",
