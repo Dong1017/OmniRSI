@@ -189,7 +189,10 @@ def run_trial(
     *,
     timeout_seconds: float | None = None,
     engineering_artifact: bool = False,
+    generation_only: bool = False,
 ) -> dict:
+    if generation_only and not engineering_artifact:
+        raise ValueError("Generation-only requires the engineering artifact adapter")
     trial_dir.mkdir(parents=True)
     final = trial_dir / "answer.json"
     before = engineering.input_hashes(workspace) if engineering_artifact else {
@@ -233,11 +236,18 @@ def run_trial(
             evaluation_error = "missing_output"
         else:
             try:
-                answer_bytes = (engineering.read_regular(final, 65536) if engineering_artifact
+                answer_limit = 1048576 if generation_only else 65536
+                answer_bytes = (engineering.read_regular(final, answer_limit)
+                                if engineering_artifact
                                 else final.read_bytes())
                 output = json.loads(answer_bytes.decode("utf-8"))
             except (ValueError, UnicodeError):
                 evaluation_error = "invalid_output_json"
+    if evaluation_error is None and generation_only:
+        try:
+            output = engineering.materialize_generated_artifact(workspace, output)
+        except (ValueError, OSError):
+            evaluation_error = "invalid_generated_artifact"
     if evaluation_error is None and engineering_artifact:
         artifact = workspace / "parser.py"
         if not isinstance(output, dict) or set(output) != {"artifact", "summary"}:
@@ -263,14 +273,19 @@ def run_trial(
                 verification_dir.mkdir()
                 (verification_dir / "stdout.log").write_text("", encoding="utf-8")
                 (verification_dir / "stderr.log").write_text("", encoding="utf-8")
-                try:
-                    checks = engineering.verify(task, output)
-                except engineering.SandboxUnavailable:
-                    evaluation_error = "artifact_sandbox_unavailable"
+                if generation_only:
+                    # The generation process may carry provider credentials. Even
+                    # a capable host must not execute generated source in this phase.
+                    evaluation_error = "artifact_verification_deferred"
                 else:
-                    atomic_write_json(verification_dir / "result.json", checks)
-                    verification = {"status": "completed" if checks["passed"] else "failed",
-                                    "returncode": 0 if checks["passed"] else 1}
+                    try:
+                        checks = engineering.verify(task, output)
+                    except engineering.SandboxUnavailable:
+                        evaluation_error = "artifact_sandbox_unavailable"
+                    else:
+                        atomic_write_json(verification_dir / "result.json", checks)
+                        verification = {"status": "completed" if checks["passed"] else "failed",
+                                        "returncode": 0 if checks["passed"] else 1}
     if evaluation_error is None and not engineering_artifact:
         verifier_environment = getattr(client, "verifier_environment", None)
         options = {"environment": verifier_environment()} if verifier_environment else {}
@@ -333,5 +348,7 @@ def run_trial(
         record["artifact_sha256"] = (sha256(retained) if retained.is_file()
                                      and not retained.is_symlink() else None)
         record["artifact_kind"] = engineering.ADAPTER
+        if generation_only:
+            record["execution_mode"] = engineering.GENERATION_MODE
     atomic_write_json(trial_dir / "result.json", record)
     return record
