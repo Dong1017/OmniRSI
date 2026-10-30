@@ -26,8 +26,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/ed26a9f4fad26dc6933d8bd7c31bd6d36492ff85/src/inferrsi/data/skill_library/repositories/vllm-metal/SKILL.md",
-      "commit": "ed26a9f4fad26dc6933d8bd7c31bd6d36492ff85",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/f05ab7b583c66a9c34cb9f9e8a2c15b2ccfc0db3/src/inferrsi/data/skill_library/repositories/vllm-metal/SKILL.md",
+      "commit": "f05ab7b583c66a9c34cb9f9e8a2c15b2ccfc0db3",
       "paths": [
         "src/inferrsi/data/skill_library/repositories/vllm-metal/LICENSE",
         "src/inferrsi/data/skill_library/repositories/vllm-metal/SKILL.md",
