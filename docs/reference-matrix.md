@@ -176,6 +176,16 @@ the supplied local directory. Its six-paper extraction and standalone candidates
 are not imported or counted here. Existing DeepSpeed configuration evidence and
 Mooncake transport discovery are not substitutes for those paper readsets.
 
+Separately, the fresh official OSDI 24 DistServe edition is retained in the
+[phase-placement reference](../src/inferrsi/data/skill_library/methods/optimization-search-policy/references/distserve-phase-placement/README.md)
+under `optimization-search-policy` (`candidate`, empirical validation `not_run`).
+The 2026-10-30 full-paper qualification and selected visual checks support the
+independent-versus-paired-stage feasible sets, joint-SLO per-GPU denominator and
+simulation limits; the [source record](../src/inferrsi/data/skill_library/methods/optimization-search-policy/references/distserve-phase-placement/source-record.json)
+retains the exact edition, readset and UNKNOWN rights. This source requalification
+does not recover the archive, establish novelty over its unseen synthesis or
+validate a current serving engine.
+
 ### Negative findings (scoped to inspected paths and revisions)
 
 - **Disk-level storage I/O mechanics** (mmap/pinned staging buffers,
