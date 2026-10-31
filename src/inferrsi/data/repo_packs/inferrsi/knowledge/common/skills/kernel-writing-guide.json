@@ -39,8 +39,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/3626ac6c80a598a95d014b7427cad45e86980583/src/inferrsi/data/skill_library/methods/kernel-writing-guide/SKILL.md",
-      "commit": "3626ac6c80a598a95d014b7427cad45e86980583",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/b10231860fc1f643e02c6cff9cf3e2f92006c608/src/inferrsi/data/skill_library/methods/kernel-writing-guide/SKILL.md",
+      "commit": "b10231860fc1f643e02c6cff9cf3e2f92006c608",
       "paths": [
         "src/inferrsi/data/skill_library/methods/kernel-writing-guide/SKILL.md",
         "src/inferrsi/data/skill_library/methods/kernel-writing-guide/cases/causal-conv1d-dispatch-state.md",
