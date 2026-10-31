@@ -1,7 +1,7 @@
 # Mooncake: prefix reuse as a conditional cost comparison
 
-Qin et al., *Mooncake: A KVCache-centric Disaggregated Architecture for LLM
-Serving*, FAST '25 proceedings, pp. 155-170
+Qin et al., *Mooncake: Trading More Storage for Less Computation — A
+KVCache-centric Architecture for Serving LLM Chatbot*, FAST '25 proceedings, pp. 155-170
 ([publisher](https://www.usenix.org/conference/fast25/presentation/qin),
 [paper](https://www.usenix.org/system/files/fast25-qin.pdf)). The fixed edition
 and PDF digest are recorded in [the owner's paper source](../metadata.json).
