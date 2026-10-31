@@ -46,7 +46,9 @@
     "references/papers-20261015/NEXT_GATE_LEADS.md",
     "references/papers-20261015/references/source-notes.md",
     "references/papers-20261015/updates/optimization-search-policy.md",
-    "cases/sarathi-chunk-budget.json"
+    "cases/sarathi-chunk-budget.json",
+    "references/distserve-phase-placement/README.md",
+    "references/distserve-phase-placement/source-record.json"
   ],
   "references": [
     "../inference-optimization-casebook/cases/qwen-b300-rejected-directions.md",
@@ -60,7 +62,29 @@
     "cases/sarathi-chunk-budget.json",
     "../../repositories/vllm/diagnose-vllm-admission-pressure/SKILL.md",
     "../assess-serving-preemption/SKILL.md",
-    "../calibrate-serving-simulation/SKILL.md"
+    "../calibrate-serving-simulation/SKILL.md",
+    "../performance-ceiling-analysis/SKILL.md",
+    "../../repositories/vllm/audit-vllm-kv-lifetimes/SKILL.md"
   ],
-  "consumption_mode": "packaged"
+  "consumption_mode": "packaged",
+  "sources": [
+    {
+      "type": "paper",
+      "id": "usenix:osdi24:zhong-yinmin",
+      "version": "OSDI 24 proceedings, July 2024, pages 193-210",
+      "url": "https://www.usenix.org/conference/osdi24/presentation/zhong-yinmin",
+      "sections": [
+        "3.3",
+        "4.1-4.2",
+        "6.1-6.5",
+        "7",
+        "Appendices A-C"
+      ],
+      "readset": "references/distserve-phase-placement/source-record.json"
+    },
+    {
+      "type": "unknown",
+      "scope": "Pre-existing sources remain in their original procedure/readsets; this amendment does not normalize that inventory"
+    }
+  ]
 }

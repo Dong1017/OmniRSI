@@ -209,6 +209,18 @@ per-engine two-hour searches. None is an InferRSI measurement.
 
 ## Prior art from related systems
 
+### DistServe — topology changes the phase-placement search
+
+When comparing separate prefill and decoding plans, read the
+[DistServe phase-placement reference](references/distserve-phase-placement/README.md).
+Its high-bandwidth branch optimizes phase configurations independently; its
+weak-cross-node-bandwidth branch pairs corresponding model-layer groups inside
+a node and jointly enumerates complete per-phase intra-node parallel layouts
+under their combined GPU capacity constraint. Preserve that
+feasible-set difference before comparing joint TTFT/request-average-TPOT
+attained goodput per provisioned GPU. The paper's simulated ablation and
+historical measured results do not qualify a current engine configuration.
+
 ### RRSI — bounded harness proposals and acceptance
 
 Use [RRSI v3 source evidence](references/papers-20261015/references/source-notes.md#f1--rrsi)
