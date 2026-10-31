@@ -1,10 +1,11 @@
-# Bounded KV live launcher (inactive implementation)
+# Bounded KV live launcher (one-pair gated execution)
 
 This is an Issue-scoped synthetic editing feasibility controller, not a default
-CI lane, model benchmark, efficacy result or service qualification. The checked-in
-locator is disabled, and the manual workflow contains **no credential binding**.
-It cannot currently run a paid pilot. Ordinary tests use fake providers, fake
-ledgers and synthetic keys only.
+CI lane, model benchmark, efficacy result or service qualification. The manual
+workflow binds the existing provider key and GitHub token **only in the trusted
+execute step**, after secret-free preparation. A disabled or incomplete public
+locator still prevents paid admission. Ordinary tests use fake providers, fake
+ledgers and synthetic keys only; no key values belong in the freeze or checkout.
 
 ## Trust and execution boundaries
 
@@ -44,6 +45,19 @@ projection of preparation progress, staged workspace hashes and the actual
 isolation/runtime/cleanup/replay receipts. Each preparation stage records its
 start before running. Missing, failed or interrupted stages are explicit; no
 exception text, process command, environment or arbitrary log is published.
+
+The execution bundle also projects closed worker diagnostics from fixed trusted
+result paths: worker status, an allowlisted reason/error code, `provider_attempts`
+and outer executor status/return code/elapsed seconds. `provider_attempts` counts
+invocations of the transport function, **not confirmed HTTP delivery or charges**.
+A present zero is distinct from a missing/malformed/interrupted record (`null`).
+Only fixed reason enums or `http_100` through `http_599` are retained; unknown
+exceptions become `unknown`, never arbitrary exception text. The transport code
+is captured separately before the edit agent generalizes its failure. These
+diagnostics do not settle costs, authorize retry or upgrade a verdict. Packaging
+only reads existing first-run files, including when controller writing stopped.
+This future retention correction cannot recover a reason omitted from an earlier
+artifact; that earlier cause and billing remain unknown without separate evidence.
 
 The grader uploads only its dedicated `public/` projection, not its working
 directory. `evidence.json` enumerates every assigned hidden trace and the fixed
@@ -107,7 +121,7 @@ successful pinned Ready run and the exact nonexpired
 SHA-256. Generic green CI, a numeric task-only artifact or a locally authored
 `PASS` JSON file cannot replace this receipt.
 
-## Activation prerequisites (not supplied by this patch)
+## Required one-pair operational freeze
 
 - Accepted final common task/workbench/development bytes, limits and arm order;
   exact A3 knowledge export audit and independent final-verifier inventory.
@@ -119,10 +133,10 @@ SHA-256. Generic green CI, a numeric task-only artifact or a locally authored
 - Refreshed price evidence, supported authorization expiry and enough full-pair
   runway before expiry or Shanghai midnight. An expired plan is not renewed by
   an offline test or by the larger task ceiling.
-- Reviewed public freeze/locator with actual hashes and provenance, and explicit
-  resolution of the pending existing-key workflow binding/manual-execution step.
+- Reviewed public freeze/locator with actual hashes and provenance, plus explicit
+  owner authorization for this existing-key binding and single manual execution.
 
-No deployment, credential or paid action is authorized by an inactive template.
+No deployment, credential or paid action is authorized merely by this template.
 An operator must not enable the locator, add a secret binding or dispatch merely
 because repository tests passed. These tests establish software behavior only;
 real hosted isolation, provider delivery, measured model output and efficacy
