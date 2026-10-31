@@ -20,7 +20,7 @@
       "full_text": "All 19 PDF pages: cover, abstract, Sections 1-9, references 1-60 and Appendices A-C",
       "visually_inspected_pdf_pages": [1, 2, 6, 8, 9, 10, 11, 12, 13, 18, 19],
       "caption_and_discussion_only_figures": [2, 5],
-      "retained_scope": ["Sections 3.3 and 4.1-4.2 / Algorithms 1-2", "Sections 1-2 and 6.1-6.2 metric definition", "Sections 3.2-3.3 and 5 resource costs", "Sections 6.3-6.5 simulation, calibration and label limits", "Section 7 and Appendices A-C applicability limits"],
+      "retained_scope": ["Sections 3.3 and 4.1-4.2 / Algorithms 1-2", "Sections 1-2 and 6.1-6.2 metric definition", "Sections 3.2-3.3 and 5 resource costs", "Sections 6.3-6.5 simulation, calibration and label limits", "Section 6.1 and Appendix B Table 3: Low experiments with unequal total per-phase PP", "Section 7 and Appendices A-C applicability limits"],
       "exclusions": "No code/artifact repository, slides/video or other paper edition was acquired. Raw source assets remain private and are not bundled."
     }
   },
@@ -31,9 +31,15 @@
       "evidence_type": "source_observation"
     },
     {
-      "claim": "Weak-cross-node-bandwidth planning jointly enumerates intra-node phase allocations and corresponding-stage placement",
+      "claim": "Weak-cross-node-bandwidth planning shares an outer corresponding-layer grouping and jointly enumerates general per-phase intra-node parallelism configurations under combined GPU capacity",
       "locators": ["Sections 3.3 and 4.2", "Algorithm 2", "Appendix B"],
       "evidence_type": "source_observation"
+    },
+    {
+      "claim": "Low end-to-end experiments report unequal total per-phase PP: OPT-66B prefill TP=4/PP=1 and decoding TP=2/PP=2",
+      "locators": ["Section 6.1", "Appendix B Table 3"],
+      "evidence_type": "source_observation_of_author_report",
+      "interpretation_limit": "Shared outer grouping does not impose equal total PP or TP-only inner search; helper internals and concrete placement reconstruction remain unqualified here"
     },
     {
       "claim": "Per-GPU goodput uses maximum request rate at joint TTFT/request-average-TPOT attainment divided by provisioned GPUs",

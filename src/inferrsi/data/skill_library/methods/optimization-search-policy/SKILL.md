@@ -203,8 +203,9 @@ per-engine two-hour searches. None is an InferRSI measurement.
 When comparing separate prefill and decoding plans, read the
 [DistServe phase-placement reference](references/distserve-phase-placement/README.md).
 Its high-bandwidth branch optimizes phase configurations independently; its
-weak-cross-node-bandwidth branch pairs corresponding pipeline-stage segments
-inside a node and enumerates their combined GPU allocation. Preserve that
+weak-cross-node-bandwidth branch pairs corresponding model-layer groups inside
+a node and jointly enumerates complete per-phase intra-node parallel layouts
+under their combined GPU capacity constraint. Preserve that
 feasible-set difference before comparing joint TTFT/request-average-TPOT
 attained goodput per provisioned GPU. The paper's simulated ablation and
 historical measured results do not qualify a current engine configuration.

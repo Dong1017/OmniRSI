@@ -17,17 +17,28 @@ The planning branches also assume different costs for moving the key/value
 | Paper branch | Assumption and search | Constraint to retain |
 | --- | --- | --- |
 | Algorithm 1, high cross-node bandwidth / HighNode-Affinity | Cross-node KV transfer is treated as negligible. Search tensor/pipeline parallelism for each phase independently, then replicate the selected phase instances to serve the target rate. | Independent phase optima are conditional on that transfer assumption. |
-| Algorithm 2, weak cross-node bandwidth / LowNode-Affinity | Choose a shared pipeline-stage count and place corresponding prefill/decoding stage segments within an NVLink node. Enumerate memory-feasible intra-node tensor-parallel allocations for the two phases jointly, subject to the node's GPU capacity. | A phase's locally best allocation can be infeasible when its paired allocation must fit in the same node. |
+| Algorithm 2, weak cross-node bandwidth / LowNode-Affinity | Group corresponding model-layer segments for same-node NVLink transfer. Jointly enumerate the two phases' memory-feasible intra-node parallelism configurations, subject to their combined GPU allocation fitting the node. | A phase's locally best configuration can be infeasible when the paired configuration must fit in the same node; total per-phase pipeline-parallel degrees can differ. |
 
 The second branch restricts the feasible placement set before scoring plans;
 it is not an extra transfer penalty applied after choosing independent optima.
-The same-node condition concerns corresponding model-layer segments. It does
-not require an entire multi-node model to fit in one node. Duplicate phase
-weights, KV capacity and the prefill-side source buffer remain resource costs
-(Sections 3.2-3.3 and 5); they cannot be omitted because compute is separated.
+The same-node condition concerns corresponding model-layer segments. Algorithm
+2 shares an outer `inter_op` grouping, then selects `Pp` and `Pd` from the general
+intra-node configurations described in Section 4.2. Keep that outer grouping
+separate from each phase's complete tensor/pipeline-parallel layout. Appendix B,
+Table 3 reports OPT-66B prefill TP=4/PP=1 and decoding TP=2/PP=2 for the main
+end-to-end workloads, which Section 6.1 says use Low. The inner search is not
+specified as TP-only, and the shared outer grouping does not require equal
+total PP. The helper's internals and reconstruction of a concrete placement
+remain unqualified here.
+
+The grouping does not require an entire multi-node model to fit in one node.
+Duplicate phase weights, KV capacity and the prefill-side source buffer remain
+resource costs (Sections 3.2-3.3 and 5); they cannot be omitted because compute
+is separated.
 
 For a future comparison, declare the cross-node bandwidth assumption, per-node
-GPU capacity, phase tensor/pipeline layouts and corresponding-stage mapping
+GPU capacity, outer corresponding-layer grouping and complete per-phase
+tensor/pipeline layouts
 before selecting candidates. If the intended mapping exceeds node capacity,
 exclude that mapping from Algorithm 2's feasible set. If transfer is material,
 the independent-search assumption needs separate evidence. These are
