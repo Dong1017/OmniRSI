@@ -21,8 +21,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/6e03dab672d63d51c02d4ea1abc396ca1325786f/src/inferrsi/data/skill_library/methods/optimization-search-policy/SKILL.md",
-      "commit": "6e03dab672d63d51c02d4ea1abc396ca1325786f",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/6f8f6fbbfa100bc444ea062656efe6fc365f382e/src/inferrsi/data/skill_library/methods/optimization-search-policy/SKILL.md",
+      "commit": "6f8f6fbbfa100bc444ea062656efe6fc365f382e",
       "paths": [
         "src/inferrsi/data/skill_library/methods/optimization-search-policy/SKILL.md",
         "src/inferrsi/data/skill_library/methods/optimization-search-policy/metadata.json",
@@ -36,7 +36,7 @@
         "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/updates/optimization-search-policy.md",
         "src/inferrsi/data/skill_library/skill-index.json"
       ],
-      "content_sha256": "829035fb618f912c279f3686dd7985c4db5f0dc612093558c69aa98118df5441"
+      "content_sha256": "1ba252b6fee219a87f16072e45e544f07f20a11a2d29517704d37bbc55c6e635"
     }
   ],
   "index_type": "packaged-skill",
@@ -45,10 +45,10 @@
   },
   "checkout_ref": "checkout:optimization-search-policy",
   "source_files": {
-    "src/inferrsi/data/skill_library/methods/optimization-search-policy/SKILL.md": "829035fb618f912c279f3686dd7985c4db5f0dc612093558c69aa98118df5441",
+    "src/inferrsi/data/skill_library/methods/optimization-search-policy/SKILL.md": "1ba252b6fee219a87f16072e45e544f07f20a11a2d29517704d37bbc55c6e635",
     "src/inferrsi/data/skill_library/methods/optimization-search-policy/metadata.json": "c6c04914c9b353c8c8c1d9e106bb97d9f8f87694561c25c26f26600c05f0d9c4",
-    "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/distserve-phase-placement/README.md": "bd85c85d5bc7d1d577ce128d05bfe1a58e4bb70ea06a92243dff58539caf81f7",
-    "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/distserve-phase-placement/source-record.json": "a06900013b89edd07b869a54d2884332a1c4ad81bdf9f01f290ad7866565463d",
+    "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/distserve-phase-placement/README.md": "56e16efce447dfd4990a024ff1d6f7cb428f8e3e1f7b32a7e4d05f57139b836a",
+    "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/distserve-phase-placement/source-record.json": "21cc9562f1c19d6b57957c01b53e0adf8700d05ffaaa7764afe07c4da1284de1",
     "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/INTEGRATION_NOTES.md": "157e74ba180426b279b548a729769f152bf18f9a78ffca4ebfcaf26b7d0c5292",
     "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/MECHANISMS.md": "18bb2f5d7e52773c516420a142edfb531d0b9c822a2934d60f3234ac1cb9d40e",
     "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/NEXT_GATE_LEADS.md": "16a264c7159f9c2c700ce8ba46e63f3e636b277c987da4970f6d2fa085fcb053",

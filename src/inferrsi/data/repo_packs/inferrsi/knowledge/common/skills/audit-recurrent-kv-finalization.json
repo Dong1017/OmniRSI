@@ -26,8 +26,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/6e03dab672d63d51c02d4ea1abc396ca1325786f/src/inferrsi/data/skill_library/repositories/vllm-rlt/audit-recurrent-kv-finalization/SKILL.md",
-      "commit": "6e03dab672d63d51c02d4ea1abc396ca1325786f",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/6f8f6fbbfa100bc444ea062656efe6fc365f382e/src/inferrsi/data/skill_library/repositories/vllm-rlt/audit-recurrent-kv-finalization/SKILL.md",
+      "commit": "6f8f6fbbfa100bc444ea062656efe6fc365f382e",
       "paths": [
         "src/inferrsi/data/skill_library/repositories/vllm-rlt/audit-recurrent-kv-finalization/LICENSE",
         "src/inferrsi/data/skill_library/repositories/vllm-rlt/audit-recurrent-kv-finalization/SKILL.md",
