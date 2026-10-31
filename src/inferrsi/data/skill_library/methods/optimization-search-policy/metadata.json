@@ -38,6 +38,7 @@
     "references/papers-20261015/NEXT_GATE_LEADS.md",
     "references/papers-20261015/references/source-notes.md",
     "references/papers-20261015/updates/optimization-search-policy.md",
+    "cases/sarathi-chunk-budget.json",
     "references/distserve-phase-placement/README.md",
     "references/distserve-phase-placement/source-record.json"
   ],
@@ -49,6 +50,10 @@
     "../inference-optimization-casebook/cases/drama3-rejected-directions.md",
     "../inference-optimization-casebook/cases/drama3-rejected-directions.json",
     "../../workflows/rsi-evidence/references/loopx-goal-governance/README.md",
+    "cases/sarathi-chunk-budget.md",
+    "cases/sarathi-chunk-budget.json",
+    "../../repositories/vllm/diagnose-vllm-admission-pressure/SKILL.md",
+    "../assess-serving-preemption/SKILL.md",
     "../calibrate-serving-simulation/SKILL.md",
     "../performance-ceiling-analysis/SKILL.md",
     "../../repositories/vllm/audit-vllm-kv-lifetimes/SKILL.md"
