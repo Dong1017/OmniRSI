@@ -22,11 +22,12 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/6a39cb45c66c22ebec973200c9a36e48c12ed9e7/src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/SKILL.md",
-      "commit": "6a39cb45c66c22ebec973200c9a36e48c12ed9e7",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/ad322aab86d9a148bc4b378a15b2762e41b86908/src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/SKILL.md",
+      "commit": "ad322aab86d9a148bc4b378a15b2762e41b86908",
       "paths": [
         "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/SKILL.md",
         "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/metadata.json",
+        "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/references/mooncake-prefix-reuse-feasibility.md",
         "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/references/papers-20261015/INTEGRATION_NOTES.md",
         "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/references/papers-20261015/MECHANISMS.md",
         "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/references/papers-20261015/README.md",
@@ -48,7 +49,7 @@
         "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/scripts/roofline.py",
         "src/inferrsi/data/skill_library/skill-index.json"
       ],
-      "content_sha256": "c5f78961c23e3c8d659f5675b522518ab06e1f2a8ea8bc74c5d428ffb41693d5"
+      "content_sha256": "4810761a3ab1e5e6e000060d9ad140a0e8892937486f2ab384d50868c22b0f11"
     }
   ],
   "index_type": "packaged-skill",
@@ -57,8 +58,9 @@
   },
   "checkout_ref": "checkout:performance-ceiling-analysis",
   "source_files": {
-    "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/SKILL.md": "c5f78961c23e3c8d659f5675b522518ab06e1f2a8ea8bc74c5d428ffb41693d5",
-    "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/metadata.json": "60b5b24ead590b0fb222398fba47822bf6723690da683e256a450bb5c0eeb806",
+    "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/SKILL.md": "4810761a3ab1e5e6e000060d9ad140a0e8892937486f2ab384d50868c22b0f11",
+    "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/metadata.json": "3fcd2126846cf42ee77b1def39fc05ebfc54cf7428e0a6844b0ade1acf9f47ea",
+    "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/references/mooncake-prefix-reuse-feasibility.md": "e64b62fded4490708414a898f540b0319c54d2b205fd5d060acaab419734d100",
     "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/references/papers-20261015/INTEGRATION_NOTES.md": "083e462e0a204dce599362d46712fcfb392d053c5cda56216e22e28d4b8fa0fa",
     "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/references/papers-20261015/MECHANISMS.md": "742c249082ceca230326f4407a40130fe624553b796ae5a157a8a4c15a7e1398",
     "src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/references/papers-20261015/README.md": "17b2d1c7c14124d59ac8a0d5ad4200ad2803d991e784a1a98cd97188cc364999",
@@ -125,6 +127,19 @@
         ],
         "type": "git",
         "revision_precision": "prefix"
+      },
+      {
+        "type": "paper",
+        "id": "usenix:fast25-qin",
+        "version": "FAST '25 proceedings, February 25-27, 2025, pp. 155-170",
+        "url": "https://www.usenix.org/system/files/fast25-qin.pdf",
+        "content_sha256": "543e56c541523c5e807d2231370f96749b2294bc901266397a7265b18ae2c130",
+        "sections": [
+          "2.2, Table 1, Equations 1-2",
+          "3.1 and 5.3 (storage-scope limits only)"
+        ],
+        "readset": "references/mooncake-prefix-reuse-feasibility.md",
+        "license": "UNKNOWN"
       }
     ],
     "verification": {
@@ -151,9 +166,11 @@
     ],
     "empirical_validation": "not_run",
     "limitations": [
-      "Source-derived candidate; no local efficacy validation."
+      "Source-derived candidate; no local efficacy validation.",
+      "Mooncake's prefix-reuse condition is an analytical approximation; current cache validity, placement, effective rates, overlap and SLO outcomes remain unverified."
     ],
     "provenance_readsets": [
+      "references/mooncake-prefix-reuse-feasibility.md",
       "references/papers-20261015/cases/decision-cases.md",
       "references/papers-20261015/govern-optimization-experiments/procedure.md",
       "references/papers-20261015/govern-optimization-experiments/references/source-notes.md",
@@ -187,7 +204,8 @@
     "The imported status describes this index, not the original skill; its declared status is candidate.",
     "Reading or indexing does not authorize execution, validate efficacy, promote a candidate or grant a license.",
     "The backend categorizes the procedure's hardware dependency; it does not certify compatibility, and skills.discovery is a discovery scenario.",
-    "Source-derived candidate; no local efficacy validation."
+    "Source-derived candidate; no local efficacy validation.",
+    "Mooncake's prefix-reuse condition is an analytical approximation; current cache validity, placement, effective rates, overlap and SLO outcomes remain unverified."
   ],
   "verification": {
     "locally_verified": false,

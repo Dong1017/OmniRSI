@@ -42,6 +42,12 @@ For supplied single-resource work/traffic counts, the bundled
 It preserves sources and unknowns; it does not collect hardware facts, estimate
 model work or establish attainable speedup, goal acceptance or E2E performance.
 
+For a remotely reusable input prefix, the
+[Mooncake source comparison](references/mooncake-prefix-reuse-feasibility.md)
+relates KV loading time to saved prefill work. Its paper-specific inequality
+screens a candidate; current cache validity, effective rates, exposed costs and
+service outcomes still require evidence.
+
 **FLOPs per forward pass:**
 
 For a linear projection of shape (batch × seq, in_channels, out_channels):
