@@ -41,6 +41,19 @@
       ],
       "type": "git",
       "revision_precision": "prefix"
+    },
+    {
+      "type": "paper",
+      "id": "usenix:fast25-qin",
+      "version": "FAST '25 proceedings, February 25-27, 2025, pp. 155-170",
+      "url": "https://www.usenix.org/system/files/fast25-qin.pdf",
+      "content_sha256": "543e56c541523c5e807d2231370f96749b2294bc901266397a7265b18ae2c130",
+      "sections": [
+        "2.2, Table 1, Equations 1-2",
+        "3.1 and 5.3 (storage-scope limits only)"
+      ],
+      "readset": "references/mooncake-prefix-reuse-feasibility.md",
+      "license": "UNKNOWN"
     }
   ],
   "verification": {
@@ -67,9 +80,11 @@
   ],
   "empirical_validation": "not_run",
   "limitations": [
-    "Source-derived candidate; no local efficacy validation."
+    "Source-derived candidate; no local efficacy validation.",
+    "Mooncake's prefix-reuse condition is an analytical approximation; current cache validity, placement, effective rates, overlap and SLO outcomes remain unverified."
   ],
   "provenance_readsets": [
+    "references/mooncake-prefix-reuse-feasibility.md",
     "references/papers-20261015/cases/decision-cases.md",
     "references/papers-20261015/govern-optimization-experiments/procedure.md",
     "references/papers-20261015/govern-optimization-experiments/references/source-notes.md",
