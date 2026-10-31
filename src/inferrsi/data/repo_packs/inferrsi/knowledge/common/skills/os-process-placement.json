@@ -24,8 +24,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/b10231860fc1f643e02c6cff9cf3e2f92006c608/src/inferrsi/data/skill_library/hardware/host/os-process-placement/SKILL.md",
-      "commit": "b10231860fc1f643e02c6cff9cf3e2f92006c608",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/95b1e4bac05edd101392a70920fc2295074f0848/src/inferrsi/data/skill_library/hardware/host/os-process-placement/SKILL.md",
+      "commit": "95b1e4bac05edd101392a70920fc2295074f0848",
       "paths": [
         "src/inferrsi/data/skill_library/hardware/host/os-process-placement/SKILL.md",
         "src/inferrsi/data/skill_library/hardware/host/os-process-placement/metadata.json",

@@ -131,6 +131,17 @@ That constraint narrows the remaining search space.
 
 ## Cost-aware candidate selection
 
+For observed prefill interference with ongoing decodes, consult the
+[Sarathi-Serve chunk-budget case](cases/sarathi-chunk-budget.md) and its
+[source record](cases/sarathi-chunk-budget.json) before proposing a budget sweep.
+Account for decode tokens before partial and new prefills; preserve TTFT,
+token-gap latency, queueing and prefill-efficiency tradeoffs. This source-derived
+candidate supplies neither a universal budget nor current-engine validation.
+Use [admission diagnosis](../../repositories/vllm/diagnose-vllm-admission-pressure/SKILL.md),
+[preemption assessment](../assess-serving-preemption/SKILL.md) and
+[serving-simulation calibration](../calibrate-serving-simulation/SKILL.md)
+for their existing responsibilities.
+
 Not all experiments cost the same. Order candidates by cost-adjusted expected
 value:
 
@@ -197,6 +208,18 @@ per-engine two-hour searches. None is an InferRSI measurement.
 ---
 
 ## Prior art from related systems
+
+### DistServe — topology changes the phase-placement search
+
+When comparing separate prefill and decoding plans, read the
+[DistServe phase-placement reference](references/distserve-phase-placement/README.md).
+Its high-bandwidth branch optimizes phase configurations independently; its
+weak-cross-node-bandwidth branch pairs corresponding model-layer groups inside
+a node and jointly enumerates complete per-phase intra-node parallel layouts
+under their combined GPU capacity constraint. Preserve that
+feasible-set difference before comparing joint TTFT/request-average-TPOT
+attained goodput per provisioned GPU. The paper's simulated ablation and
+historical measured results do not qualify a current engine configuration.
 
 ### RRSI — bounded harness proposals and acceptance
 
