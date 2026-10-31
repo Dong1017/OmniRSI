@@ -21,11 +21,13 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/bde70d82bb65cc2e5dcd0f9d33cda5d38091120b/src/inferrsi/data/skill_library/methods/optimization-search-policy/SKILL.md",
-      "commit": "bde70d82bb65cc2e5dcd0f9d33cda5d38091120b",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/cbb63ffaa2fd4f10e7343a840b30140285a07341/src/inferrsi/data/skill_library/methods/optimization-search-policy/SKILL.md",
+      "commit": "cbb63ffaa2fd4f10e7343a840b30140285a07341",
       "paths": [
         "src/inferrsi/data/skill_library/methods/optimization-search-policy/SKILL.md",
         "src/inferrsi/data/skill_library/methods/optimization-search-policy/metadata.json",
+        "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/distserve-phase-placement/README.md",
+        "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/distserve-phase-placement/source-record.json",
         "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/INTEGRATION_NOTES.md",
         "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/MECHANISMS.md",
         "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/NEXT_GATE_LEADS.md",
@@ -34,7 +36,7 @@
         "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/updates/optimization-search-policy.md",
         "src/inferrsi/data/skill_library/skill-index.json"
       ],
-      "content_sha256": "dd275a0576e827353963aae7f0b09494d60d0b9a4a2884fe575c85249fa3131b"
+      "content_sha256": "829035fb618f912c279f3686dd7985c4db5f0dc612093558c69aa98118df5441"
     }
   ],
   "index_type": "packaged-skill",
@@ -43,8 +45,10 @@
   },
   "checkout_ref": "checkout:optimization-search-policy",
   "source_files": {
-    "src/inferrsi/data/skill_library/methods/optimization-search-policy/SKILL.md": "dd275a0576e827353963aae7f0b09494d60d0b9a4a2884fe575c85249fa3131b",
-    "src/inferrsi/data/skill_library/methods/optimization-search-policy/metadata.json": "4a61aab6b9984dacdccd657c17f2d959b3a6ffe74bfd2f1677438f3bb8f025d3",
+    "src/inferrsi/data/skill_library/methods/optimization-search-policy/SKILL.md": "829035fb618f912c279f3686dd7985c4db5f0dc612093558c69aa98118df5441",
+    "src/inferrsi/data/skill_library/methods/optimization-search-policy/metadata.json": "c6c04914c9b353c8c8c1d9e106bb97d9f8f87694561c25c26f26600c05f0d9c4",
+    "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/distserve-phase-placement/README.md": "bd85c85d5bc7d1d577ce128d05bfe1a58e4bb70ea06a92243dff58539caf81f7",
+    "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/distserve-phase-placement/source-record.json": "a06900013b89edd07b869a54d2884332a1c4ad81bdf9f01f290ad7866565463d",
     "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/INTEGRATION_NOTES.md": "157e74ba180426b279b548a729769f152bf18f9a78ffca4ebfcaf26b7d0c5292",
     "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/MECHANISMS.md": "18bb2f5d7e52773c516420a142edfb531d0b9c822a2934d60f3234ac1cb9d40e",
     "src/inferrsi/data/skill_library/methods/optimization-search-policy/references/papers-20261015/NEXT_GATE_LEADS.md": "16a264c7159f9c2c700ce8ba46e63f3e636b277c987da4970f6d2fa085fcb053",
@@ -70,6 +74,26 @@
       "external"
     ],
     "empirical_validation": "not_run",
+    "sources": [
+      {
+        "type": "paper",
+        "id": "usenix:osdi24:zhong-yinmin",
+        "version": "OSDI 24 proceedings, July 2024, pages 193-210",
+        "url": "https://www.usenix.org/conference/osdi24/presentation/zhong-yinmin",
+        "sections": [
+          "3.3",
+          "4.1-4.2",
+          "6.1-6.5",
+          "7",
+          "Appendices A-C"
+        ],
+        "readset": "references/distserve-phase-placement/source-record.json"
+      },
+      {
+        "type": "unknown",
+        "scope": "Pre-existing sources remain in their original procedure/readsets; this amendment does not normalize that inventory"
+      }
+    ],
     "limitations": [
       "Source-derived candidate; no local efficacy validation.",
       "Original typed source inventory is not normalized; retain source identities and limits in the procedure/readsets."
@@ -80,7 +104,9 @@
       "references/papers-20261015/MECHANISMS.md",
       "references/papers-20261015/NEXT_GATE_LEADS.md",
       "references/papers-20261015/references/source-notes.md",
-      "references/papers-20261015/updates/optimization-search-policy.md"
+      "references/papers-20261015/updates/optimization-search-policy.md",
+      "references/distserve-phase-placement/README.md",
+      "references/distserve-phase-placement/source-record.json"
     ],
     "references": [
       "../inference-optimization-casebook/cases/qwen-b300-rejected-directions.md",
@@ -89,7 +115,10 @@
       "../inference-optimization-casebook/cases/qwen-ascend-rejected-directions.json",
       "../inference-optimization-casebook/cases/drama3-rejected-directions.md",
       "../inference-optimization-casebook/cases/drama3-rejected-directions.json",
-      "../../workflows/rsi-evidence/references/loopx-goal-governance/README.md"
+      "../../workflows/rsi-evidence/references/loopx-goal-governance/README.md",
+      "../calibrate-serving-simulation/SKILL.md",
+      "../performance-ceiling-analysis/SKILL.md",
+      "../../repositories/vllm/audit-vllm-kv-lifetimes/SKILL.md"
     ],
     "consumption_mode": "packaged"
   },
