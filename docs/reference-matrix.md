@@ -142,7 +142,8 @@ worker/connector conformance, cross-pin compatibility or a physical transport.
 
 ### Reviewed systems-paper mechanisms
 
-`mined` below means pack-mediated extraction into the linked candidate artifacts.
+`mined` below means scoped extraction into the linked candidate artifacts;
+the evidence column distinguishes retained packs from direct public-paper reads.
 Readsets preserve exact sections, equations, tables, source hashes where supplied,
 metric denominators and unreported limitations. Versions are paper identities,
 not fabricated implementation SHAs or a version-matched runtime stack.
@@ -150,6 +151,7 @@ not fabricated implementation SHAs or a version-matched runtime stack.
 | Original source / version | Inspected scope and local evidence | Mechanism / consumer | Evidence limits |
 |---|---|---|---|
 | Vidur — [2405.05465v2](https://arxiv.org/abs/2405.05465v2) | [A readset](../src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/references/papers-20261015/READSET.md); §§3–7, A.1–A.2 | mined — operator/queue model calibration and joint-SLO shortlist → [calibrate-serving-simulation](../src/inferrsi/data/skill_library/methods/calibrate-serving-simulation/SKILL.md), ceiling analysis | Empirical prediction, not physical bound; near-capacity CPU overhead and 12.65% maximum error in the specified appendix case; no current runtime calibration |
+| Mooncake — FAST '25 proceedings, pp. 155-170 | Direct public-paper read, retained qualification 2026-10-31; [source condition and readset](../src/inferrsi/data/skill_library/methods/performance-ceiling-analysis/references/mooncake-prefix-reuse-feasibility.md), §2.2, Table 1, Eqs. 1-2 | mined — conditional prefix-KV transfer versus saved-prefill-work comparison → `performance-ceiling-analysis` | Analytical gate only; current inputs and E2E benefit unverified. SSD mechanics excluded. Original transfer-gates extraction history remains positive; missing synthesis novelty UNKNOWN. Raw-paper redistribution permission UNKNOWN. |
 | Orca — OSDI 2022 proceedings | [Exact readset](../src/inferrsi/data/skill_library/repositories/vllm/diagnose-vllm-admission-pressure/references/papers-20261015/references/orca-readset.md); §§3–6, Algorithm 1 | mined — iteration eligibility, selective batching, FCFS/reservation → [assess-serving-preemption](../src/inferrsi/data/skill_library/methods/assess-serving-preemption/SKILL.md) | Historical engine/harness and normalized-median denominators; not present vLLM behavior or fairness proof |
 | FastServe — [2305.05920v3](https://arxiv.org/abs/2305.05920v3) | [Exact readset](../src/inferrsi/data/skill_library/repositories/vllm/diagnose-vllm-admission-pressure/references/papers-20261015/references/fastserve-readset.md) | mined — service priority, promotion and suspended-state host residency → serving-preemption candidate | Aggregate tail improvement is not tenant fairness; same-engine contrast distinct from historical-vLLM comparison |
 | Llumnix — [2406.03243v1](https://arxiv.org/abs/2406.03243v1) | [Exact readset](../src/inferrsi/data/skill_library/repositories/vllm/diagnose-vllm-admission-pressure/references/papers-20261015/references/llumnix-readset.md) | mined — replica migration, virtual headroom, pre-copy/downtime and host staging → [evaluate-elastic-serving-placement](../src/inferrsi/data/skill_library/methods/evaluate-elastic-serving-placement/SKILL.md) | Virtual headroom is not physical capacity; normal-class cost and evaluated-artifact fault-tolerance limit retained |
@@ -175,6 +177,8 @@ DistServe, PagedAttention, Mooncake) is referenced by the packs but absent from
 the supplied local directory. Its six-paper extraction and standalone candidates
 are not imported or counted here. Existing DeepSpeed configuration evidence and
 Mooncake transport discovery are not substitutes for those paper readsets.
+The separate public-source Mooncake condition above does not recover that archive
+or import its earlier standalone candidate.
 
 ### Negative findings (scoped to inspected paths and revisions)
 
