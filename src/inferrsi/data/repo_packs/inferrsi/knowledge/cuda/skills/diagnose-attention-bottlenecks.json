@@ -16,8 +16,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/a037b99a198c944a4ddbbe1d952bda1f42ab2ffa/src/inferrsi/data/skill_library/hardware/cuda/diagnose-attention-bottlenecks/SKILL.md",
-      "commit": "a037b99a198c944a4ddbbe1d952bda1f42ab2ffa",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/4fd6176b2fa64e1d502cd6fe95a9e9383f0b0937/src/inferrsi/data/skill_library/hardware/cuda/diagnose-attention-bottlenecks/SKILL.md",
+      "commit": "4fd6176b2fa64e1d502cd6fe95a9e9383f0b0937",
       "paths": [
         "src/inferrsi/data/skill_library/hardware/cuda/diagnose-attention-bottlenecks/SKILL.md",
         "src/inferrsi/data/skill_library/hardware/cuda/diagnose-attention-bottlenecks/metadata.json",
