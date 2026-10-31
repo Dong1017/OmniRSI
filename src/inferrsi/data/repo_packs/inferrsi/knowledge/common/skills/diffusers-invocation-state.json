@@ -22,8 +22,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/224f6534dc5596ff78fd2f8329d73658c6bc78da/src/inferrsi/data/skill_library/frameworks/diffusers/diffusers-invocation-state/SKILL.md",
-      "commit": "224f6534dc5596ff78fd2f8329d73658c6bc78da",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/a7f23dfef4770e8542f8390709b029fc934928e4/src/inferrsi/data/skill_library/frameworks/diffusers/diffusers-invocation-state/SKILL.md",
+      "commit": "a7f23dfef4770e8542f8390709b029fc934928e4",
       "paths": [
         "src/inferrsi/data/skill_library/frameworks/diffusers/diffusers-invocation-state/SKILL.md",
         "src/inferrsi/data/skill_library/frameworks/diffusers/diffusers-invocation-state/metadata.json",
