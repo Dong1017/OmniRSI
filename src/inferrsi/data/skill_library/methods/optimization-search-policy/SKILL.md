@@ -131,6 +131,17 @@ That constraint narrows the remaining search space.
 
 ## Cost-aware candidate selection
 
+For observed prefill interference with ongoing decodes, consult the
+[Sarathi-Serve chunk-budget case](cases/sarathi-chunk-budget.md) and its
+[source record](cases/sarathi-chunk-budget.json) before proposing a budget sweep.
+Account for decode tokens before partial and new prefills; preserve TTFT,
+token-gap latency, queueing and prefill-efficiency tradeoffs. This source-derived
+candidate supplies neither a universal budget nor current-engine validation.
+Use [admission diagnosis](../../repositories/vllm/diagnose-vllm-admission-pressure/SKILL.md),
+[preemption assessment](../assess-serving-preemption/SKILL.md) and
+[serving-simulation calibration](../calibrate-serving-simulation/SKILL.md)
+for their existing responsibilities.
+
 Not all experiments cost the same. Order candidates by cost-adjusted expected
 value:
 

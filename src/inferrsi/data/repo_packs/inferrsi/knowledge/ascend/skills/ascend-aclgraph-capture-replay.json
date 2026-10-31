@@ -21,8 +21,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/a04c599c49465b67ea40a1f0de622706ab3da955/src/inferrsi/data/skill_library/hardware/ascend/ascend-aclgraph-capture-replay/SKILL.md",
-      "commit": "a04c599c49465b67ea40a1f0de622706ab3da955",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/c5e13944c06a8a03ab7015a8933981a983e42186/src/inferrsi/data/skill_library/hardware/ascend/ascend-aclgraph-capture-replay/SKILL.md",
+      "commit": "c5e13944c06a8a03ab7015a8933981a983e42186",
       "paths": [
         "src/inferrsi/data/skill_library/hardware/ascend/ascend-aclgraph-capture-replay/SKILL.md",
         "src/inferrsi/data/skill_library/hardware/ascend/ascend-aclgraph-capture-replay/metadata.json",
