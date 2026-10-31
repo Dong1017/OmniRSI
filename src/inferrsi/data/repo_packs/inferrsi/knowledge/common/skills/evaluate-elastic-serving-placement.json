@@ -16,8 +16,8 @@
   "sources": [
     {
       "type": "git",
-      "url": "https://github.com/InferMatrixLab/InferRSI/blob/cbb63ffaa2fd4f10e7343a840b30140285a07341/src/inferrsi/data/skill_library/methods/evaluate-elastic-serving-placement/SKILL.md",
-      "commit": "cbb63ffaa2fd4f10e7343a840b30140285a07341",
+      "url": "https://github.com/InferMatrixLab/InferRSI/blob/6e03dab672d63d51c02d4ea1abc396ca1325786f/src/inferrsi/data/skill_library/methods/evaluate-elastic-serving-placement/SKILL.md",
+      "commit": "6e03dab672d63d51c02d4ea1abc396ca1325786f",
       "paths": [
         "src/inferrsi/data/skill_library/methods/evaluate-elastic-serving-placement/SKILL.md",
         "src/inferrsi/data/skill_library/methods/evaluate-elastic-serving-placement/metadata.json",
